@@ -38,6 +38,8 @@ class PolicyNode:
     summary: str = ""
     source_text: str = ""
     negated: bool = False
+    char_interval: dict = field(default_factory=dict)
+    evidence_requirements: list[dict] = field(default_factory=list)
     children: list[PolicyNode] = field(default_factory=list)
 
 
@@ -96,6 +98,10 @@ def _assign_ids(node: dict, parent_path: str = "") -> None:
         slug = _slug(node_name)
         current_path = f"{parent_path}.{slug}" if parent_path else slug
 
+    # Assign ID to internal (AND/OR) nodes too
+    if current_path:
+        node["id"] = current_path
+
     for child in node.get("children", []):
         _assign_ids(child, current_path)
 
@@ -127,6 +133,8 @@ def _dict_to_node(d: dict) -> PolicyNode:
         summary=d.get("summary", ""),
         source_text=d.get("source_text", ""),
         negated=d.get("negated", False),
+        char_interval=d.get("char_interval", {}),
+        evidence_requirements=d.get("evidence_requirements", []),
         children=children,
     )
 
@@ -161,6 +169,10 @@ def tree_to_dict(node: PolicyNode) -> dict:
         d["source_text"] = node.source_text
     if node.negated:
         d["negated"] = True
+    if node.char_interval:
+        d["char_interval"] = node.char_interval
+    if node.evidence_requirements:
+        d["evidence_requirements"] = node.evidence_requirements
     if node.children:
         d["children"] = [tree_to_dict(c) for c in node.children]
     return d
