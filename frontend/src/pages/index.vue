@@ -32,12 +32,20 @@
                 <v-list-item v-bind="itemProps">
                   <template #append>
                     <v-chip
-                      v-if="item.raw.hasFhir"
+                      v-if="item.raw.metCount != null"
                       size="x-small"
-                      color="success"
+                      :color="item.raw.metCount === item.raw.totalCount ? 'success' : item.raw.metCount > item.raw.totalCount / 2 ? 'warning' : 'error'"
                       variant="tonal"
                     >
-                      FHIR
+                      {{ item.raw.metCount }}/{{ item.raw.totalCount }} met
+                    </v-chip>
+                    <v-chip
+                      v-else
+                      size="x-small"
+                      color="grey"
+                      variant="tonal"
+                    >
+                      Pending
                     </v-chip>
                   </template>
                 </v-list-item>
@@ -101,9 +109,10 @@ const navigating = ref(false)
 
 const patientItems = computed(() =>
   patientStore.patients.map(p => ({
-    text: `${p.name} (${p.uuid.slice(0, 8)}...)`,
+    text: p.name,
     value: p.uuid,
-    hasFhir: p.has_fhir,
+    metCount: p.met_count,
+    totalCount: p.total_count,
   }))
 )
 

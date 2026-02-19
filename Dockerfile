@@ -2,9 +2,6 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install pip + uv
-RUN pip install --no-cache-dir uv
-
 # Copy dependency files first (layer cache)
 COPY requirements-cloud.txt ./
 
@@ -18,7 +15,6 @@ COPY . .
 # (mlx_models/ is large — exclude via .dockerignore instead)
 
 # Default: pre-computed results only (no model)
-ENV SKIP_MODEL=1
 ENV PORT=8080
 
 EXPOSE 8080

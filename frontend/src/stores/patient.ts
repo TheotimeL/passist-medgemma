@@ -6,6 +6,9 @@ export interface PatientSummary {
   name: string
   files: string[]
   has_fhir: boolean
+  eligible: boolean | null
+  met_count: number | null
+  total_count: number | null
 }
 
 export interface PatientFhir {
