@@ -1,11 +1,8 @@
 """FastAPI entry point for the PA Form Auto-Fill application.
 
-Run with: uvicorn api.index:app --reload --port 8000
-(or just: uvicorn api:app --reload --port 8000)
+Run with: uvicorn server:app --reload --port 8000
 
 Set SKIP_MODEL=1 to skip MedGemma loading (uses pre-computed results only).
-
-Vercel will automatically route requests starting with /api to this module.
 """
 
 import os

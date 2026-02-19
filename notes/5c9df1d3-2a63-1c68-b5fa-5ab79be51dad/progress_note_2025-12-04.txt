@@ -1,0 +1,41 @@
+PROGRESS NOTE — Psychiatry Follow-Up
+
+Patient: Aide Reichel
+DOB: 03/01/1979
+Date of Visit: 12/04/2025
+Provider: Dr. Thomas Brennan, MD, Department of Psychiatry
+Facility: Valley Regional Hospital
+
+Reason for Visit: Follow-up for anxiety disorder.
+
+SUBJECTIVE:
+Aide is a 47-year-old woman presenting for routine follow-up of anxiety disorder. The patient reports stable symptoms overall. Current medications include sertraline 50 mg daily. No new complaints related to today's condition. Patient reports occasional missed doses.
+
+Review of systems negative for chest pain, shortness of breath, fever, or weight loss.
+
+OBJECTIVE:
+Vitals: BP 146/90 mmHg, HR 71 bpm, Temp 98.7°F, Weight 154 lbs
+General: Alert and oriented x3, in no acute distress.
+
+Physical Exam:
+- Cardiovascular: Regular rate and rhythm, no murmurs
+- Respiratory: Clear to auscultation bilaterally
+- Abdomen: Soft, non-tender, non-distended
+- Extremities: No edema, peripheral pulses intact
+- Neurological: Grossly intact
+
+ASSESSMENT:
+1. Anxiety disorder — mildly uncontrolled, medication adjustment considered.
+   Current therapy: sertraline 50 mg daily.
+
+PLAN:
+1. Continue sertraline 50 mg daily.
+2. Annual screening labs ordered.
+3. Patient instructed to call if symptoms worsen.
+4. Return to clinic in 3 months for routine follow-up.
+
+Electronically signed,
+Dr. Thomas Brennan, MD
+Department of Psychiatry
+Valley Regional Hospital
+12/04/2025

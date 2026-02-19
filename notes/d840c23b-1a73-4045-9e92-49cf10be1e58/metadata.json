@@ -1,0 +1,24 @@
+{
+  "patient_name": "Patricia Williams",
+  "uuid": "d840c23b-1a73-4045-9e92-49cf10be1e58",
+  "notes": [
+    {
+      "filename": "soap_note_2026-01-22.txt",
+      "type": "soap",
+      "date": "2026-01-22",
+      "title": "Rheumatology Clinic Visit"
+    },
+    {
+      "filename": "progress_note_2025-11-27.txt",
+      "type": "progress",
+      "date": "2025-11-27",
+      "title": "Cardiology Follow-Up"
+    },
+    {
+      "filename": "lab_report_2026-01-01.txt",
+      "type": "lab",
+      "date": "2026-01-01",
+      "title": "Routine Lab Results"
+    }
+  ]
+}

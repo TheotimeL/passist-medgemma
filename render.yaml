@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: medgemma-pa
+    runtime: python
+    buildCommand: bash build.sh
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SKIP_MODEL
+        value: "1"
+      - key: PYTHON_VERSION
+        value: "3.12.3"

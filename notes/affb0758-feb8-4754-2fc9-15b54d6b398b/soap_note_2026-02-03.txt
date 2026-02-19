@@ -1,0 +1,81 @@
+SOAP NOTE — Rheumatology New Patient Evaluation
+
+Patient: Analisa Auer
+DOB: 03/22/1976
+Age: 49 years old
+Gender: Female
+MRN: AFFB0758
+Date of Visit: 02/03/2026
+Provider: Dr. Chanell Robel, MD, Rheumatology
+Facility: St. Peters Community Hospital, Rheumatology Department
+PCP: Dr. Johna Klein, Helena Indian Alliance Inc
+
+Reason for Visit: New rheumatology referral for established rheumatoid arthritis. Evaluation for DMARD initiation.
+
+SUBJECTIVE:
+Ms. Auer is a 49-year-old woman with a history of rheumatoid arthritis first diagnosed in March 2008, now presenting for her first rheumatology evaluation. She has been managed by her primary care provider Dr. Klein for the past 17 years with naproxen 500 mg oral tablet only.
+
+She reports chronic bilateral hand and wrist pain and stiffness that has gradually worsened over the years. Morning stiffness currently lasts about 60 minutes. She has noticed progressive deformity of her finger joints over the past several years. She also reports bilateral foot pain, particularly the balls of her feet, which makes walking painful. Pain is rated 5/10 on average, worse in cold weather.
+
+She has never been prescribed a disease-modifying antirheumatic drug (DMARD). No history of methotrexate, leflunomide, sulfasalazine, hydroxychloroquine, or any biologic therapy. She states that her previous provider managed her RA with naproxen and physical therapy only.
+
+She reports fatigue, approximately 2-3 hours of productive activity before needing to rest. She denies fevers, recent infections, or weight loss.
+
+Allergies: No known drug allergies.
+Social History: Divorced. Non-smoker, no alcohol use. Works part-time at a local library.
+
+OBJECTIVE:
+Vitals: BP 124/76 mmHg, HR 80 bpm, Temp 98.4F, Weight 142 lbs, Height 5'4"
+General: Appears tired, in no acute distress.
+
+Musculoskeletal Exam:
+- Hands: Ulnar deviation at MCP joints bilaterally, swan-neck deformity developing at right PIP 3-4. Synovitis palpable at MCP 2-5 bilaterally. Reduced grip strength.
+- Wrists: Bilateral synovitis with reduced ROM (extension 30 degrees bilaterally)
+- Elbows: Small rheumatoid nodule at right olecranon
+- Shoulders: Reduced abduction bilaterally to 140 degrees
+- Knees: Right knee with moderate effusion, left knee trace effusion
+- Feet: Tenderness and swelling at MTP 2-5 bilaterally, cock-up toe deformity developing at right 3rd toe
+- Tender joint count: 14/28
+- Swollen joint count: 10/28
+- Patient global assessment: 60/100
+
+Labs (01/27/2026):
+- ESR: 55 mm/hr (elevated)
+- CRP: 3.8 mg/dL (elevated)
+- RF: Positive, 185 IU/mL
+- Anti-CCP: Positive, >300 U/mL (strongly positive)
+- CBC: WBC 7.0, Hgb 11.5, Plt 380
+- CMP: ALT 18, AST 16, Creatinine 0.7
+- Hepatitis B surface antigen: Negative
+- Hepatitis C antibody: Negative
+- TB QuantiFERON Gold: Negative
+
+X-ray bilateral hands (01/27/2026): Significant erosive changes at MCP 2-4 bilaterally, joint space narrowing at multiple PIP joints, early subluxation at MCP 2-3 right hand. Advanced changes consistent with longstanding undertreated RA.
+
+X-ray bilateral feet (01/27/2026): Erosions at MTP 3-5 bilaterally, subluxation at right MTP 3.
+
+DAS28-ESR: 6.1 (high disease activity)
+
+ASSESSMENT:
+1. Rheumatoid arthritis, seropositive, severely active (DAS28-ESR 6.1) with structural damage
+   - Diagnosed March 2008, 17-year disease duration
+   - NEVER treated with any DMARD — has been on NSAID monotherapy only
+   - Significant radiographic damage including erosions and early deformities
+   - Strongly seropositive (high-titer RF and anti-CCP)
+   - Requires urgent initiation of disease-modifying therapy
+
+PLAN:
+1. Start methotrexate 15 mg oral weekly with folic acid 1 mg daily. This is the first-line DMARD and must be trialed before biologic therapy can be considered per insurance step therapy requirements.
+2. Continue naproxen 500 mg oral tablet daily for symptomatic relief.
+3. Prednisone 10 mg daily taper over 6 weeks as bridge therapy while methotrexate takes effect.
+4. Pre-DMARD screening labs completed (TB, hepatitis) - all negative.
+5. Occupational therapy referral for hand function and joint protection strategies.
+6. Physical therapy referral for lower extremity strengthening and gait training.
+7. Follow-up in 6 weeks to assess methotrexate tolerance and initial response.
+8. If methotrexate fails after adequate 3-month trial, will proceed with biologic DMARD authorization.
+
+Electronically signed,
+Dr. Chanell Robel, MD
+Department of Rheumatology
+St. Peters Community Hospital
+02/03/2026

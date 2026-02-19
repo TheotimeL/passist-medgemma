@@ -37,6 +37,9 @@ class PolicyNode:
     id: str = ""
     summary: str = ""
     source_text: str = ""
+    search_description: str = ""
+    keywords: list[str] = field(default_factory=list)
+    anti_keywords: list[str] = field(default_factory=list)
     negated: bool = False
     char_interval: dict = field(default_factory=dict)
     evidence_requirements: list[dict] = field(default_factory=list)
@@ -69,41 +72,48 @@ def _slug(name: str) -> str:
     return re.sub(r'[^a-z0-9]+', '_', name.lower()).strip('_')
 
 
-def _assign_ids(node: dict, parent_path: str = "") -> None:
-    """Recursively assign dot-notation IDs derived from the tree structure.
+def _assign_ids(node: dict, parent_path: str = "", counter: list | None = None) -> None:
+    """Recursively assign short, meaningful IDs to tree nodes.
 
-    IDs are built by concatenating slugified parent node names.
-    For leaves, the slug of source_text (or summary) is appended.
+    IDs use abbreviated slug names from node names (e.g., 'diag', 'step', 'prescr')
+    with numeric suffixes for disambiguation. This keeps IDs short but meaningful
+    for programmatic matching.
     """
+    if counter is None:
+        counter = {}  # slug -> count for disambiguation
+
     if node.get("type") == "ROOT":
         for child in node.get("children", []):
-            _assign_ids(child, parent_path)
+            _assign_ids(child, parent_path, counter)
         return
 
     node_name = node.get("name", "")
+    # Create a short slug (first word or first 6 chars of slugified name)
+    full_slug = _slug(node_name)
+    short = full_slug.split('_')[0][:8] if full_slug else "node"
 
     if node.get("type") == "LEAF":
-        # Use source_text as the leaf slug (falls back to summary)
-        leaf_text = node.get("source_text", "") or node.get("summary", "")
-        leaf_slug = _slug(leaf_text)
-        # Truncate long slugs (e.g. full policy sentences) to first 60 chars
-        if len(leaf_slug) > 60:
-            leaf_slug = leaf_slug[:60].rstrip('_')
-        node["id"] = f"{parent_path}.{leaf_slug}" if parent_path else leaf_slug
+        # Disambiguate if multiple leaves share a parent path + slug
+        key = f"{parent_path}.{short}" if parent_path else short
+        counter[key] = counter.get(key, 0) + 1
+        if counter[key] > 1:
+            node["id"] = f"{key}_{counter[key]}"
+        else:
+            node["id"] = key
         return
 
-    # Internal node: extend the path with this node's name
-    current_path = parent_path
-    if node_name:
-        slug = _slug(node_name)
-        current_path = f"{parent_path}.{slug}" if parent_path else slug
+    # Internal node: extend the path
+    key = f"{parent_path}.{short}" if parent_path else short
+    counter[key] = counter.get(key, 0) + 1
+    if counter[key] > 1:
+        current_path = f"{key}_{counter[key]}"
+    else:
+        current_path = key
+    node["id"] = current_path
 
-    # Assign ID to internal (AND/OR) nodes too
-    if current_path:
-        node["id"] = current_path
-
+    child_counter = {}
     for child in node.get("children", []):
-        _assign_ids(child, current_path)
+        _assign_ids(child, current_path, child_counter)
 
 
 def enrich_tree(tree_dict: dict) -> dict:
@@ -132,6 +142,9 @@ def _dict_to_node(d: dict) -> PolicyNode:
         id=d.get("id", ""),
         summary=d.get("summary", ""),
         source_text=d.get("source_text", ""),
+        search_description=d.get("search_description", ""),
+        keywords=d.get("keywords", []),
+        anti_keywords=d.get("anti_keywords", []),
         negated=d.get("negated", False),
         char_interval=d.get("char_interval", {}),
         evidence_requirements=d.get("evidence_requirements", []),
@@ -167,6 +180,12 @@ def tree_to_dict(node: PolicyNode) -> dict:
         d["summary"] = node.summary
     if node.source_text:
         d["source_text"] = node.source_text
+    if node.search_description:
+        d["search_description"] = node.search_description
+    if node.keywords:
+        d["keywords"] = node.keywords
+    if node.anti_keywords:
+        d["anti_keywords"] = node.anti_keywords
     if node.negated:
         d["negated"] = True
     if node.char_interval:
@@ -199,6 +218,8 @@ def set_criterion(
 
 
 def _eval_and(child_results: list[bool | None]) -> bool | None:
+    if not child_results:
+        return None  # empty node = indeterminate
     if any(r is False for r in child_results):
         return False
     if all(r is True for r in child_results):
@@ -207,6 +228,8 @@ def _eval_and(child_results: list[bool | None]) -> bool | None:
 
 
 def _eval_or(child_results: list[bool | None]) -> bool | None:
+    if not child_results:
+        return None  # empty node = indeterminate
     if any(r is True for r in child_results):
         return True
     if all(r is False for r in child_results):

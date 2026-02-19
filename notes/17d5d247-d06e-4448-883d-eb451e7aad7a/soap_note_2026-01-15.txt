@@ -1,0 +1,79 @@
+SOAP NOTE — Rheumatology Clinic Visit
+
+Patient: Elena Rodriguez
+DOB: 07/22/1971
+Age: 54 years old
+Gender: F
+MRN: 4e8a2f1c
+Date of Visit: 01/15/2026
+Provider: Dr. Amina Patel, MD, Rheumatology
+Facility: Northwest Rheumatology Associates
+Primary Care/PCP: Dr. Kevin Liu, MD
+
+SUBJECTIVE:
+Ms. Rodriguez is a 54-year-old Hispanic woman presenting for follow-up of rheumatoid arthritis initially diagnosed in March 2020. She reports persistent bilateral hand and wrist pain rated 7/10, with morning stiffness lasting approximately 90 minutes daily. She describes difficulty gripping objects, opening jars, and buttoning clothing. She notes intermittent swelling of both knees, worse with prolonged standing. Her symptoms have progressively worsened over the past 6 months despite conventional DMARD therapy.
+
+Medication History for RA:
+- Methotrexate 20 mg orally once weekly: Started April 2020, titrated up from 10 mg. Discontinued August 2020 after 4 months due to persistent nausea, elevated liver enzymes (ALT 98 U/L), and inadequate disease control despite maximally tolerated dose.
+- Sulfasalazine 1000 mg BID: Started October 2020, increased to 1500 mg BID by December 2020. Discontinued April 2021 after 6 months due to leukopenia (WBC dropped to 2.9) and continued high disease activity.
+- Currently on prednisone 7.5 mg daily and naproxen 500 mg BID for symptom management.
+
+Allergies: Penicillin (rash)
+Comorbidities: Hypertension (controlled with lisinopril), hypothyroidism (levothyroxine 75 mcg daily)
+
+Social History: Non-smoker, occasional wine. Works as a school administrator. Lives with husband and two children. No recreational drug use.
+
+OBJECTIVE:
+Vitals: BP 132/78, HR 76, Temp 98.4°F, Weight 154 lbs, Height 5'4"
+General: Well-appearing woman in no acute distress, though noted guarding of bilateral hands during handshake.
+
+Musculoskeletal Examination:
+- Hands: Bilateral MCP joint synovitis (2nd-4th digits), PIP swelling right index and middle fingers. Reduced grip strength bilaterally (12 kg R, 10 kg L; normal >20 kg).
+- Wrists: Bilateral tenderness to palpation with mildly reduced ROM in flexion/extension.
+- Elbows: Full ROM, no effusion.
+- Shoulders: Mild bilateral tenderness, full ROM.
+- Knees: Small bilateral effusions, tenderness along medial joint lines.
+- Feet: Tenderness at 3rd-5th MTP joints bilaterally.
+- Tender joint count (28-joint): 14
+- Swollen joint count (28-joint): 9
+
+Laboratory Results (drawn 01/08/2026):
+- ESR: 48 mm/hr (elevated)
+- CRP: 3.6 mg/dL (elevated)
+- RF: 156 IU/mL (positive)
+- Anti-CCP: >200 U/mL (strongly positive)
+- CBC: WBC 6.2, Hgb 12.1, Plt 312
+- CMP: Creatinine 0.8, ALT 22, AST 19
+- Hepatitis B surface antigen: Negative
+- Hepatitis C antibody: Negative
+- QuantiFERON-TB Gold: Negative
+
+Imaging:
+- Hand X-rays (01/08/2026): Periarticular osteopenia at MCP and PIP joints bilaterally, early joint space narrowing at 2nd and 3rd MCP joints right hand. No definite erosions.
+
+Disease Activity:
+- DAS28-ESR: 5.8 (high disease activity)
+- Patient Global Assessment: 70/100
+- Physician Global Assessment: 65/100
+
+ASSESSMENT:
+1. Seropositive rheumatoid arthritis — moderately to severely active disease with high disease activity score (DAS28-ESR 5.8). Disease duration approximately 6 years since initial diagnosis in March 2020.
+   - Failed methotrexate (April-August 2020): hepatotoxicity with elevated transaminases and inadequate response at maximally tolerated dose after 4-month trial.
+   - Failed sulfasalazine (October 2020-April 2021): leukopenia and persistent high disease activity after 6-month trial at maximally indicated doses.
+   - Currently on low-dose prednisone and NSAIDs with insufficient disease control.
+   - Two conventional DMARD failures documented. Patient is a candidate for biologic therapy escalation.
+
+PLAN:
+1. Initiate adalimumab (Humira) 40 mg subcutaneous injection every 2 weeks pending prior authorization approval.
+2. Continue prednisone 7.5 mg daily with plan to taper once biologic therapy is established.
+3. Continue naproxen 500 mg BID as needed for symptom relief.
+4. Pre-biologic screening completed: Hepatitis B/C negative, TB QuantiFERON negative, CBC and CMP within normal limits.
+5. Patient counseled on adalimumab injection technique, potential side effects including infection risk, and importance of reporting fevers or signs of infection.
+6. Follow-up in 8 weeks after biologic initiation to reassess disease activity.
+7. Prior authorization documentation submitted to insurance.
+
+Electronically signed,
+Dr. Amina Patel, MD
+Rheumatology
+Northwest Rheumatology Associates
+01/15/2026
