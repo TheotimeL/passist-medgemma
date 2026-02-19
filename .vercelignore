@@ -17,8 +17,17 @@ generations/
 *.ipynb
 .ipynb_checkpoints/
 
-# Frontend source (only dist/ is served, built by @vercel/static-build)
+# Frontend source — only dist/ is needed (served by server.py StaticFiles)
 frontend/node_modules/
+frontend/src/
+frontend/public/
+frontend/.gitignore
+frontend/eslint.config.js
+frontend/tsconfig*.json
+frontend/env.d.ts
+frontend/index.html
+frontend/package*.json
+frontend/vite.config.mts
 
 # Secrets (Vercel env vars used instead)
 .env
