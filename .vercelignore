@@ -2,6 +2,10 @@
 .venv/
 venv/
 
+# Force Vercel to use requirements.txt (not uv.lock which installs mlx/torch/325MB)
+pyproject.toml
+uv.lock
+
 # Local model files (not used in cloud)
 mlx_models/
 mlx-community/
