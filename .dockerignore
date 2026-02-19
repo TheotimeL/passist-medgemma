@@ -1,0 +1,30 @@
+# Virtual environments
+.venv/
+venv/
+
+# Local MLX model files (large, not needed in container)
+mlx_models/
+mlx-community/
+
+# Synthea FHIR data (large — bundle pre-computed JSONs only)
+generations/
+
+# Development notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Frontend source (only dist/ is needed)
+frontend/node_modules/
+frontend/src/
+frontend/public/
+
+# Python cache
+__pycache__/
+*.py[codz]
+
+# Secrets
+.env
+
+# Git
+.git/
+.gitignore

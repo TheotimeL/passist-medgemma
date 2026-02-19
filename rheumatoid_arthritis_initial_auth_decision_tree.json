@@ -1,0 +1,192 @@
+{
+  "name": "Rheumatoid Arthritis - Initial Auth Policy",
+  "type": "ROOT",
+  "children": [
+    {
+      "name": "Initial Authorization",
+      "type": "AND",
+      "children": [
+        {
+          "name": "Diagnosis",
+          "type": "AND",
+          "children": [
+            {
+              "name": "(1) Diagnosis of moderately to severely active rhe",
+              "type": "LEAF",
+              "source_text": "(1) Diagnosis of moderately to severely active rheumatoid arthritis",
+              "char_interval": {
+                "start_pos": 128,
+                "end_pos": 195
+              },
+              "negated": false,
+              "id": "initial.diagnosi.1",
+              "search_description": "Patient has a confirmed diagnosis of moderately to severely active rheumatoid arthritis (look for diagnosis, disease status, severity level)"
+            }
+          ],
+          "id": "initial.diagnosi"
+        },
+        {
+          "name": "Step Therapy",
+          "type": "OR",
+          "children": [
+            {
+              "name": "(a) History of failure to a 3 month trial of one n",
+              "type": "LEAF",
+              "source_text": "(a) History of failure to a 3 month trial of one non-biologic disease modifying anti-rheumatic drug (DMARD) [e.g., methotrexate, leflunomide, sulfasalazine, hydroxychloroquine] at the maximally indicated doses, unless contraindicated or clinically significant adverse effects are experienced (document drug, date, and duration of trial)b",
+              "char_interval": {
+                "start_pos": 231,
+                "end_pos": 568
+              },
+              "negated": false,
+              "id": "initial.step.a",
+              "search_description": "Patient has failed at least one non-biologic DMARD from: methotrexate, leflunomide, sulfasalazine, hydroxychloroquine. Look for any of these drugs in medication history as PRESCRIBED or STARTED, with evidence of inadequate response, side effects, or discontinuation. A recommendation to 'consider' a drug does NOT count — the patient must have actually taken it and it must have failed."
+            },
+            {
+              "name": "(a) History of failure to a 3 month trial of one non-biologic disease modifying anti-rheumatic drug (DMARD) [e.g., methotrexate, leflunomide, sulfasalazine, hydroxychloroquine] at the maximally indicated doses, unless contraindicated or clinically significant adverse effects are experienced",
+              "type": "AND",
+              "children": [],
+              "id": "initial.step.a_2",
+              "evidence_requirements": [
+                {
+                  "source_text": "(document drug, date, and duration of trial)",
+                  "char_interval": {
+                    "start_pos": 523,
+                    "end_pos": 567
+                  }
+                }
+              ]
+            },
+            {
+              "name": "(b) Patient has been previously treated with a sys",
+              "type": "LEAF",
+              "source_text": "(b) Patient has been previously treated with a systemic targeted immunomodulator FDA-approved for the treatment of rheumatoid arthritis as documented by claims history or submission of medical records (Document drug, date, and duration of therapy) [e.g., Enbrel (etanercept), Cimzia (certolizumab), Simponi (golimumab), Orencia (abatacept), Xeljanz (tofacitinib), Olumiant (baricitinib), Rinvoq (upadacitinib)]",
+              "char_interval": {
+                "start_pos": 576,
+                "end_pos": 986
+              },
+              "negated": false,
+              "id": "initial.step.b",
+              "search_description": "Patient was previously treated with at least one systemic targeted immunomodulator from: Enbrel (etanercept), Cimzia (certolizumab), Simponi (golimumab), Orencia (abatacept), Xeljanz (tofacitinib), Olumiant (baricitinib), Rinvoq (upadacitinib). Look for any of these in past medications, treatment history, or claims records with dates and duration of therapy."
+            },
+            {
+              "name": "(b) Patient has been previously treated with a systemic targeted immunomodulator FDA-approved for the treatment of rheumatoid arthritis [e.g., Enbrel (etanercept), Cimzia (certolizumab), Simponi (golimumab), Orencia (abatacept), Xeljanz (tofacitinib), Olumiant (baricitinib), Rinvoq (upadacitinib)]",
+              "type": "AND",
+              "children": [],
+              "id": "initial.step.b_2",
+              "evidence_requirements": [
+                {
+                  "source_text": "as documented by claims history or submission of medical records (Document drug, date, and duration of therapy)",
+                  "char_interval": {
+                    "start_pos": 712,
+                    "end_pos": 823
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Current User",
+              "type": "AND",
+              "children": [
+                {
+                  "name": "i. Patient is currently on adalimumab therapy as d",
+                  "type": "LEAF",
+                  "source_text": "i. Patient is currently on adalimumab therapy as documented by claims history or submission of medical records (Document date and duration of therapy):",
+                  "char_interval": {
+                    "start_pos": 1022,
+                    "end_pos": 1173
+                  },
+                  "negated": false,
+                  "id": "initial.step.current.i",
+                  "search_description": "Patient is currently taking or prescribed adalimumab (look for active prescriptions, current medications list, or recent dispensing records)"
+                },
+                {
+                  "name": "i. Patient is currently on adalimumab therapy",
+                  "type": "AND",
+                  "children": [],
+                  "id": "initial.step.current.i_2",
+                  "evidence_requirements": [
+                    {
+                      "source_text": "as documented by claims history or submission of medical records (Document date and duration of therapy)",
+                      "char_interval": {
+                        "start_pos": 1068,
+                        "end_pos": 1172
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ii. Patient has not received a manufacturer suppli",
+                  "type": "LEAF",
+                  "source_text": "ii. Patient has not received a manufacturer supplied sample at no cost in the prescriber's office, or any form of assistance from a manufacturer sponsored program (e.g., sample card which can be redeemed at a pharmacy for a free supply of medication) as a means to establish as a current user of adalimumab*",
+                  "char_interval": {
+                    "start_pos": 1182,
+                    "end_pos": 1489
+                  },
+                  "negated": true,
+                  "id": "initial.step.current.ii",
+                  "search_description": "Patient has NOT received free drug samples or manufacturer assistance (met if there is NO mention of free samples or manufacturer programs)"
+                }
+              ],
+              "id": "initial.step.current",
+              "source_text": "(c) Both of the following:",
+              "char_interval": {
+                "start_pos": 994,
+                "end_pos": 1020
+              }
+            }
+          ],
+          "id": "initial.step",
+          "source_text": "(2) One of the following:",
+          "char_interval": {
+            "start_pos": 204,
+            "end_pos": 229
+          }
+        },
+        {
+          "name": "Combination Therapy",
+          "type": "AND",
+          "children": [
+            {
+              "name": "(3) Patient is not receiving adalimumab in combina",
+              "type": "LEAF",
+              "source_text": "(3) Patient is not receiving adalimumab in combination with another systemic targeted immunomodulator. [e.g., Enbrel (etanercept), Cimzia (certolizumab), Simponi (golimumab), Orencia (abatacept), Xeljanz (tofacitinib), Olumiant (baricitinib), Rinvoq (upadacitinib)] for treatment of the same indication.",
+              "char_interval": {
+                "start_pos": 1498,
+                "end_pos": 1801
+              },
+              "negated": true,
+              "id": "initial.combinat.3",
+              "search_description": "Patient is NOT taking another systemic targeted immunomodulator from: Enbrel (etanercept), Cimzia (certolizumab), Simponi (golimumab), Orencia (abatacept), Xeljanz (tofacitinib), Olumiant (baricitinib), Rinvoq (upadacitinib) at the same time for rheumatoid arthritis (met if there is NO mention of concurrent use of these drugs for RA)"
+            }
+          ],
+          "id": "initial.combinat"
+        },
+        {
+          "name": "Prescriber",
+          "type": "AND",
+          "children": [
+            {
+              "name": "(4) Prescribed by or in consultation with a rheuma",
+              "type": "LEAF",
+              "source_text": "(4) Prescribed by or in consultation with a rheumatologist",
+              "char_interval": {
+                "start_pos": 1810,
+                "end_pos": 1868
+              },
+              "negated": false,
+              "id": "initial.prescrib.4",
+              "search_description": "A rheumatologist is involved in prescribing (look for rheumatologist name, title, department, or consultation notes in signatures or headers)"
+            }
+          ],
+          "id": "initial.prescrib"
+        }
+      ],
+      "id": "initial",
+      "source_text": "all of the following criteria",
+      "char_interval": {
+        "start_pos": 96,
+        "end_pos": 125
+      }
+    }
+  ]
+}

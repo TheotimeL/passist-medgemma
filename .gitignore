@@ -206,8 +206,19 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# JSON / CSV / TXT 
+# JSON / CSV / TXT
 *.json
 *.csv
 *.txt
 .python-version
+
+# ── Deployment exceptions ────────────────────────────────────────────────────
+# These files must be tracked for cloud deployment (Vercel reads from git).
+!rheumatoid_arthritis_initial_auth_decision_tree*.json
+!extraction_*.json
+!soap_notes/*.txt
+!notes/**/metadata.json
+!notes/**/*.txt
+!fhir/*.json
+!requirements.txt
+!requirements-cloud.txt

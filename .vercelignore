@@ -1,0 +1,20 @@
+# Vercel deployment excludes — keeps function bundle small
+.venv/
+venv/
+
+# Local model files (not used in cloud)
+mlx_models/
+mlx-community/
+
+# Large FHIR data directories
+generations/
+
+# Development notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Frontend source (only dist/ is served, built by @vercel/static-build)
+frontend/node_modules/
+
+# Secrets (Vercel env vars used instead)
+.env

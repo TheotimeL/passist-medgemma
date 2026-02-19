@@ -1,0 +1,65 @@
+SOAP NOTE — Primary Care Annual Visit
+
+Patient: Abram Gerlach
+DOB: 08/06/1975
+Age: 50 years old
+Gender: Male
+MRN: 8B8F1E13
+Date of Visit: 01/22/2026
+Provider: Dr. Thomasena Gutmann, MD, Family Medicine
+Facility: Bitterroot Health - Convenient Care
+
+Reason for Visit: Annual wellness exam. Review of past medical history.
+
+SUBJECTIVE:
+Mr. Gerlach is a 50-year-old man presenting for his annual wellness visit. He reports feeling generally well.
+
+Past Medical History:
+- Rheumatoid arthritis: Diagnosed July 2017 by Dr. Gerry Block at Bitterroot Health - Daly Hospital. Treated with methotrexate 2.5 mg oral tablet and naproxen 500 mg oral tablet. His RA went into sustained clinical remission by mid-2020. All RA medications were discontinued in January 2022 after confirmed remission with normal inflammatory markers for over 12 months. He has had no recurrence of joint symptoms since discontinuation.
+
+He reports no current joint pain, stiffness, or swelling. He is physically active and exercises regularly (hiking, cycling). He denies fatigue, fevers, or weight changes.
+
+Current Medications:
+- None
+
+Allergies: No known drug allergies.
+Social History: Married, two teenage children. Non-smoker, social drinker. Works as a high school teacher.
+
+OBJECTIVE:
+Vitals: BP 122/76 mmHg, HR 66 bpm, Temp 98.4F, Weight 178 lbs, Height 5'11"
+General: Healthy-appearing male in no distress.
+
+Musculoskeletal Exam:
+- Hands: No swelling, no tenderness, full grip strength bilaterally
+- Wrists: Full ROM, non-tender
+- All other joints: Normal ROM, no effusions, no tenderness
+- No rheumatoid nodules
+
+Labs (01/22/2026):
+- ESR: 8 mm/hr (normal)
+- CRP: 0.2 mg/dL (normal)
+- CBC: WBC 6.8, Hgb 15.2, Plt 220
+- CMP: All within normal limits
+
+ASSESSMENT:
+1. History of rheumatoid arthritis, currently in sustained remission off all therapy
+   - Diagnosed July 2017, achieved remission by 2020
+   - All RA medications discontinued January 2022
+   - No evidence of active disease on exam or labs today
+   - Over 4 years of drug-free remission
+2. Health maintenance: Up to date on age-appropriate screenings
+
+PLAN:
+1. No RA treatment indicated at this time. Disease remains in remission.
+2. Continue monitoring: Annual labs with ESR and CRP to screen for recurrence.
+3. Patient counseled to return promptly if joint pain, stiffness, or swelling develops.
+4. Influenza vaccine administered today.
+5. Zoster vaccine (Shingrix) series: first dose administered at prior visit (August 2025), due for second dose.
+6. Routine health maintenance: colonoscopy due at age 50 — referral placed.
+7. Follow-up in 12 months for annual wellness.
+
+Electronically signed,
+Dr. Thomasena Gutmann, MD
+Family Medicine
+Bitterroot Health - Convenient Care
+01/22/2026

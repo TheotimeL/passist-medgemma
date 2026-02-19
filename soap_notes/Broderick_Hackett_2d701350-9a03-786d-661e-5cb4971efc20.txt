@@ -1,0 +1,78 @@
+SOAP NOTE — Rheumatology Consultation
+
+Patient: Broderick Hackett
+DOB: 12/09/1969
+Age: 56 years old
+Gender: Male
+MRN: 2D701350
+Date of Visit: 01/20/2026
+Referring Provider: Dr. Chere Crona, Internal Medicine, Roosevelt County Special Hospital District
+Consulting Provider: Dr. Maria Elena Sandoval, MD, Rheumatology
+Facility: Roosevelt General Hospital, Rheumatology Division
+
+Reason for Consultation: Evaluation and management of refractory rheumatoid arthritis. Assessment for biologic DMARD therapy.
+
+SUBJECTIVE:
+Mr. Hackett is a 56-year-old man referred by Dr. Crona for rheumatology consultation regarding persistent rheumatoid arthritis despite conventional DMARD therapy. He was diagnosed with RA in May 2018 by Dr. Rudolf Vandervort at Roosevelt General Hospital.
+
+He reports bilateral hand and wrist pain rated 7/10, significant morning stiffness lasting 2 hours daily, and progressive functional decline. He is unable to fully close his fists and has difficulty with occupational tasks (works as an office administrator). He also reports bilateral knee swelling that worsens with prolonged standing.
+
+Medication History for RA:
+1. Methotrexate 2.5 mg oral tablet: Started May 2018 at diagnosis. Dose was titrated up to 20 mg weekly over 3 months. Discontinued September 2018 due to persistent GI intolerance (severe nausea, oral ulcers) despite folate supplementation, and inadequate clinical response at maximum tolerated dose.
+2. Leflunomide 20 mg daily: Started October 2018 as alternative DMARD. Discontinued February 2019 after 4 months due to diarrhea, hair thinning, and continued high disease activity (DAS28-CRP 4.9 at that time).
+3. Naproxen 500 mg oral tablet: Current, ongoing since May 2018. Provides modest pain relief but does not control disease activity.
+
+No prior biologic or targeted synthetic DMARD therapy.
+
+Allergies: No known drug allergies.
+Social History: Non-smoker, occasional alcohol use. Lives alone.
+
+OBJECTIVE:
+Vitals: BP 128/82 mmHg, HR 68 bpm, Temp 98.6F, Weight 185 lbs, Height 5'10"
+General: Well-appearing male in no acute distress.
+
+Musculoskeletal Exam:
+- Hands: Swelling and tenderness at MCP joints 2-4 bilaterally, PIP joints 2-3 bilaterally
+- Wrists: Bilateral synovitis, reduced extension (35 degrees bilaterally)
+- Elbows: Full ROM, no nodules
+- Shoulders: Mild bilateral tenderness, full ROM
+- Knees: Bilateral small effusions, no warmth
+- Feet: Tenderness at MTP joints 3-5 bilaterally
+- Tender joint count: 12/28
+- Swollen joint count: 8/28
+
+Labs (01/13/2026):
+- ESR: 38 mm/hr (elevated)
+- CRP: 3.1 mg/dL (elevated)
+- RF: Positive, 96 IU/mL
+- Anti-CCP: Positive, 185 U/mL
+- CBC: WBC 6.8, Hgb 13.5, Plt 310
+- CMP: Within normal limits, ALT 18, AST 20, Creatinine 1.0
+- Hepatitis B surface antigen: Negative
+- Hepatitis C antibody: Negative
+- TB QuantiFERON Gold: Negative
+
+DAS28-CRP: 5.1 (high disease activity)
+
+ASSESSMENT:
+1. Rheumatoid arthritis, seropositive, moderately to severely active
+   - Diagnosed May 2018, 7+ year disease duration
+   - Failed trial of methotrexate (May-September 2018): discontinued due to GI intolerance and inadequate response at maximally tolerated dose
+   - Failed trial of leflunomide (October 2018 - February 2019): discontinued after 4 months due to side effects and inadequate response
+   - Two conventional DMARD failures warrant escalation to biologic therapy
+   - Active erosive disease with elevated inflammatory markers
+
+PLAN:
+1. Recommend initiation of adalimumab 40 mg subcutaneous every 2 weeks.
+2. Submitting prior authorization request to insurance. Documentation of two conventional DMARD failures (methotrexate and leflunomide) provided.
+3. Continue naproxen 500 mg oral tablet for symptomatic relief.
+4. Pre-biologic screening completed: TB negative, hepatitis B/C negative.
+5. Patient counseled on biologic therapy including infection risk, injection technique, and need for regular monitoring.
+6. Will coordinate care with Dr. Crona for ongoing primary care management.
+7. Follow-up in rheumatology clinic in 12 weeks.
+
+Electronically signed,
+Dr. Maria Elena Sandoval, MD
+Rheumatology Division
+Roosevelt General Hospital
+01/20/2026
