@@ -218,7 +218,6 @@
               :field-id-to-pdf-name="fieldIdToPdfName"
               :field-statuses="formStore.fieldStatuses"
               @field-click="onPdfFieldClick"
-              @loaded="onPdfLoaded"
             />
           </template>
           <template v-else-if="generatingPreview">
@@ -231,7 +230,7 @@
             <div class="right-placeholder">
               <v-icon size="56" color="grey-lighten-2">mdi-file-pdf-box</v-icon>
               <p class="text-body-2 text-medium-emphasis mt-3">
-                Accept some fields to preview the filled form
+                Click "Generate Preview" to see the filled form
               </p>
               <v-btn
                 v-if="formStore.totalFilledCount > 0"
@@ -330,7 +329,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, computed, watch, nextTick } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef, computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePatientStore } from '@/stores/patient'
 import { useExtractionStore } from '@/stores/extraction'
@@ -365,7 +364,7 @@ const showError = ref(false)
 const errorMessage = ref('')
 const showSuccess = ref(false)
 const successMessage = ref('')
-const pdfPreviewData = ref<ArrayBuffer | null>(null)
+const pdfPreviewData = shallowRef<ArrayBuffer | null>(null)
 const pdfStale = ref(false)
 const rightMode = ref<'pdf' | 'notes' | 'policy' | 'justification'>('notes')
 const leftMode = ref<'review' | 'notes'>('review')
@@ -464,7 +463,7 @@ onMounted(async () => {
   fetch('/api/form/field-mapping')
     .then(r => r.ok ? r.json() : {})
     .then(data => { fieldIdToPdfName.value = data })
-    .catch(() => {})
+    .catch((e) => console.warn('Failed to fetch field mapping:', e))
 
   await patientStore.selectPatient(uuid.value)
   fhirLoadingStatus.value = 'Loading patient records...'
@@ -473,6 +472,8 @@ onMounted(async () => {
   if (patientStore.fhirData) {
     formStore.buildFromFhir(patientStore.fhirData)
     formStore.addManualFields()
+    // Auto-generate PDF preview with FHIR fields so PDF shows demographics immediately
+    generatePreview()
   }
   await extractionStore.fetchExtraction(uuid.value)
   // If extraction already completed (e.g. fast SSE), trigger justification fetch now
@@ -538,11 +539,7 @@ function onPolicyViewSource(evidence: string, sourceNote?: string) {
 // PDF → ReviewQueue: click a field overlay in PDF
 function onPdfFieldClick(fieldId: string) {
   leftMode.value = 'review'
-  reviewQueueRef.value?.scrollToField(fieldId)
-}
-
-function onPdfLoaded() {
-  // PDF loaded — could trigger initial scroll etc.
+  reviewQueueRef.value?.focusField(fieldId)
 }
 
 // ReviewQueue → PDF: locate field in PDF
@@ -576,8 +573,8 @@ async function generatePreview() {
   pdfStale.value = false
   try {
     const fieldUpdates = Object.values(formStore.fields)
-      .filter(f => (f.status === 'accepted' || f.status === 'edited') && f.value)
-      .map(f => ({ field_id: f.fieldId, value: f.value }))
+      .filter(f => f.status !== 'rejected' && f.value)
+      .map(f => ({ field_id: f.fieldId, value: f.value, status: f.status }))
 
     if (fieldUpdates.length === 0) {
       generatingPreview.value = false
@@ -614,8 +611,8 @@ async function downloadPdf() {
   generatingPdf.value = true
   try {
     const fieldUpdates = Object.values(formStore.fields)
-      .filter(f => (f.status === 'accepted' || f.status === 'edited') && f.value)
-      .map(f => ({ field_id: f.fieldId, value: f.value }))
+      .filter(f => f.status !== 'rejected' && f.value)
+      .map(f => ({ field_id: f.fieldId, value: f.value, status: f.status }))
 
     const res = await fetch('/api/form/generate-pdf', {
       method: 'POST',
@@ -850,21 +847,6 @@ async function downloadPdf() {
   background: #F9AB00;
   margin-left: 4px;
 }
-.notes-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #F9AB00;
-  margin-left: 4px;
-}
-.policy-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  margin-left: 4px;
-}
-.policy-dot-pass { background: #34A853; }
-.policy-dot-fail { background: #EA4335; }
 .right-actions {
   display: flex;
   align-items: center;

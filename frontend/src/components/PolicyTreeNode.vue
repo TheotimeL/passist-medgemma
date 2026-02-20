@@ -271,11 +271,14 @@ if (props.node.type === 'LEAF') {
   expanded.value = !(props.parentOrSatisfied && !effectiveMet.value && !props.node.negated)
 }
 
-// React to override changes
-watch(effectiveMet, () => {
-  // Keep all leaves expanded by default; only collapse dimmed ones
+// React to override changes — expand MET leaves, collapse dimmed ones
+watch(effectiveMet, (met) => {
   if (props.node.type === 'LEAF') {
-    if (isDimmed.value) expanded.value = false
+    if (met) {
+      expanded.value = true
+    } else if (isDimmed.value) {
+      expanded.value = false
+    }
   }
 })
 
@@ -521,9 +524,6 @@ const isDimmed = computed(() => {
   border-left: 3px solid #34A853;
   background: #F6FFF8;
 }
-.leaf-overridden {
-  border-style: dashed;
-}
 .leaf-dimmed {
   opacity: 0.5;
   border-left-color: #E8EAED !important;
@@ -704,12 +704,6 @@ const isDimmed = computed(() => {
   border-radius: 4px;
   border-left: 2px solid #E8EAED;
 }
-.leaf-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-}
 .action-link {
   display: flex;
   align-items: center;
@@ -788,23 +782,6 @@ const isDimmed = computed(() => {
   border-color: #E8EAED;
 }
 .btn-cancel:hover { background: #E8EAED; }
-.btn-edit-evidence {
-  color: #1967D2;
-  background: none;
-  border-color: #E8EAED;
-}
-.btn-edit-evidence:hover { background: #E8F0FE; border-color: #1967D2; }
-.btn-override-unmet {
-  color: #C5221F;
-  background: none;
-  border-color: #E8EAED;
-}
-.btn-override-unmet:hover { background: #FCE8E6; border-color: #EA4335; }
-
-/* Evidence editing */
-.evidence-edit, .manual-evidence {
-  margin-top: 6px;
-}
 .evidence-textarea {
   width: 100%;
   font-size: 12px;
@@ -826,40 +803,6 @@ const isDimmed = computed(() => {
   margin-top: 4px;
   justify-content: flex-end;
 }
-
-/* Override actions for unmet criteria */
-.override-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-}
-.btn-add-evidence {
-  display: flex;
-  align-items: center;
-  font-size: 10px;
-  font-weight: 600;
-  color: #137333;
-  background: #E6F4EA;
-  border: 1px solid #34A853;
-  border-radius: 4px;
-  padding: 4px 10px;
-  cursor: pointer;
-  transition: all 0.1s;
-}
-.btn-add-evidence:hover { background: #CEEAD6; }
-.btn-mark-met {
-  display: flex;
-  align-items: center;
-  font-size: 10px;
-  font-weight: 500;
-  color: #5F6368;
-  background: none;
-  border: 1px solid #E8EAED;
-  border-radius: 4px;
-  padding: 4px 10px;
-  cursor: pointer;
-}
-.btn-mark-met:hover { background: #F1F3F4; }
 
 /* Auto-met */
 .leaf-auto-met {

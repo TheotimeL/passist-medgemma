@@ -212,6 +212,15 @@ __marimo__/
 *.txt
 .python-version
 
+# Frontend build output (built at deploy time via multi-stage Docker)
+frontend/dist/
+
+# Jupyter notebooks (exploratory dev artifacts)
+*.ipynb
+
+# Unused scripts
+sft_dataset_creation.py
+
 # ── Project-specific ignores ─────────────────────────────────────────────────
 
 # MLX / HuggingFace model weights (large binaries, download at runtime)

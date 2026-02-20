@@ -5,9 +5,12 @@ Run with: uvicorn server:app --reload --port 8000
 Set SKIP_MODEL=1 to skip MedGemma loading (uses pre-computed results only).
 """
 
+import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
 
@@ -21,7 +24,7 @@ from fastapi.staticfiles import StaticFiles
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("PA Form Auto-Fill API starting...")
+    logger.info("PA Form Auto-Fill API starting...")
 
     # Load extraction service at startup
     # SKIP_MODEL only skips the heavy MLX model; Gemini backend is lightweight
@@ -33,13 +36,13 @@ async def lifespan(app: FastAPI):
             svc = ExtractionService.get_instance()
             svc.initialize()
         except Exception as e:
-            print(f"WARNING: Failed to initialize extraction service: {e}")
-            print("Live extraction will be unavailable. Pre-computed results still work.")
+            logger.warning("Failed to initialize extraction service: %s", e)
+            logger.warning("Live extraction will be unavailable. Pre-computed results still work.")
     else:
-        print("SKIP_MODEL=1 — using pre-computed extraction results only.")
+        logger.info("SKIP_MODEL=1 — using pre-computed extraction results only.")
 
     yield
-    print("Shutting down...")
+    logger.info("Shutting down...")
 
 
 app = FastAPI(

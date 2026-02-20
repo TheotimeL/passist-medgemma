@@ -38,10 +38,8 @@ const MANDATORY_FIELDS = new Set([
 
 export const useFormStore = defineStore('form', () => {
   const fields = ref<Record<string, FormField>>({})
-  const sectionViText = ref('')
   const justificationText = ref('')
   const justificationLoading = ref(false)
-  const activeTab = ref('demographics')
 
   function _addField(
     fieldId: string,
@@ -179,7 +177,7 @@ export const useFormStore = defineStore('form', () => {
   function editField(fieldId: string, newValue: string) {
     if (fields.value[fieldId]) {
       fields.value[fieldId].value = newValue
-      fields.value[fieldId].status = 'edited'
+      fields.value[fieldId].status = 'accepted'
     }
   }
 
@@ -309,18 +307,14 @@ export const useFormStore = defineStore('form', () => {
 
   function reset() {
     fields.value = {}
-    sectionViText.value = ''
     justificationText.value = ''
     justificationLoading.value = false
-    activeTab.value = 'demographics'
   }
 
   return {
     fields,
-    sectionViText,
     justificationText,
     justificationLoading,
-    activeTab,
     fieldsBySection,
     missingMandatoryFields,
     suggestedCount,

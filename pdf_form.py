@@ -9,9 +9,12 @@ update method doesn't handle them well.
 """
 
 import io
+import logging
 import requests
 from pypdf import PdfReader, PdfWriter
-from pypdf.generic import NameObject, BooleanObject, TextStringObject
+from pypdf.generic import NameObject, BooleanObject
+
+logger = logging.getLogger(__name__)
 
 
 class PDFFormManager:
@@ -19,7 +22,7 @@ class PDFFormManager:
         self.fields_map = {}
 
         if source_path_or_url.startswith("http"):
-            print(f"Downloading from: {source_path_or_url}...")
+            logger.info("Downloading from: %s...", source_path_or_url)
             response = requests.get(source_path_or_url)
             self.stream = io.BytesIO(response.content)
         else:
@@ -39,7 +42,7 @@ class PDFFormManager:
                 field_type = field_data.get("/FT", "/Tx")
                 self.fields_map[field_id] = {"type": field_type, "value": None}
         else:
-            print("No fields found.")
+            logger.warning("No fields found.")
 
     def generate_pdf(self, output_filename):
         writer = PdfWriter(clone_from=self.reader)
@@ -51,7 +54,7 @@ class PDFFormManager:
         if not data_to_write:
             with open(output_filename, "wb") as f:
                 writer.write(f)
-            print(f"PDF saved to: {output_filename} (no fields to fill)")
+            logger.info("PDF saved to: %s (no fields to fill)", output_filename)
             return
 
         # Split into text fields and checkboxes
@@ -92,4 +95,4 @@ class PDFFormManager:
         with open(output_filename, "wb") as f:
             writer.write(f)
 
-        print(f"PDF saved to: {output_filename}")
+        logger.info("PDF saved to: %s", output_filename)

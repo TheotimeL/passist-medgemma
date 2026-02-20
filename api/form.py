@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import tempfile
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -191,6 +194,7 @@ def get_justification(uuid: str, body: JustificationRequest):
                             extraction_results = entry.get("met_criteria", [])
                             break
             except (json.JSONDecodeError, KeyError):
+                logger.warning("Failed to parse extraction file: %s", path)
                 continue
 
     if not extraction_results:
@@ -383,6 +387,7 @@ def generate_pdf(request: GeneratePdfRequest):
                             extraction_results = entry.get("met_criteria", [])
                             break
             except (json.JSONDecodeError, KeyError):
+                logger.warning("Failed to parse extraction file: %s", path)
                 continue
         if extraction_results:
             cr_results: dict[str, CriterionResult] = {}
@@ -409,36 +414,3 @@ def generate_pdf(request: GeneratePdfRequest):
         media_type="application/pdf",
         filename=f"pa_form_{patient_data['name'].replace(' ', '_')}.pdf",
     )
-
-
-def validate_field_coverage(field_ids: list[str]) -> dict[str, list[str]]:
-    """Check which frontend field_ids are mapped, display-only, computed, or orphaned.
-
-    Dev-only utility. Call from a test or debug endpoint to verify no fields are
-    silently lost.
-
-    Returns dict with keys: mapped, display_only, computed, dynamic, orphaned.
-    """
-    result: dict[str, list[str]] = {
-        "mapped": [],
-        "display_only": [],
-        "computed": [],
-        "dynamic": [],
-        "orphaned": [],
-    }
-    for fid in field_ids:
-        if fid in FIELD_ID_TO_PDF:
-            result["mapped"].append(fid)
-        elif fid in DISPLAY_ONLY_FIELDS:
-            result["display_only"].append(fid)
-        elif fid in _COMPUTED_FIELDS:
-            result["computed"].append(fid)
-        elif (
-            fid.startswith("prior_drug_")
-            or fid.startswith("manual_prior_drug_")
-            or fid.startswith("manual_drug_")
-        ):
-            result["dynamic"].append(fid)
-        else:
-            result["orphaned"].append(fid)
-    return result

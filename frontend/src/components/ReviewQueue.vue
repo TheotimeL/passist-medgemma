@@ -93,7 +93,7 @@
                 class="compact-edit-input"
                 @keyup.enter="saveEdit(field.fieldId)"
                 @keyup.escape="cancelEdit()"
-                @blur="saveEdit(field.fieldId)"
+                @blur="cancelEdit()"
               />
             </template>
 
@@ -114,7 +114,7 @@
                   :placeholder="'Enter ' + field.label.toLowerCase()"
                   @keyup.enter="saveManualEntry(field.fieldId)"
                   @keyup.escape="cancelManualEntry()"
-                  @blur="saveManualEntry(field.fieldId)"
+                  @blur="cancelManualEntry()"
                 />
               </template>
               <template v-else>
@@ -149,7 +149,7 @@
                 class="drug-table-row"
                 :class="{ 'drug-table-row-reviewed': groupIsReviewed(group) }"
               >
-                <td v-for="col in ['name', 'dose', 'dates', 'reason']" :key="col" class="drug-table-cell">
+                <td v-for="col in ['name', 'dose', 'dates', 'reason']" :key="col" :data-field-id="tableFieldId(group, col)" class="drug-table-cell">
                   <!-- Inline edit (existing value) -->
                   <template v-if="editingField === tableFieldId(group, col)">
                     <input
@@ -158,7 +158,7 @@
                       class="compact-edit-input"
                       @keyup.enter="saveEdit(tableFieldId(group, col))"
                       @keyup.escape="cancelEdit()"
-                      @blur="saveEdit(tableFieldId(group, col))"
+                      @blur="cancelEdit()"
                     />
                   </template>
                   <!-- Manual entry (empty cell) -->
@@ -169,7 +169,7 @@
                       class="compact-edit-input"
                       @keyup.enter="saveManualEntry(tableFieldId(group, col))"
                       @keyup.escape="cancelManualEntry()"
-                      @blur="saveManualEntry(tableFieldId(group, col))"
+                      @blur="cancelManualEntry()"
                     />
                   </template>
                   <!-- Display -->
@@ -265,7 +265,7 @@
                     class="compact-edit-input"
                     @keyup.enter="saveEdit(field.fieldId)"
                     @keyup.escape="cancelEdit()"
-                    @blur="saveEdit(field.fieldId)"
+                    @blur="cancelEdit()"
                   />
                 </template>
                 <template v-else>
@@ -280,7 +280,7 @@
                       :placeholder="'Enter ' + field.label.toLowerCase()"
                       @keyup.enter="saveManualEntry(field.fieldId)"
                       @keyup.escape="cancelManualEntry()"
-                      @blur="saveManualEntry(field.fieldId)"
+                      @blur="cancelManualEntry()"
                     />
                   </template>
                   <template v-else>
@@ -374,7 +374,7 @@
                     class="edit-input"
                     @keyup.enter="saveEdit(field.fieldId)"
                     @keyup.escape="cancelEdit()"
-                    @blur="saveEdit(field.fieldId)"
+                    @blur="cancelEdit()"
                   />
                 </div>
               </div>
@@ -393,7 +393,7 @@
                     :placeholder="'Enter ' + field.label.toLowerCase()"
                     @keyup.enter="saveManualEntry(field.fieldId)"
                     @keyup.escape="cancelManualEntry()"
-                    @blur="saveManualEntry(field.fieldId)"
+                    @blur="cancelManualEntry()"
                   />
                 </template>
                 <template v-else>
@@ -859,24 +859,6 @@ function itemClass(field: FormField) {
   return ''
 }
 
-function statusColor(field: FormField) {
-  switch (field.status) {
-    case 'accepted': return 'success'
-    case 'rejected': return 'error'
-    case 'edited': return 'info'
-    default: return 'grey'
-  }
-}
-
-function statusIcon(field: FormField) {
-  switch (field.status) {
-    case 'accepted': return 'mdi-check-circle'
-    case 'rejected': return 'mdi-close-circle'
-    case 'edited': return 'mdi-pencil-circle'
-    default: return 'mdi-circle-outline'
-  }
-}
-
 function sourceLabel(source: string) {
   switch (source) {
     case 'fhir': return 'EHR'
@@ -958,7 +940,24 @@ function scrollToField(fieldId: string) {
   })
 }
 
-defineExpose({ scrollToField })
+function focusField(fieldId: string) {
+  // Scroll to the field first (expands section, scrolls, flashes)
+  scrollToField(fieldId)
+
+  // Then open it in edit mode after DOM updates
+  nextTick(() => {
+    const field = formStore.fields[fieldId]
+    if (field) {
+      if (field.value) {
+        startEdit(field)
+      } else {
+        startManualEntry(field)
+      }
+    }
+  })
+}
+
+defineExpose({ scrollToField, focusField })
 </script>
 
 <style scoped>
@@ -1206,26 +1205,6 @@ defineExpose({ scrollToField })
   outline: none;
   background: #fff;
 }
-.compact-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.compact-save {
-  color: #fff;
-  background: #34A853;
-}
-.compact-cancel {
-  color: #5F6368;
-  background: #E8EAED;
-}
-
 /* ========================================
    CARD VIEW (AI-extracted sections)
    ======================================== */

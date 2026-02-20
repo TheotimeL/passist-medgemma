@@ -14,10 +14,13 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+import logging
 import os
 import re
 import time
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 from typing import Generator
 
 # HF_TOKEN is read from environment if needed for MLX model download
@@ -347,7 +350,7 @@ class ExtractionService:
         if self.initialized:
             return
 
-        print("ExtractionService: Loading policy trees...")
+        logger.info("ExtractionService: Loading policy trees...")
         self.tree = load_tree(TREE_PATH)
         leaf_nodes = get_all_criteria(self.tree)
         self.tree_original = load_tree(TREE_PATH_ORIGINAL)
@@ -366,18 +369,18 @@ class ExtractionService:
         ]
         self.criteria = [c for c in self.all_criteria if not c.get("negated")]
         self.negated_criteria = [c for c in self.all_criteria if c.get("negated")]
-        print(f"  Loaded {len(self.all_criteria)} criteria ({len(self.criteria)} for model, {len(self.negated_criteria)} negated)")
+        logger.info("  Loaded %d criteria (%d for model, %d negated)", len(self.all_criteria), len(self.criteria), len(self.negated_criteria))
 
         # Discover patients
         self.patients = self._discover_patients()
-        print(f"  Discovered {len(self.patients)} patients")
+        logger.info("  Discovered %d patients", len(self.patients))
 
         backend = os.environ.get("EXTRACTION_BACKEND") or "mlx"
         self._backend = backend
 
         if backend == "mlx":
             # Load model
-            print("ExtractionService: Loading MedGemma model (MLX)...")
+            logger.info("ExtractionService: Loading MedGemma model (MLX)...")
             from mlx_lm import load, generate
             from mlx_lm.models.cache import make_prompt_cache
             from mlx_lm.generate import generate_step
@@ -389,7 +392,7 @@ class ExtractionService:
             self._logits_processors = make_logits_processors(repetition_penalty=1.2)
 
             # Cache prompt prefix
-            print("ExtractionService: Caching prompt prefix...")
+            logger.info("ExtractionService: Caching prompt prefix...")
             t_cache = time.time()
             prompt_prefix = _build_prompt_prefix(self.criteria)
             prefix_tokens = mx.array(self.tokenizer.encode(prompt_prefix))
@@ -397,12 +400,12 @@ class ExtractionService:
             for _ in generate_step(prefix_tokens, self.model, max_tokens=0, prompt_cache=self._prefix_cache):
                 pass
             mx.eval(*[kv.state for kv in self._prefix_cache])
-            print(f"  Prefix cached: {self._prefix_cache[0].offset} tokens ({time.time() - t_cache:.1f}s)")
+            logger.info("  Prefix cached: %d tokens (%.1fs)", self._prefix_cache[0].offset, time.time() - t_cache)
         else:
-            print(f"ExtractionService: Using {backend} backend (no local model loaded).")
+            logger.info("ExtractionService: Using %s backend (no local model loaded).", backend)
 
         self.initialized = True
-        print("ExtractionService: Ready.")
+        logger.info("ExtractionService: Ready.")
 
     def _discover_patients(self) -> dict[str, dict]:
         """Discover patients from new notes/ structure or legacy soap_notes/."""

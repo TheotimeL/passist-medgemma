@@ -1,5 +1,5 @@
 <template>
-  <div ref="containerRef" class="pdf-viewer" @scroll="onScroll">
+  <div ref="containerRef" class="pdf-viewer">
     <div v-if="loading" class="pdf-loading">
       <v-progress-circular indeterminate size="32" color="primary" />
       <span class="mt-3 text-caption text-medium-emphasis">Loading PDF...</span>
@@ -108,7 +108,7 @@ async function loadPdf(data: ArrayBuffer) {
   pages.value = []
 
   try {
-    const loadingTask = pdfjsLib.getDocument({ data })
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(data) })
     pdfDoc = await loadingTask.promise
 
     buildReverseMap()
@@ -228,10 +228,6 @@ function onFieldClick(fieldId: string) {
   activeFieldId.value = fieldId
   setTimeout(() => { activeFieldId.value = null }, 2000)
   emit('fieldClick', fieldId)
-}
-
-function onScroll() {
-  // Could track current page for external use, skipped for now
 }
 
 watch(() => props.pdfData, (data) => {

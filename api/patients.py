@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, HTTPException
 
@@ -63,6 +66,7 @@ def _discover_patients() -> dict[str, dict]:
                 files = [n["filename"] for n in meta.get("notes", [])]
                 patients[uuid] = {"name": name, "uuid": uuid, "files": files}
             except (json.JSONDecodeError, KeyError):
+                logger.warning("Failed to parse metadata: %s", metadata_file)
                 continue
 
     # --- Legacy fallback: soap_notes/*.txt ---
@@ -111,6 +115,7 @@ def _find_eligibility(uuid: str) -> dict:
                         "total_count": entry.get("total_count"),
                     }
         except (json.JSONDecodeError, KeyError):
+            logger.warning("Failed to parse extraction file: %s", path)
             continue
     return {"eligible": None, "met_count": None, "total_count": None}
 

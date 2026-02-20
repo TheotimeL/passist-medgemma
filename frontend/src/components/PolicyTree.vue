@@ -291,29 +291,6 @@ onMounted(async () => {
   color: #5F6368;
   margin-top: 1px;
 }
-.elig-overrides {
-  display: flex;
-  align-items: center;
-  font-size: 10px;
-  font-weight: 500;
-  color: #7B1FA2;
-  background: #F3E8FD;
-  padding: 2px 8px;
-  border-radius: 12px;
-  gap: 2px;
-  flex-shrink: 0;
-}
-.clear-overrides {
-  font-size: 9px;
-  color: #7B1FA2;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-decoration: underline;
-  margin-left: 4px;
-  padding: 0;
-}
-
 .elig-blockers {
   display: flex;
   flex-wrap: wrap;
