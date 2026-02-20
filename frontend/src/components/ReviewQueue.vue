@@ -620,7 +620,7 @@ function fieldGroups(sectionId: string): DrugGroup[] {
   }
 
   return groupOrder.map(key => {
-    const groupFields = groupMap[key]
+    const groupFields = groupMap[key]!
     const nameField = groupFields.find(f => f.fieldId.endsWith('_name') || f.label === 'Prior Drug')
     return {
       key,

@@ -139,7 +139,7 @@ async function loadPdf(data: ArrayBuffer) {
       canvas.width = viewport.width
       canvas.height = viewport.height
       const ctx = canvas.getContext('2d')!
-      await page.render({ canvasContext: ctx, viewport }).promise
+      await page.render({ canvasContext: ctx, viewport, canvas } as any).promise
 
       // Parse annotations for field overlays
       const annotations = await page.getAnnotations()
@@ -172,7 +172,7 @@ async function loadPdf(data: ArrayBuffer) {
         })
       }
 
-      pages.value[i - 1].fields = fields
+      pages.value[i - 1]!.fields = fields
     }
 
     emit('loaded')

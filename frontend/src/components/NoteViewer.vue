@@ -88,7 +88,7 @@ const highlightedHtml = computed(() => {
     let prevWasSpace = false
 
     for (let i = 0; i < content.length; i++) {
-      const ch = content[i]
+      const ch = content[i]!
       if (/\s/.test(ch)) {
         if (!prevWasSpace) {
           normStartMap[normPos] = i

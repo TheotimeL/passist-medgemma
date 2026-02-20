@@ -98,7 +98,7 @@ export const useExtractionStore = defineStore('extraction', () => {
       const aiResult = results.value.find(r => r.criterion_id === id)
       // Check policyStatus criteria for negated/auto-met criteria not in AI results
       const psCriterion = policyStatus.value.criteria.find(c => c.id === id)
-      const wasMet = aiResult?.met ?? (psCriterion?.status === 'met') ?? false
+      const wasMet = aiResult?.met ?? (psCriterion?.status === 'met' || false)
       if (override.met && !wasMet) count++
       else if (!override.met && wasMet) count--
     }

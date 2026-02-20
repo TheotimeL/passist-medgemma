@@ -52,7 +52,7 @@
                         <v-chip
                           v-if="item.raw.metCount != null"
                           size="x-small"
-                          :color="item.raw.metCount === item.raw.totalCount ? 'success' : item.raw.metCount > item.raw.totalCount / 2 ? 'warning' : 'error'"
+                          :color="item.raw.metCount === item.raw.totalCount ? 'success' : item.raw.metCount! > item.raw.totalCount! / 2 ? 'warning' : 'error'"
                           variant="tonal"
                         >
                           {{ item.raw.metCount }}/{{ item.raw.totalCount }} met

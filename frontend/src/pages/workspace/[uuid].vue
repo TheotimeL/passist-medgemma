@@ -383,7 +383,7 @@ let refreshDebounce: ReturnType<typeof setTimeout> | null = null
 const justificationTabAvailable = computed(() => extractionStore.allCriteriaReviewed)
 const pdfSaveEnabled = computed(() => justificationVisited.value && (formStore.acceptedCount > 0 || formStore.totalFilledCount > 0))
 
-const uuid = computed(() => route.params.uuid as string)
+const uuid = computed(() => (route.params as { uuid: string }).uuid)
 
 const statusKey = computed(() => {
   const ps = extractionStore.policyStatus

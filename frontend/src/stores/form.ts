@@ -270,7 +270,7 @@ export const useFormStore = defineStore('form', () => {
     }
     // Sort mandatory fields to the top of each section
     for (const key of Object.keys(sections)) {
-      sections[key].sort((a, b) => {
+      sections[key]!.sort((a, b) => {
         if (a.required && !b.required) return -1
         if (!a.required && b.required) return 1
         return 0
