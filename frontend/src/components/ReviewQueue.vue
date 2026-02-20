@@ -79,8 +79,9 @@
           <div
             v-for="field in sectionFields(section.id)"
             :key="field.fieldId"
+            :data-field-id="field.fieldId"
             class="compact-row"
-            :class="compactRowClass(field)"
+            :class="[compactRowClass(field), { 'field-flash': flashFieldId === field.fieldId }]"
           >
             <span class="compact-label" :class="{ 'compact-label-required': field.required }">{{ field.label }}</span>
 
@@ -101,6 +102,9 @@
               <template v-if="field.value">
                 <span class="compact-value compact-clickable-value" @click.stop="startEdit(field)">{{ field.value }}</span>
                 <span class="source-chip" :class="'source-' + field.source">{{ sourceLabel(field.source) }}</span>
+                <button class="locate-pdf-btn" @click.stop="emit('locateInPdf', field.fieldId)" title="Locate in PDF">
+                  <v-icon size="12">mdi-file-find-outline</v-icon>
+                </button>
               </template>
               <template v-else-if="manualEntryField === field.fieldId">
                 <input
@@ -141,6 +145,7 @@
               <tr
                 v-for="group in fieldGroups(section.id)"
                 :key="group.key"
+                :data-field-id="tableFieldId(group, 'name')"
                 class="drug-table-row"
                 :class="{ 'drug-table-row-reviewed': groupIsReviewed(group) }"
               >
@@ -191,6 +196,9 @@
                     title="View in Notes"
                   >
                     <v-icon size="12">mdi-text-search</v-icon>
+                  </button>
+                  <button class="locate-pdf-btn" @click.stop="emit('locateInPdf', tableFieldId(group, 'name'))" title="Locate in PDF">
+                    <v-icon size="12">mdi-file-find-outline</v-icon>
                   </button>
                   <button v-if="groupIsReviewed(group)" class="undo-btn drug-table-undo" @click="undoGroup(group)">undo</button>
                   <button class="btn-remove" @click="removeGroup(group)" title="Remove drug">
@@ -314,8 +322,9 @@
           <div
             v-for="field in sectionFields(section.id)"
             :key="field.fieldId"
+            :data-field-id="field.fieldId"
             class="review-item"
-            :class="itemClass(field)"
+            :class="[itemClass(field), { 'field-flash': flashFieldId === field.fieldId }]"
           >
             <!-- Accepted/Edited/Rejected: compact row -->
             <template v-if="field.status !== 'suggested'">
@@ -336,6 +345,9 @@
                   <span class="source-chip" :class="'source-' + field.source">
                     {{ sourceLabel(field.source) }}
                   </span>
+                  <button class="locate-pdf-btn item-top-link" @click.stop="emit('locateInPdf', field.fieldId)" title="Locate in PDF">
+                    <v-icon size="12">mdi-file-find-outline</v-icon>
+                  </button>
                   <button v-if="field.evidence" class="action-link item-top-link" @click.stop="toggleEvidence(field)">
                     {{ expandedEvidence === field.fieldId ? 'Hide Source' : 'View Source' }}
                   </button>
@@ -498,13 +510,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useFormStore, type FormField } from '@/stores/form'
 import { useExtractionStore } from '@/stores/extraction'
 
 const emit = defineEmits<{
   fieldAccepted: [fieldId: string]
   viewSource: [evidence: string, sourceNote?: string]
+  locateInPdf: [fieldId: string]
 }>()
 
 const formStore = useFormStore()
@@ -922,6 +935,30 @@ function saveEdit(fieldId: string) {
 function cancelEdit() {
   editingField.value = null  // Setting to null first means blur handler's saveEdit will no-op
 }
+
+// Expose scrollToField for bidirectional PDF ↔ ReviewQueue navigation
+const flashFieldId = ref<string | null>(null)
+
+function scrollToField(fieldId: string) {
+  // First, expand the section containing this field
+  const field = formStore.fields[fieldId]
+  if (field) {
+    sectionCollapsed.value[field.section] = false
+  }
+
+  // Wait for DOM update, then scroll and flash
+  nextTick(() => {
+    // Find the element by data attribute
+    const el = document.querySelector(`[data-field-id="${fieldId}"]`) as HTMLElement
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      flashFieldId.value = fieldId
+      setTimeout(() => { flashFieldId.value = null }, 2000)
+    }
+  })
+}
+
+defineExpose({ scrollToField })
 </script>
 
 <style scoped>
@@ -1599,5 +1636,41 @@ function cancelEdit() {
 @keyframes pulse {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
+}
+
+/* Locate in PDF button */
+.locate-pdf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #80868B;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: all 0.15s;
+}
+.compact-row:hover .locate-pdf-btn,
+.review-item:hover .locate-pdf-btn,
+.item-top .locate-pdf-btn,
+.drug-table-row:hover .locate-pdf-btn {
+  opacity: 1;
+}
+.locate-pdf-btn:hover {
+  color: #1967D2;
+  background: #E8F0FE;
+}
+
+/* Flash animation for scroll-to-field */
+.field-flash {
+  animation: field-flash-anim 0.5s ease-in-out 3;
+}
+@keyframes field-flash-anim {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: #E8F0FE; }
 }
 </style>

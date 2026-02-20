@@ -217,6 +217,7 @@ export const useFormStore = defineStore('form', () => {
 
     // --- Section IV: Prescriber (extras not from FHIR) ---
     _maybe('prescriber_specialty', 'Prescriber Specialty', 'provider')
+    _maybe('prescriber_address', 'Prescriber Address', 'provider')
     _maybe('prescriber_phone', 'Prescriber Phone', 'provider')
     _maybe('prescriber_fax', 'Prescriber Fax', 'provider')
     _maybe('prescriber_contact', 'Office Contact Name', 'provider')
@@ -298,6 +299,14 @@ export const useFormStore = defineStore('form', () => {
     Object.values(fields.value).filter(f => f.value).length
   )
 
+  const fieldStatuses = computed(() => {
+    const map: Record<string, string> = {}
+    for (const f of Object.values(fields.value)) {
+      map[f.fieldId] = f.value ? f.status : 'empty'
+    }
+    return map
+  })
+
   function reset() {
     fields.value = {}
     sectionViText.value = ''
@@ -317,6 +326,7 @@ export const useFormStore = defineStore('form', () => {
     suggestedCount,
     acceptedCount,
     totalFilledCount,
+    fieldStatuses,
     buildFromFhir,
     addManualDrug,
     addManualFields,

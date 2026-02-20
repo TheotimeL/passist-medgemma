@@ -28,7 +28,6 @@ TREE_PATH = "rheumatoid_arthritis_initial_auth_decision_tree_enriched.json"
 
 # Form template URLs
 FORM_TEMPLATES = {
-    "uhc": "https://www.bcbstx.com/star/pdf/nofr002.pdf",
     "bcbs": "https://www.bcbstx.com/star/pdf/nofr002.pdf",
 }
 
@@ -96,9 +95,28 @@ DISPLAY_ONLY_FIELDS: set[str] = {
 _COMPUTED_FIELDS: set[str] = {
     "patient_gender",      # checkbox
     "patient_address",     # parsed into 4 address fields
+    "prescriber_address",  # parsed into 4 address fields
     "condition_display",   # combined with onset → "Patients diagnosis related..."
     # prior_drug_* and manual_prior_drug_* → drug history rows 1–6
     # manual_drug_* → requested drug fields (last one wins)
+}
+
+# Computed fields that map to multiple PDF form fields (checkboxes, split address, etc.)
+# Merged into the field-mapping endpoint so PdfViewer can highlight them.
+COMPUTED_FIELD_TO_PDF: dict[str, list[str]] = {
+    "patient_gender": [
+        "Patient's Gender - Male", "Patient's Gender - Female",
+        "Patient's Gender - Other", "Patient's Gender - Unknown",
+    ],
+    "patient_address": [
+        "Patient's Address - Street", "Patient's Address - City",
+        "Patient's Address - State", "Patient's Address - ZIP Code",
+    ],
+    "prescriber_address": [
+        "Prescriber's Address - Street", "Prescriber's Address - City",
+        "Prescriber's Address - State", "Prescriber's Address - ZIP Code",
+    ],
+    "condition_display": ["Patients diagnosis related to this request"],
 }
 
 
@@ -113,6 +131,12 @@ def _pdf_set(pdf: PDFFormManager, field_name: str, value: str) -> bool:
 def _pdf_set_many(pdf: PDFFormManager, fields: dict[str, str]) -> int:
     """Set multiple PDF fields. Returns count of fields set."""
     return sum(_pdf_set(pdf, name, val) for name, val in fields.items())
+
+
+@router.get("/form/field-mapping")
+def get_field_mapping():
+    """Return the frontend fieldId → PDF field name mapping (including computed fields)."""
+    return {**FIELD_ID_TO_PDF, **COMPUTED_FIELD_TO_PDF}
 
 
 @router.get("/policy/tree")
@@ -228,6 +252,16 @@ def generate_pdf(request: GeneratePdfRequest):
         fname = gender_map.get(gender, "")
         if fname:
             _pdf_set(pdf, fname, "/On")
+
+    # --- Prescriber Address (parsed into BCBS address components) ---
+    if "prescriber_address" in accepted:
+        addr_parts = [p.strip() for p in accepted["prescriber_address"].split(",")]
+        filled += _pdf_set_many(pdf, {
+            "Prescriber's Address - Street": addr_parts[0] if len(addr_parts) > 0 else "",
+            "Prescriber's Address - City": addr_parts[1] if len(addr_parts) > 1 else "",
+            "Prescriber's Address - State": addr_parts[2] if len(addr_parts) > 2 else "",
+            "Prescriber's Address - ZIP Code": addr_parts[3] if len(addr_parts) > 3 else "",
+        })
 
     # --- Address (parsed into BCBS address components) ---
     if "patient_address" in accepted:
