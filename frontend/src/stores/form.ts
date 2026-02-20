@@ -266,7 +266,7 @@ export const useFormStore = defineStore('form', () => {
     const sections: Record<string, FormField[]> = {}
     for (const f of Object.values(fields.value)) {
       if (!sections[f.section]) sections[f.section] = []
-      sections[f.section].push(f)
+      sections[f.section]!.push(f)
     }
     // Sort mandatory fields to the top of each section
     for (const key of Object.keys(sections)) {
