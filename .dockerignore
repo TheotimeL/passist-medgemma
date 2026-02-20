@@ -13,10 +13,8 @@ generations/
 *.ipynb
 .ipynb_checkpoints/
 
-# Frontend source (only dist/ is needed)
+# Frontend node_modules (rebuilt in Docker)
 frontend/node_modules/
-frontend/src/
-frontend/public/
 
 # Python cache
 __pycache__/
