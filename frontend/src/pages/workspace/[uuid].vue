@@ -112,7 +112,6 @@
             ref="reviewQueueRef"
             @field-accepted="onFieldAccepted"
             @view-source="onViewSource"
-            @locate-in-pdf="onLocateInPdf"
           />
         </div>
 
@@ -329,7 +328,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, shallowRef, computed, watch, nextTick } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePatientStore } from '@/stores/patient'
 import { useExtractionStore } from '@/stores/extraction'
@@ -540,14 +539,6 @@ function onPolicyViewSource(evidence: string, sourceNote?: string) {
 function onPdfFieldClick(fieldId: string) {
   leftMode.value = 'review'
   reviewQueueRef.value?.focusField(fieldId)
-}
-
-// ReviewQueue → PDF: locate field in PDF
-function onLocateInPdf(fieldId: string) {
-  rightMode.value = 'pdf'
-  nextTick(() => {
-    pdfViewerRef.value?.scrollToField(fieldId)
-  })
 }
 
 function onFieldAccepted(fieldIdOrSection: string) {

@@ -136,9 +136,13 @@ async function loadPdf(data: ArrayBuffer) {
       const canvas = canvasRefs.value[i]
       if (!canvas) continue
 
-      canvas.width = viewport.width
-      canvas.height = viewport.height
+      const dpr = window.devicePixelRatio || 1
+      canvas.width = viewport.width * dpr
+      canvas.height = viewport.height * dpr
+      canvas.style.width = viewport.width + 'px'
+      canvas.style.height = viewport.height + 'px'
       const ctx = canvas.getContext('2d')!
+      ctx.scale(dpr, dpr)
       await page.render({ canvasContext: ctx, viewport, canvas } as any).promise
 
       // Parse annotations for field overlays
@@ -176,44 +180,14 @@ async function loadPdf(data: ArrayBuffer) {
     }
 
     emit('loaded')
+
+    // Default to page 2
+    await nextTick()
+    scrollToPage(2)
   } catch (e: any) {
     error.value = e.message || 'Failed to load PDF'
   } finally {
     loading.value = false
-  }
-}
-
-function scrollToField(fieldId: string) {
-  // Find the page and field
-  for (const page of pages.value) {
-    const field = page.fields.find(f => f.fieldId === fieldId)
-    if (field) {
-      const pageEl = pageRefs.value[page.num]
-      if (pageEl && containerRef.value) {
-        // Scroll the page into view
-        pageEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
-
-        // After scroll, highlight the field with pulse animation
-        activeFieldId.value = fieldId
-        setTimeout(() => {
-          activeFieldId.value = null
-        }, 2000)
-      }
-      return
-    }
-  }
-
-  // Fallback: scroll to page based on field prefix (for dynamic drug fields)
-  const sectionPage: Record<string, number> = {
-    prior_drug_: 3,
-    manual_prior_drug_: 3,
-    manual_drug_: 3,
-  }
-  for (const [prefix, pageNum] of Object.entries(sectionPage)) {
-    if (fieldId.startsWith(prefix)) {
-      scrollToPage(pageNum)
-      return
-    }
   }
 }
 
@@ -238,7 +212,7 @@ watch(() => props.fieldIdToPdfName, () => {
   buildReverseMap()
 }, { deep: true })
 
-defineExpose({ scrollToField, scrollToPage })
+defineExpose({})
 </script>
 
 <style scoped>

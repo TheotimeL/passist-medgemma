@@ -102,9 +102,6 @@
               <template v-if="field.value">
                 <span class="compact-value compact-clickable-value" @click.stop="startEdit(field)">{{ field.value }}</span>
                 <span class="source-chip" :class="'source-' + field.source">{{ sourceLabel(field.source) }}</span>
-                <button class="locate-pdf-btn" @click.stop="emit('locateInPdf', field.fieldId)" title="Locate in PDF">
-                  <v-icon size="12">mdi-file-find-outline</v-icon>
-                </button>
               </template>
               <template v-else-if="manualEntryField === field.fieldId">
                 <input
@@ -196,9 +193,6 @@
                     title="View in Notes"
                   >
                     <v-icon size="12">mdi-text-search</v-icon>
-                  </button>
-                  <button class="locate-pdf-btn" @click.stop="emit('locateInPdf', tableFieldId(group, 'name'))" title="Locate in PDF">
-                    <v-icon size="12">mdi-file-find-outline</v-icon>
                   </button>
                   <button v-if="groupIsReviewed(group)" class="undo-btn drug-table-undo" @click="undoGroup(group)">undo</button>
                   <button class="btn-remove" @click="removeGroup(group)" title="Remove drug">
@@ -345,9 +339,6 @@
                   <span class="source-chip" :class="'source-' + field.source">
                     {{ sourceLabel(field.source) }}
                   </span>
-                  <button class="locate-pdf-btn item-top-link" @click.stop="emit('locateInPdf', field.fieldId)" title="Locate in PDF">
-                    <v-icon size="12">mdi-file-find-outline</v-icon>
-                  </button>
                   <button v-if="field.evidence" class="action-link item-top-link" @click.stop="toggleEvidence(field)">
                     {{ expandedEvidence === field.fieldId ? 'Hide Source' : 'View Source' }}
                   </button>
@@ -517,7 +508,6 @@ import { useExtractionStore } from '@/stores/extraction'
 const emit = defineEmits<{
   fieldAccepted: [fieldId: string]
   viewSource: [evidence: string, sourceNote?: string]
-  locateInPdf: [fieldId: string]
 }>()
 
 const formStore = useFormStore()
@@ -1615,33 +1605,6 @@ defineExpose({ scrollToField, focusField })
 @keyframes pulse {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
-}
-
-/* Locate in PDF button */
-.locate-pdf-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  color: #80868B;
-  background: none;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  flex-shrink: 0;
-  opacity: 0;
-  transition: all 0.15s;
-}
-.compact-row:hover .locate-pdf-btn,
-.review-item:hover .locate-pdf-btn,
-.item-top .locate-pdf-btn,
-.drug-table-row:hover .locate-pdf-btn {
-  opacity: 1;
-}
-.locate-pdf-btn:hover {
-  color: #1967D2;
-  background: #E8F0FE;
 }
 
 /* Flash animation for scroll-to-field */
