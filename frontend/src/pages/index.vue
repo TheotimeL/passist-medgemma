@@ -1,97 +1,120 @@
 <template>
-  <v-container class="fill-height" fluid>
-    <v-row align="center" justify="center">
-      <v-col cols="12" sm="8" md="6" lg="5">
-        <v-fade-transition appear>
-          <v-card class="pa-8 landing-card" elevation="2">
-            <!-- Header -->
-            <div class="text-center mb-8">
-              <div class="gemini-icon mb-4">
-                <v-icon size="48" color="primary">mdi-file-document-check</v-icon>
+  <div class="landing-wrapper">
+    <!-- Floating background shapes -->
+    <div class="bg-shape shape-1" />
+    <div class="bg-shape shape-2" />
+    <div class="bg-shape shape-3" />
+
+    <v-container class="fill-height" fluid>
+      <v-row align="center" justify="center">
+        <v-col cols="12" sm="10" md="8" lg="6" xl="5">
+          <v-fade-transition appear>
+            <div>
+              <!-- Hero text above card -->
+              <div class="text-center mb-8">
+                <div class="hero-icon mb-5">
+                  <svg width="56" height="56" viewBox="0 0 64 64" fill="none">
+                    <path d="M32 8 L52 20 V40 C52 52 32 58 32 58 S12 52 12 40 V20 Z" fill="none" stroke="url(#iconGrad)" stroke-width="3" stroke-linejoin="round"/>
+                    <path d="M24 34 L29 39 L40 26" fill="none" stroke="url(#iconGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs>
+                      <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#4285F4"/>
+                        <stop offset="100%" stop-color="#7B61FF"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
+                <h1 class="text-h3 font-weight-bold hero-title">
+                  Prior Authorization
+                </h1>
+                <p class="text-body-1 mt-3 hero-subtitle">
+                  AI-assisted form filling powered by
+                  <span class="font-weight-medium" style="color: #4285F4">MedGemma</span>
+                </p>
               </div>
-              <h1 class="text-h4 font-weight-medium" style="color: #202124">
-                Prior Authorization
-              </h1>
-              <p class="text-body-1 mt-2" style="color: #5F6368">
-                AI-assisted form filling powered by MedGemma
+
+              <!-- Main card -->
+              <v-card class="pa-8 landing-card" elevation="0">
+                <!-- Patient Selection -->
+                <v-select
+                  v-model="selectedPatient"
+                  :items="patientItems"
+                  item-title="text"
+                  item-value="value"
+                  label="Select Patient"
+                  prepend-inner-icon="mdi-account-outline"
+                  :loading="patientStore.loadingPatients"
+                  class="mb-2"
+                >
+                  <template #item="{ props: itemProps, item }">
+                    <v-list-item v-bind="itemProps">
+                      <template #append>
+                        <v-chip
+                          v-if="item.raw.metCount != null"
+                          size="x-small"
+                          :color="item.raw.metCount === item.raw.totalCount ? 'success' : item.raw.metCount > item.raw.totalCount / 2 ? 'warning' : 'error'"
+                          variant="tonal"
+                        >
+                          {{ item.raw.metCount }}/{{ item.raw.totalCount }} met
+                        </v-chip>
+                        <v-chip
+                          v-else
+                          size="x-small"
+                          color="grey"
+                          variant="tonal"
+                        >
+                          Pending
+                        </v-chip>
+                      </template>
+                    </v-list-item>
+                  </template>
+                </v-select>
+
+                <!-- Insurer & Drug in a row -->
+                <v-row dense class="mb-2">
+                  <v-col cols="12" sm="6">
+                    <v-select
+                      v-model="selectedInsurer"
+                      :items="insurerItems"
+                      label="Insurer"
+                      prepend-inner-icon="mdi-shield-check-outline"
+                    />
+                  </v-col>
+                  <v-col cols="12" sm="6">
+                    <v-select
+                      v-model="selectedDrug"
+                      :items="drugItems"
+                      label="Drug"
+                      prepend-inner-icon="mdi-pill"
+                    />
+                  </v-col>
+                </v-row>
+
+                <!-- Start Button -->
+                <v-btn
+                  block
+                  size="x-large"
+                  color="primary"
+                  :disabled="!selectedPatient"
+                  :loading="navigating"
+                  class="start-btn mt-2"
+                  @click="startReview"
+                >
+                  Start Authorization Review
+                  <v-icon end>mdi-arrow-right</v-icon>
+                </v-btn>
+              </v-card>
+
+              <!-- Footer -->
+              <p class="text-center text-caption mt-6 footer-text">
+                AI drafts, human verifies &mdash; all processing runs locally
               </p>
             </div>
-
-            <!-- Patient Selection -->
-            <v-select
-              v-model="selectedPatient"
-              :items="patientItems"
-              item-title="text"
-              item-value="value"
-              label="Select Patient"
-              prepend-inner-icon="mdi-account"
-              :loading="patientStore.loadingPatients"
-              class="mb-4"
-            >
-              <template #item="{ props: itemProps, item }">
-                <v-list-item v-bind="itemProps">
-                  <template #append>
-                    <v-chip
-                      v-if="item.raw.metCount != null"
-                      size="x-small"
-                      :color="item.raw.metCount === item.raw.totalCount ? 'success' : item.raw.metCount > item.raw.totalCount / 2 ? 'warning' : 'error'"
-                      variant="tonal"
-                    >
-                      {{ item.raw.metCount }}/{{ item.raw.totalCount }} met
-                    </v-chip>
-                    <v-chip
-                      v-else
-                      size="x-small"
-                      color="grey"
-                      variant="tonal"
-                    >
-                      Pending
-                    </v-chip>
-                  </template>
-                </v-list-item>
-              </template>
-            </v-select>
-
-            <!-- Insurer Selection -->
-            <v-select
-              v-model="selectedInsurer"
-              :items="insurerItems"
-              label="Select Insurer"
-              prepend-inner-icon="mdi-shield-check"
-              class="mb-4"
-            />
-
-            <!-- Drug Selection -->
-            <v-select
-              v-model="selectedDrug"
-              :items="drugItems"
-              label="Drug to Prescribe"
-              prepend-inner-icon="mdi-pill"
-              class="mb-6"
-            />
-
-            <!-- Start Button -->
-            <v-btn
-              block
-              size="large"
-              color="primary"
-              :disabled="!selectedPatient"
-              :loading="navigating"
-              @click="startReview"
-            >
-              <v-icon start>mdi-play</v-icon>
-              Start Authorization Review
-            </v-btn>
-          </v-card>
-        </v-fade-transition>
-
-        <!-- Footer -->
-        <p class="text-center text-caption mt-6" style="color: #9AA0A6">
-          AI drafts, human verifies
-        </p>
-      </v-col>
-    </v-row>
-  </v-container>
+          </v-fade-transition>
+        </v-col>
+      </v-row>
+    </v-container>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -132,19 +155,86 @@ function startReview() {
 </script>
 
 <style scoped>
-.landing-card {
-  transition: box-shadow 0.2s ease;
+.landing-wrapper {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(145deg, #F0F4FF 0%, #F8F9FA 40%, #F3EEFF 100%);
 }
-.landing-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+
+/* Floating decorative shapes */
+.bg-shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.4;
+  filter: blur(80px);
+  pointer-events: none;
 }
-.gemini-icon {
+.shape-1 {
+  width: 500px;
+  height: 500px;
+  background: #4285F4;
+  top: -200px;
+  right: -100px;
+  opacity: 0.08;
+}
+.shape-2 {
+  width: 400px;
+  height: 400px;
+  background: #7B61FF;
+  bottom: -150px;
+  left: -100px;
+  opacity: 0.07;
+}
+.shape-3 {
+  width: 300px;
+  height: 300px;
+  background: #34A853;
+  top: 50%;
+  left: 60%;
+  opacity: 0.05;
+}
+
+.hero-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #E8F0FE 0%, #F3E8FD 100%);
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 4px 24px rgba(66, 133, 244, 0.12);
+}
+
+.hero-title {
+  color: #1A1A2E;
+  letter-spacing: -0.5px;
+}
+
+.hero-subtitle {
+  color: #5F6368;
+  font-size: 1.05rem;
+}
+
+.landing-card {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.landing-card:hover {
+  box-shadow: 0 8px 32px rgba(66, 133, 244, 0.1) !important;
+  transform: translateY(-2px);
+}
+
+.start-btn {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: none;
+  font-size: 1rem;
+}
+
+.footer-text {
+  color: #9AA0A6;
 }
 </style>

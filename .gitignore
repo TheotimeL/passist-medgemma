@@ -247,4 +247,6 @@ resultat_final.pdf
 !fhir/*.json
 !requirements.txt
 !requirements-cloud.txt
+!frontend/package-lock.json
+!frontend/package.json
 !.python-version
