@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     FormField: typeof import('./components/FormField.vue')['default']
     NoteViewer: typeof import('./components/NoteViewer.vue')['default']
+    PdfViewer: typeof import('./components/PdfViewer.vue')['default']
     PolicyTree: typeof import('./components/PolicyTree.vue')['default']
     PolicyTreeNode: typeof import('./components/PolicyTreeNode.vue')['default']
     ReviewQueue: typeof import('./components/ReviewQueue.vue')['default']

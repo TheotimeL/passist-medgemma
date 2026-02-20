@@ -107,7 +107,13 @@
               </div>
             </div>
           </template>
-          <ReviewQueue v-else @field-accepted="onFieldAccepted" @view-source="onViewSource" />
+          <ReviewQueue
+            v-else
+            ref="reviewQueueRef"
+            @field-accepted="onFieldAccepted"
+            @view-source="onViewSource"
+            @locate-in-pdf="onLocateInPdf"
+          />
         </div>
 
         <!-- Left: Clinical Notes -->
@@ -197,7 +203,7 @@
                 @click="generatePreview"
               >
                 <v-icon start size="14">mdi-refresh</v-icon>
-                {{ pdfPreviewUrl ? 'Refresh' : 'Generate' }}
+                {{ pdfPreviewData ? 'Refresh' : 'Generate' }}
               </v-btn>
             </template>
           </div>
@@ -205,8 +211,15 @@
 
         <!-- PDF Mode -->
         <div v-if="rightMode === 'pdf'" class="right-body">
-          <template v-if="pdfPreviewUrl">
-            <iframe :src="pdfPreviewUrl + '#page=' + pdfPage" class="pdf-iframe" :key="pdfKey" />
+          <template v-if="pdfPreviewData">
+            <PdfViewer
+              ref="pdfViewerRef"
+              :pdf-data="pdfPreviewData"
+              :field-id-to-pdf-name="fieldIdToPdfName"
+              :field-statuses="formStore.fieldStatuses"
+              @field-click="onPdfFieldClick"
+              @loaded="onPdfLoaded"
+            />
           </template>
           <template v-else-if="generatingPreview">
             <div class="right-placeholder">
@@ -317,7 +330,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePatientStore } from '@/stores/patient'
 import { useExtractionStore } from '@/stores/extraction'
@@ -325,6 +338,7 @@ import { useFormStore } from '@/stores/form'
 import ReviewQueue from '@/components/ReviewQueue.vue'
 import NoteViewer from '@/components/NoteViewer.vue'
 import PolicyTree from '@/components/PolicyTree.vue'
+import PdfViewer from '@/components/PdfViewer.vue'
 
 const route = useRoute()
 const patientStore = usePatientStore()
@@ -351,7 +365,7 @@ const showError = ref(false)
 const errorMessage = ref('')
 const showSuccess = ref(false)
 const successMessage = ref('')
-const pdfPreviewUrl = ref<string | null>(null)
+const pdfPreviewData = ref<ArrayBuffer | null>(null)
 const pdfStale = ref(false)
 const rightMode = ref<'pdf' | 'notes' | 'policy' | 'justification'>('notes')
 const leftMode = ref<'review' | 'notes'>('review')
@@ -360,24 +374,15 @@ const isDragging = ref(false)
 const fhirLoading = ref(true)
 const fhirLoadingStatus = ref('Connecting to EHR...')
 const highlightEvidence = ref<string | null>(null)
-const pdfPage = ref(2) // Default to page 2 (actual form, not instructions)
-const pdfKey = ref(0) // Force iframe re-render on page change
 const justificationVisited = ref(false) // Track if justification tab was visited
+const fieldIdToPdfName = ref<Record<string, string[]>>({})
+const pdfViewerRef = ref<InstanceType<typeof PdfViewer> | null>(null)
+const reviewQueueRef = ref<InstanceType<typeof ReviewQueue> | null>(null)
 let refreshDebounce: ReturnType<typeof setTimeout> | null = null
 
 // Tab availability rules
 const justificationTabAvailable = computed(() => extractionStore.allCriteriaReviewed)
 const pdfSaveEnabled = computed(() => justificationVisited.value && (formStore.acceptedCount > 0 || formStore.totalFilledCount > 0))
-
-// Map field sections to PDF pages
-const sectionToPage: Record<string, number> = {
-  demographics: 2,
-  provider: 2,
-  diagnosis: 2,
-  step_therapy: 3,
-  drug_request: 3,
-  justification: 3,
-}
 
 const uuid = computed(() => route.params.uuid as string)
 
@@ -433,7 +438,7 @@ watch(() => extractionStore.complete, (done) => {
     // Fetch clinical justification after extraction, passing live results
     formStore.fetchJustification(uuid.value, extractionStore.results)
     // Auto-generate first PDF preview once extraction is done
-    if (!pdfPreviewUrl.value && formStore.totalFilledCount > 0) {
+    if (!pdfPreviewData.value && formStore.totalFilledCount > 0) {
       generatePreview()
     }
   }
@@ -454,6 +459,13 @@ onMounted(async () => {
   extractionStore.reset()
   fhirLoading.value = true
   fhirLoadingStatus.value = 'Connecting to EHR...'
+
+  // Fetch field mapping in parallel with patient data
+  fetch('/api/form/field-mapping')
+    .then(r => r.ok ? r.json() : {})
+    .then(data => { fieldIdToPdfName.value = data })
+    .catch(() => {})
+
   await patientStore.selectPatient(uuid.value)
   fhirLoadingStatus.value = 'Loading patient records...'
   await new Promise(resolve => setTimeout(resolve, 1500))
@@ -523,18 +535,26 @@ function onPolicyViewSource(evidence: string, sourceNote?: string) {
   leftMode.value = 'notes'
 }
 
+// PDF → ReviewQueue: click a field overlay in PDF
+function onPdfFieldClick(fieldId: string) {
+  leftMode.value = 'review'
+  reviewQueueRef.value?.scrollToField(fieldId)
+}
+
+function onPdfLoaded() {
+  // PDF loaded — could trigger initial scroll etc.
+}
+
+// ReviewQueue → PDF: locate field in PDF
+function onLocateInPdf(fieldId: string) {
+  rightMode.value = 'pdf'
+  nextTick(() => {
+    pdfViewerRef.value?.scrollToField(fieldId)
+  })
+}
+
 function onFieldAccepted(fieldIdOrSection: string) {
   pdfStale.value = true
-
-  // Determine which PDF page to show based on the field's section
-  // fieldIdOrSection can be either a field ID or a section name (from Accept All)
-  const field = formStore.fields[fieldIdOrSection]
-  const section = field ? field.section : fieldIdOrSection
-  const targetPage = sectionToPage[section] || 2
-  if (targetPage !== pdfPage.value) {
-    pdfPage.value = targetPage
-    pdfKey.value++
-  }
 
   // Debounce PDF refresh — wait 1.5s after last change
   if (refreshDebounce) clearTimeout(refreshDebounce)
@@ -576,12 +596,8 @@ async function generatePreview() {
     })
 
     if (res.ok) {
-      if (pdfPreviewUrl.value) {
-        URL.revokeObjectURL(pdfPreviewUrl.value)
-      }
       const blob = await res.blob()
-      pdfPreviewUrl.value = URL.createObjectURL(blob)
-      pdfKey.value++ // Force iframe refresh
+      pdfPreviewData.value = await blob.arrayBuffer()
     } else {
       errorMessage.value = 'Failed to generate PDF preview.'
       showError.value = true
@@ -1001,11 +1017,6 @@ async function downloadPdf() {
 }
 .justification-dot-loading { background: #F9AB00; }
 .justification-dot-ready { background: #34A853; }
-.pdf-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
 .right-placeholder {
   display: flex;
   flex-direction: column;

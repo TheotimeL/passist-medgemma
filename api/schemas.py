@@ -88,5 +88,5 @@ class FormFieldUpdate(BaseModel):
 class GeneratePdfRequest(BaseModel):
     uuid: str
     fields: list[FormFieldUpdate]
-    insurer: str = "bcbs"  # "uhc" or "bcbs"
+    insurer: str = "bcbs"
     justification_text: str | None = None  # Doctor-edited justification (overrides auto-generated)

@@ -30,6 +30,15 @@ SNOMED_TO_ICD10: dict[str, tuple[str, str]] = {
     "410795001": ("M05.70", "Erosive rheumatoid arthritis"),
 }
 
+# FHIR encounter class → human-readable location name
+ENCOUNTER_CLASS_TO_LOCATION: dict[str, str] = {
+    "AMB": "Provider Office",
+    "IMP": "Inpatient",
+    "EMER": "Outpatient",
+    "HH": "Home",
+    "SS": "Day Surgery",
+}
+
 DRUG_TO_HCPCS: dict[str, str] = {
     "adalimumab": "J0135",
     "etanercept": "J1438",
@@ -41,22 +50,7 @@ DRUG_TO_HCPCS: dict[str, str] = {
     "upadacitinib": "J3590",
 }
 
-# FHIR encounter class → PA form service location field name
-ENCOUNTER_CLASS_TO_LOCATION: dict[str, str] = {
-    "AMB": "Provider Office",
-    "IMP": "Inpatient",
-    "EMER": "Outpatient",
-    "HH": "Home",
-    "SS": "Day Surgery",
-}
 
-# FHIR gender → PA form checkbox field name
-GENDER_TO_FIELD: dict[str, str] = {
-    "female": "Paitent Gender - Female",
-    "male": "Paitent Gender - Male",
-    "other": "Paitent Gender - Other",
-    "unknown": "Paitent Gender - Unkown",  # sic — typo in the actual form
-}
 
 
 def _infer_requested_drug(tree: PolicyNode) -> str:
@@ -461,8 +455,7 @@ def fill_pa_form(
     All drug names and clinical context are derived dynamically from the policy
     tree and FHIR data — no disease-specific hardcoding.
 
-    Supports both UHC and BCBS TX form layouts — sets field values for both naming
-    conventions; fields that don't exist in the loaded form are silently skipped.
+    Uses the BCBS TX form layout (nofr002.pdf).
 
     Args:
         pdf: PDFFormManager instance (already loaded with the PA form template).
@@ -503,59 +496,41 @@ def fill_pa_form(
     addr_state = addr_parts[2] if len(addr_parts) > 2 else ""
     addr_zip = addr_parts[3] if len(addr_parts) > 3 else ""
 
-    # --- Gender checkbox (both forms) ---
+    # --- Gender checkbox ---
     gender = patient_data["gender"]
-    gender_fields_uhc = GENDER_TO_FIELD.get(gender, "")
-    gender_fields_bcbs = {
+    gender_field = {
         "female": "Patient's Gender - Female",
         "male": "Patient's Gender - Male",
         "other": "Patient's Gender - Other",
         "unknown": "Patient's Gender - Unknown",
     }.get(gender, "")
 
-    # --- Set all fields (both UHC + BCBS naming conventions) ---
+    # --- Set all fields (BCBS naming conventions) ---
     filled = 0
 
     # Patient demographics
     filled += _set(pdf, {
-        "Patient Name": patient_data["name"],
-        "Patient Date of Birth": patient_data["dob"],
-        "Patient Phone Number": patient_data["phone"],
-        "Member or Medicaid ID Number": patient_data["member_id"],
         "Patient's Name": patient_data["name"],
         "Patient's Date of Birth": patient_data["dob"],
         "Patient's Phone Number": patient_data["phone"],
+        "Member or Medicaid ID Number": patient_data["member_id"],
         "Patient's Address - Street": addr_street,
         "Patient's Address - City": addr_city,
         "Patient's Address - State": addr_state,
         "Patient's Address - ZIP Code": addr_zip,
     })
-    if gender_fields_uhc:
-        filled += _set(pdf, {gender_fields_uhc: "/On"})
-    if gender_fields_bcbs:
-        filled += _set(pdf, {gender_fields_bcbs: "/On"})
+    if gender_field:
+        filled += _set(pdf, {gender_field: "/On"})
 
-    # Provider info
+    # Provider info (BCBS field names)
     filled += _set(pdf, {
-        "Requesting Provider or Facility Name": patient_data["facility_name"],
-        "Requesting Provider or Facility NPI Number": patient_data["provider_npi"],
-        "Requesting Provider or Facility Contact Name": patient_data["provider_name"],
-        "Requesting Provider or Facility Specialty": prescriber_specialty,
-        "Service Provider or Facility Name": patient_data["facility_name"],
-        "Service Provider or Facility NPI Number": patient_data["provider_npi"],
-        "Service Provider or Facility Specialty": prescriber_specialty,
         "Prescriber's Name": patient_data["provider_name"],
         "Prescriber's NPI Number": patient_data["provider_npi"],
         "Prescriber's Specialty": prescriber_specialty,
-        # Office contact is a separate person (admin/nurse) — not the prescriber.
-        # Leave blank; the doctor fills this in the review queue.
     })
 
-    # Diagnosis
+    # Diagnosis (BCBS field names)
     filled += _set(pdf, {
-        "Planned Service or Procedure Diagnosis Description Row 1": patient_data["condition_display"],
-        "Planned Service or Procedure Diagnosis Code Row 1": icd_code,
-        "Diagnosis Description ICD Version Number": f"{icd_desc} (ICD-10: {icd_code})",
         "Patients diagnosis related to this request": f"{patient_data['condition_display']}, onset {patient_data['condition_onset']}",
         "ICD Code": icd_code,
         "ICD Version": "ICD-10",
@@ -568,31 +543,20 @@ def fill_pa_form(
             requested_dose = ext["drug_dose"]
             break
 
-    # Requested drug details (from tree inference + LLM extraction)
+    # Requested drug details (BCBS field names)
     filled += _set(pdf, {
-        "Planned Service or Procedure Row 1": requested_drug,
-        "Planned Service or Procedure Code Row 1": hcpcs_code,
-        "Planned Service or Procedure Start Date Row 1": patient_data["latest_encounter_date"],
         "Requested Prescription Drug Name": requested_drug,
         "Requested Prescription Drug Strength": requested_dose,
         "For Provider Administered Drugs Only - HCPCS Code": hcpcs_code,
         "New therapy": "/On",
     })
 
-    # Administrative
+    # Administrative (BCBS field names)
     today = datetime.now().strftime("%m/%d/%Y")
     filled += _set(pdf, {
-        "Submission Date": today,
-        "Request Type - Initial": "/On",
-        "Issuer Name": patient_data.get("insurer", ""),
         "Date Submitted": today,
         "Submitted to": patient_data.get("insurer", ""),
     })
-
-    # Service location (UHC only)
-    location_field = ENCOUNTER_CLASS_TO_LOCATION.get(patient_data["encounter_class"])
-    if location_field:
-        filled += _set(pdf, {location_field: "/On"})
 
     # --- Drug history table (BCBS has 6 rows for prior medications) ---
     # Uses LLM-provided fields (drug_name, is_prior_therapy, failure_reason)
@@ -633,24 +597,18 @@ def fill_pa_form(
         drug_dose = ext.get("drug_dose", "")
         drug_dates = ext.get("drug_dates", "")
 
-        # Set fields for both UHC and BCBS naming conventions
+        # BCBS drug history field names
         filled += _set(pdf, {
-            # UHC field names
             f"Drugs Patient has Taken for Diagnosis - Drug Name {drug_row}": drug_name,
-            f"Drugs Patient has Taken for Diagnosis - Drug Strength {drug_row}": drug_dose,
-            f"Drugs Patient has Taken for Diagnosis - Start Date {drug_row}": drug_dates,
-            f"Describe Response Reason for Failure or Allergy of Drug {drug_row}": failure,
-            # BCBS field names
             f"Strength of Drug {drug_row}": drug_dose,
             f"Dates Started and Stopped or Approximate Duration of Drug {drug_row}": drug_dates,
-            f"Frequency Drug {drug_row} Taken": "",
+            f"Describe Response Reason for Failure or Allergy of Drug {drug_row}": failure,
         })
         drug_row += 1
 
-    # --- Clinical justification (both forms) ---
+    # --- Clinical justification (BCBS Section IX) ---
     section_vi = format_section_vi(patient_data, policy_status, extraction_results, tree)
     filled += _set(pdf, {
-        "SECTION VI  CLINICAL DOCUMENTATION SEE INSTRUCTIONS PAGE SECTION VI": section_vi,
         "Section IX \u2015 Justification (See Instruction Page Section IX)": section_vi,
     })
 
