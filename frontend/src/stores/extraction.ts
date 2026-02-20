@@ -55,12 +55,40 @@ export const useExtractionStore = defineStore('extraction', () => {
   const complete = ref(false)
   const modelLoaded = ref(false)
   const overrides = ref<Record<string, CriterionOverride>>({})
+  /** Doctor review state per criterion: 'accepted' or 'rejected' */
+  const criterionReviews = ref<Record<string, 'accepted' | 'rejected'>>({})
   /** Tree-evaluated eligibility (set by PolicyTree component). Respects AND/OR logic + overrides. */
   const treeEligibility = ref<boolean | null>(null)
+  /** Reference to the full policy tree (set by PolicyTree component) for computing reviewable criteria */
+  const policyTree = ref<{ type: string; id?: string; negated?: boolean; children?: unknown[] } | null>(null)
   let eventSource: EventSource | null = null
 
   /** Number of doctor overrides active */
   const overrideCount = computed(() => Object.keys(overrides.value).length)
+
+  /** Number of criteria that have been reviewed (accepted or rejected) */
+  const reviewedCriteriaCount = computed(() => Object.keys(criterionReviews.value).length)
+
+  /** Total reviewable criteria: met + auto-met (things the doctor should confirm) */
+  const totalReviewableCriteria = computed(() => {
+    if (!policyTree.value) return 0
+    const leaves = _collectLeaves(policyTree.value as Parameters<typeof _collectLeaves>[0])
+    return leaves.filter(leaf => {
+      if (leaf.negated) return true // auto-met
+      const r = results.value.find(r => r.criterion_id === leaf.id)
+      if (r?.met) return true // AI-met
+      // Also count overrides that mark as met
+      const o = overrides.value[leaf.id]
+      if (o?.met) return true
+      return false
+    }).length
+  })
+
+  /** Whether all reviewable criteria have been reviewed */
+  const allCriteriaReviewed = computed(() => {
+    if (totalReviewableCriteria.value === 0) return false
+    return reviewedCriteriaCount.value >= totalReviewableCriteria.value
+  })
 
   /** Effective met count including overrides */
   const effectiveMetCount = computed(() => {
@@ -89,8 +117,26 @@ export const useExtractionStore = defineStore('extraction', () => {
     overrides.value = {}
   }
 
+  function reviewAccept(id: string) {
+    criterionReviews.value[id] = 'accepted'
+  }
+
+  function reviewReject(id: string) {
+    criterionReviews.value[id] = 'rejected'
+    setOverride(id, false, '')
+  }
+
+  function reviewUndo(id: string) {
+    delete criterionReviews.value[id]
+    clearOverride(id)
+  }
+
   function setTreeEligibility(value: boolean | null) {
     treeEligibility.value = value
+  }
+
+  function setPolicyTree(tree: typeof policyTree.value) {
+    policyTree.value = tree
   }
 
   /** Start extraction — always try live SSE first, fall back to pre-computed. */
@@ -294,7 +340,9 @@ export const useExtractionStore = defineStore('extraction', () => {
     error.value = null
     complete.value = false
     overrides.value = {}
+    criterionReviews.value = {}
     treeEligibility.value = null
+    policyTree.value = null
   }
 
   return {
@@ -308,8 +356,17 @@ export const useExtractionStore = defineStore('extraction', () => {
     overrides,
     overrideCount,
     effectiveMetCount,
+    criterionReviews,
+    reviewedCriteriaCount,
+    totalReviewableCriteria,
+    allCriteriaReviewed,
+    policyTree,
     treeEligibility,
     setTreeEligibility,
+    setPolicyTree,
+    reviewAccept,
+    reviewReject,
+    reviewUndo,
     fetchExtraction,
     startLiveExtraction,
     cancelExtraction,

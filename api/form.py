@@ -32,45 +32,73 @@ FORM_TEMPLATES = {
     "bcbs": "https://www.bcbstx.com/star/pdf/nofr002.pdf",
 }
 
-# Mapping from frontend field_id to PDF form field name(s)
-# Both UHC and BCBS naming conventions are included.
+# ---------------------------------------------------------------------------
+# Field mapping categories
+# ---------------------------------------------------------------------------
+# Every frontend field_id falls into exactly ONE category:
+#   1. FIELD_ID_TO_PDF  — simple text fields (field_id → PDF field names)
+#   2. CHECKBOX_FIELDS  — handled via gender logic in generate_pdf()
+#   3. Computed          — special logic in generate_pdf() (address, diagnosis combo,
+#                         prior drug rows, manual drug rows, SNOMED→ICD, HCPCS, etc.)
+#   4. DISPLAY_ONLY     — informational UI fields, never written to PDF
+
+# Verified against the actual BCBS TX form (nofr002.pdf, 143 fields).
 FIELD_ID_TO_PDF: dict[str, list[str]] = {
-    "patient_name": ["Patient Name", "Patient's Name"],
-    "patient_dob": ["Patient Date of Birth", "Patient's Date of Birth"],
-    "patient_phone": ["Patient Phone Number", "Patient's Phone Number"],
+    # --- Section I: Submission ---
+    "insurer": ["Submitted to"],
+    "insurer_phone": ["Submitted to Phone Number"],
+    "insurer_fax": ["Submitted to Fax Number"],
+    "submission_date": ["Date Submitted"],
+
+    # --- Section III: Patient Information ---
+    "patient_name": ["Patient's Name"],
+    "patient_dob": ["Patient's Date of Birth"],
+    "patient_phone": ["Patient's Phone Number"],
     "patient_member_id": ["Member or Medicaid ID Number"],
-    "provider_name": [
-        "Requesting Provider or Facility Contact Name",
-        "Prescriber's Office Contact Name",
-    ],
-    "provider_npi": [
-        "Requesting Provider or Facility NPI Number",
-        "Service Provider or Facility NPI Number",
-        "Prescriber's NPI Number",
-    ],
-    "facility_name": [
-        "Requesting Provider or Facility Name",
-        "Service Provider or Facility Name",
-    ],
-    "condition_display": [
-        "Planned Service or Procedure Diagnosis Description Row 1",
-    ],
-    "prescriber_name": [
-        "Prescriber's Name",
-    ],
-    "prescriber_specialty": [
-        "Requesting Provider or Facility Specialty",
-        "Service Provider or Facility Specialty",
-        "Prescriber's Specialty",
-    ],
-    "requested_drug": [
-        "Planned Service or Procedure Row 1",
-        "Requested Prescription Drug Name",
-    ],
-    "requested_dose": [
-        "Requested Prescription Drug Strength",
-    ],
-    "insurer": ["Issuer Name", "Submitted to"],
+    "group_number": ["Group Number"],
+    # patient_gender → checkbox (computed)
+    # patient_address → parsed into Street/City/State/ZIP (computed)
+
+    # --- Section IV: Prescriber Information ---
+    "prescriber_name": ["Prescriber's Name"],
+    "prescriber_npi": ["Prescriber's NPI Number"],
+    "prescriber_specialty": ["Prescriber's Specialty"],
+    "prescriber_phone": ["Prescriber's Phone Number"],
+    "prescriber_fax": ["Prescriber's Fax Number"],
+    "prescriber_contact": ["Prescriber's Office Contact Name"],
+    "prescriber_contact_phone": ["Prescriber's Office Contact Phone Number"],
+
+    # --- Section V: Prescription Drug Request ---
+    "requested_drug": ["Requested Prescription Drug Name"],
+    "requested_dose": ["Requested Prescription Drug Strength"],
+    "quantity": ["Requested Prescription Drug Quantity"],
+    "days_supply": ["Requested Prescription Drug Days Supply"],
+    "route_of_admin": ["Requested Prescription Drug Route of Administration"],
+    "therapy_duration": ["Requested Prescription Drug Expected Therapy Duration"],
+    "hcpcs_code": ["For Provider Administered Drugs Only - HCPCS Code"],
+
+    # --- Section VII: Diagnosis ---
+    "icd10_code": ["ICD Code"],
+    "icd_version": ["ICD Version"],
+}
+
+# Frontend fields that exist for display/info only — never written to PDF.
+DISPLAY_ONLY_FIELDS: set[str] = {
+    "coverage_type",
+    "diagnosis_evidence",
+    "condition_snomed",  # used for auto-mapping to ICD, not a PDF field itself
+    "condition_onset",   # combined with condition_display into diagnosis (computed)
+    "place_of_service",  # informational (FHIR encounter class)
+}
+
+# Computed field_ids — handled by special-case logic in generate_pdf().
+# Listed here for documentation / validation only.
+_COMPUTED_FIELDS: set[str] = {
+    "patient_gender",      # checkbox
+    "patient_address",     # parsed into 4 address fields
+    "condition_display",   # combined with onset → "Patients diagnosis related..."
+    # prior_drug_* and manual_prior_drug_* → drug history rows 1–6
+    # manual_drug_* → requested drug fields (last one wins)
 }
 
 
@@ -180,7 +208,8 @@ def generate_pdf(request: GeneratePdfRequest):
     accepted = {f.field_id: f.value for f in request.fields}
     filled = 0
 
-    # --- Apply simple field mappings ---
+
+# --- Apply simple field mappings ---
     for field_id, value in accepted.items():
         pdf_names = FIELD_ID_TO_PDF.get(field_id, [])
         for name in pdf_names:
@@ -190,22 +219,17 @@ def generate_pdf(request: GeneratePdfRequest):
     # --- Gender checkbox ---
     if "patient_gender" in accepted:
         gender = accepted["patient_gender"].lower()
-        uhc_map = {
-            "female": "Paitent Gender - Female",
-            "male": "Paitent Gender - Male",
-        }
-        bcbs_map = {
+        gender_map = {
             "female": "Patient's Gender - Female",
             "male": "Patient's Gender - Male",
             "other": "Patient's Gender - Other",
             "unknown": "Patient's Gender - Unknown",
         }
-        for gmap in [uhc_map, bcbs_map]:
-            fname = gmap.get(gender, "")
-            if fname:
-                _pdf_set(pdf, fname, "/Yes")
+        fname = gender_map.get(gender, "")
+        if fname:
+            _pdf_set(pdf, fname, "/On")
 
-    # --- Address (needs parsing into components) ---
+    # --- Address (parsed into BCBS address components) ---
     if "patient_address" in accepted:
         addr_parts = [p.strip() for p in accepted["patient_address"].split(",")]
         filled += _pdf_set_many(pdf, {
@@ -215,16 +239,14 @@ def generate_pdf(request: GeneratePdfRequest):
             "Patient's Address - ZIP Code": addr_parts[3] if len(addr_parts) > 3 else "",
         })
 
-    # --- SNOMED → ICD-10 mapping ---
-    if "condition_snomed" in accepted:
+    # --- SNOMED → ICD-10 auto-mapping (only if doctor didn't set ICD manually) ---
+    if "condition_snomed" in accepted and "icd10_code" not in accepted:
         icd_info = SNOMED_TO_ICD10.get(accepted["condition_snomed"])
         if icd_info:
-            icd_code, icd_desc = icd_info
+            icd_code, _ = icd_info
             filled += _pdf_set_many(pdf, {
-                "Planned Service or Procedure Diagnosis Code Row 1": icd_code,
                 "ICD Code": icd_code,
                 "ICD Version": "ICD-10",
-                "Diagnosis Description ICD Version Number": f"{icd_desc} (ICD-10: {icd_code})",
             })
 
     # --- Diagnosis combined with onset ---
@@ -236,32 +258,61 @@ def generate_pdf(request: GeneratePdfRequest):
         )
         _pdf_set(pdf, "Patients diagnosis related to this request", diag_combined)
 
-    # --- HCPCS code for requested drug ---
+    # --- HCPCS auto-inference from drug name ---
     if "requested_drug" in accepted:
-        hcpcs = DRUG_TO_HCPCS.get(accepted["requested_drug"].lower(), "")
-        if hcpcs:
-            filled += _pdf_set_many(pdf, {
-                "Planned Service or Procedure Code Row 1": hcpcs,
-                "For Provider Administered Drugs Only - HCPCS Code": hcpcs,
-            })
-        _pdf_set(pdf, "New therapy", "/Yes")
-        _pdf_set(pdf, "Planned Service or Procedure Start Date Row 1",
-                 patient_data.get("latest_encounter_date", ""))
+        if "hcpcs_code" not in accepted:
+            hcpcs = DRUG_TO_HCPCS.get(accepted["requested_drug"].lower(), "")
+            if hcpcs:
+                _pdf_set(pdf, "For Provider Administered Drugs Only - HCPCS Code", hcpcs)
+                filled += 1
+        _pdf_set(pdf, "New therapy", "/On")
 
-    # --- Prior drug history (step_therapy section) ---
-    # Group prior drugs by their base key (e.g., prior_drug_methotrexate)
+    # --- Manual drug request (manual_drug_N_name/dose → requested drug fields) ---
+    # If the doctor manually added a requested drug, it overrides the AI-extracted one.
+    # Only the LAST manual drug wins (can't have multiple requested drugs in one PDF).
+    manual_drug_entries: list[tuple[str, str]] = []  # (name, dose)
+    manual_drug_groups: dict[str, dict[str, str]] = {}
+    for field_id, value in accepted.items():
+        if not field_id.startswith("manual_drug_"):
+            continue
+        # Parse: manual_drug_N_suffix (e.g., manual_drug_1_name, manual_drug_1_dose)
+        # Find the suffix after the last underscore that is a known suffix
+        for suffix in ("_name", "_dose"):
+            if field_id.endswith(suffix):
+                base = field_id[: -len(suffix)]
+                if base not in manual_drug_groups:
+                    manual_drug_groups[base] = {}
+                manual_drug_groups[base][suffix.lstrip("_")] = value
+                break
+
+    for group_data in manual_drug_groups.values():
+        name = group_data.get("name", "")
+        dose = group_data.get("dose", "")
+        if name:
+            manual_drug_entries.append((name, dose))
+
+    if manual_drug_entries:
+        # Last entry wins
+        last_name, last_dose = manual_drug_entries[-1]
+        _pdf_set(pdf, "Requested Prescription Drug Name", last_name)
+        if last_dose:
+            _pdf_set(pdf, "Requested Prescription Drug Strength", last_dose)
+
+    # --- Prior drug history (rows 1–6) ---
+    # Group prior drugs by base key (e.g., prior_drug_methotrexate, manual_prior_drug_1).
+    # Uses known suffixes (_name, _dates, _reason, _dose) instead of fragile rfind("_").
+    _PRIOR_DRUG_SUFFIXES = ("_name", "_dates", "_reason", "_dose")
     prior_drugs: dict[str, dict[str, str]] = {}
     for field_id, value in accepted.items():
-        if not field_id.startswith("prior_drug_"):
+        if not (field_id.startswith("prior_drug_") or field_id.startswith("manual_prior_drug_")):
             continue
-        # field_id format: prior_drug_{drugname}_{suffix}
-        # suffix is one of: name, dates, reason, dose
-        last_underscore = field_id.rfind("_")
-        base = field_id[:last_underscore]
-        suffix = field_id[last_underscore + 1:]
-        if base not in prior_drugs:
-            prior_drugs[base] = {}
-        prior_drugs[base][suffix] = value
+        for suffix in _PRIOR_DRUG_SUFFIXES:
+            if field_id.endswith(suffix):
+                base = field_id[: -len(suffix)]
+                if base not in prior_drugs:
+                    prior_drugs[base] = {}
+                prior_drugs[base][suffix.lstrip("_")] = value
+                break
 
     drug_row = 1
     for drug_data in prior_drugs.values():
@@ -272,28 +323,21 @@ def generate_pdf(request: GeneratePdfRequest):
             continue
         filled += _pdf_set_many(pdf, {
             f"Drugs Patient has Taken for Diagnosis - Drug Name {drug_row}": drug_name,
-            f"Drugs Patient has Taken for Diagnosis - Drug Strength {drug_row}": drug_data.get("dose", ""),
-            f"Drugs Patient has Taken for Diagnosis - Start Date {drug_row}": drug_data.get("dates", ""),
-            f"Describe Response Reason for Failure or Allergy of Drug {drug_row}": drug_data.get("reason", ""),
             f"Strength of Drug {drug_row}": drug_data.get("dose", ""),
             f"Dates Started and Stopped or Approximate Duration of Drug {drug_row}": drug_data.get("dates", ""),
+            f"Describe Response Reason for Failure or Allergy of Drug {drug_row}": drug_data.get("reason", ""),
         })
         drug_row += 1
 
-    # --- Administrative fields (always set) ---
-    today = datetime.now().strftime("%m/%d/%Y")
-    filled += _pdf_set_many(pdf, {
-        "Submission Date": today,
-        "Request Type - Initial": "/Yes",
-        "Date Submitted": today,
-    })
+    # --- Administrative (always set if not already provided) ---
+    if "submission_date" not in accepted:
+        today = datetime.now().strftime("%m/%d/%Y")
+        _pdf_set(pdf, "Date Submitted", today)
 
-    # --- Section VI clinical justification ---
+    # --- Section IX clinical justification ---
     if request.justification_text:
-        # Use doctor-edited justification
         section_vi = request.justification_text
     else:
-        # Auto-generate from extraction results
         section_vi = ""
         extraction_results: list[dict] = []
         for json_file in Path(".").glob("extraction_*.json"):
@@ -319,7 +363,6 @@ def generate_pdf(request: GeneratePdfRequest):
             section_vi = format_section_vi(patient_data, policy_status, extraction_results, tree)
 
     if section_vi:
-        _pdf_set(pdf, "SECTION VI  CLINICAL DOCUMENTATION SEE INSTRUCTIONS PAGE SECTION VI", section_vi)
         _pdf_set(pdf, "Section IX \u2015 Justification (See Instruction Page Section IX)", section_vi)
 
     # --- Generate PDF ---
@@ -332,3 +375,36 @@ def generate_pdf(request: GeneratePdfRequest):
         media_type="application/pdf",
         filename=f"pa_form_{patient_data['name'].replace(' ', '_')}.pdf",
     )
+
+
+def validate_field_coverage(field_ids: list[str]) -> dict[str, list[str]]:
+    """Check which frontend field_ids are mapped, display-only, computed, or orphaned.
+
+    Dev-only utility. Call from a test or debug endpoint to verify no fields are
+    silently lost.
+
+    Returns dict with keys: mapped, display_only, computed, dynamic, orphaned.
+    """
+    result: dict[str, list[str]] = {
+        "mapped": [],
+        "display_only": [],
+        "computed": [],
+        "dynamic": [],
+        "orphaned": [],
+    }
+    for fid in field_ids:
+        if fid in FIELD_ID_TO_PDF:
+            result["mapped"].append(fid)
+        elif fid in DISPLAY_ONLY_FIELDS:
+            result["display_only"].append(fid)
+        elif fid in _COMPUTED_FIELDS:
+            result["computed"].append(fid)
+        elif (
+            fid.startswith("prior_drug_")
+            or fid.startswith("manual_prior_drug_")
+            or fid.startswith("manual_drug_")
+        ):
+            result["dynamic"].append(fid)
+        else:
+            result["orphaned"].append(fid)
+    return result

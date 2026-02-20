@@ -11,9 +11,6 @@
         </span>
         <span class="gate-name">{{ gateName }}</span>
         <span class="gate-counter">{{ gateCounter }}</span>
-        <span class="gate-status" :class="gateStatusClass">
-          {{ gateStatusText }}
-        </span>
       </div>
       <div v-if="!collapsed" class="gate-children">
         <PolicyTreeNode
@@ -41,9 +38,33 @@
             <span v-if="node.negated" class="negated-badge">AUTO-MET</span>
             <span v-if="isOverridden" class="override-badge">DOCTOR</span>
           </div>
-          <span class="leaf-badge" :class="leafBadgeClass">
-            {{ leafBadgeText }}
-          </span>
+          <!-- Inline action buttons in header -->
+          <template v-if="reviewState">
+            <span v-if="reviewState === 'accepted'" class="review-badge review-accepted">
+              <v-icon size="10" class="mr-1">mdi-check</v-icon>Accepted
+            </span>
+            <span v-else class="review-badge review-rejected">
+              <v-icon size="10" class="mr-1">mdi-close</v-icon>Rejected
+            </span>
+            <button class="header-action header-undo" @click.stop="undoReview">Undo</button>
+          </template>
+          <template v-else-if="isBlocker && !showResolve">
+            <button
+              class="header-action header-resolve"
+              @click.stop="showResolve = true; expanded = true"
+            >Resolve</button>
+          </template>
+          <template v-else-if="effectiveMet && !isOverridden && !node.negated">
+            <button class="header-action header-accept" @click.stop="acceptReview">Accept</button>
+            <button class="header-action header-reject" @click.stop="rejectReview">Reject</button>
+          </template>
+          <template v-else-if="node.negated && !isOverridden">
+            <button class="header-action header-accept" @click.stop="acceptReview">Accept</button>
+            <button class="header-action header-override" @click.stop="overrideNegated">Override</button>
+          </template>
+          <template v-else-if="isOverridden">
+            <button class="header-action header-undo" @click.stop="rejectCriterion">Undo</button>
+          </template>
           <v-icon size="14" class="expand-chevron">
             {{ expanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
           </v-icon>
@@ -72,21 +93,13 @@
                 <v-icon size="12" class="mr-1">mdi-text-search</v-icon>
                 View in Notes
               </button>
-              <button v-if="!node.negated" class="action-link reject-link" @click.stop="rejectCriterion">
-                <v-icon size="12" class="mr-1">mdi-close-circle-outline</v-icon>
-                {{ isOverridden ? 'Undo' : 'Reject' }}
-              </button>
             </div>
           </div>
 
-          <!-- Negated criterion (auto-met) — allow override to NOT MET -->
+          <!-- Negated criterion (auto-met) -->
           <div v-else-if="node.negated && !isOverridden" class="leaf-auto-met">
-            <v-icon size="12" color="grey" class="mr-1">mdi-information-outline</v-icon>
+            <v-icon size="12" color="success" class="mr-1">mdi-information-outline</v-icon>
             <span>Automatically satisfied (absence of disqualifying condition)</span>
-            <button class="action-link reject-link auto-met-reject" @click.stop="overrideNegated">
-              <v-icon size="11" class="mr-1">mdi-close-circle-outline</v-icon>
-              Override
-            </button>
           </div>
 
           <!-- Doctor rejected an AI result — show undo -->
@@ -167,7 +180,7 @@ const emit = defineEmits<{
 }>()
 
 const collapsed = ref(false)
-const expanded = ref(false)
+const expanded = ref(true)
 
 const result = computed(() => props.resultsMap[props.node.id || ''])
 const override = computed(() => props.overrides[props.node.id || ''])
@@ -190,8 +203,22 @@ const effectiveEvidence = computed(() => {
 })
 
 const isOverridden = computed(() => !!override.value)
+const reviewState = computed(() => extractionStore.criterionReviews[props.node.id || ''] as 'accepted' | 'rejected' | undefined)
 const showResolve = ref(false)
 const resolveText = ref('')
+
+function acceptReview() {
+  extractionStore.reviewAccept(props.node.id || '')
+  expanded.value = false
+}
+
+function rejectReview() {
+  extractionStore.reviewReject(props.node.id || '')
+}
+
+function undoReview() {
+  extractionStore.reviewUndo(props.node.id || '')
+}
 
 function rejectCriterion() {
   const id = props.node.id || ''
@@ -239,22 +266,16 @@ function saveResolve() {
   }
 }
 
-// Smart default expand: collapse met/auto-met/irrelevant items, expand unmet needing attention
+// Default expanded for all leaves; collapse dimmed/irrelevant leaves
 if (props.node.type === 'LEAF') {
-  // Don't expand if: auto-met, already met, OR branch satisfied (irrelevant path)
-  expanded.value = !(props.node.negated || effectiveMet.value || (props.parentOrSatisfied && !effectiveMet.value))
+  expanded.value = !(props.parentOrSatisfied && !effectiveMet.value && !props.node.negated)
 }
 
-// Gate nodes: auto-collapse non-winning branches in satisfied OR gates
-if (props.node.type !== 'LEAF' && props.parentOrSatisfied && evaluateGate() !== true) {
-  collapsed.value = true
-}
-
-// React to override changes: collapse when marked met, expand when marked not met
-watch(effectiveMet, (isMet) => {
-  if (props.node.type === 'LEAF' && !props.node.negated) {
-    // Don't expand if this leaf is in a satisfied OR (irrelevant path)
-    expanded.value = !isMet && !isDimmed.value
+// React to override changes
+watch(effectiveMet, () => {
+  // Keep all leaves expanded by default; only collapse dimmed ones
+  if (props.node.type === 'LEAF') {
+    if (isDimmed.value) expanded.value = false
   }
 })
 
@@ -310,19 +331,6 @@ function countMetLeaves(node: TreeNode): number {
   return (node.children || []).reduce((sum, c) => sum + countMetLeaves(c), 0)
 }
 
-const gateStatusClass = computed(() => {
-  const s = evaluateGate()
-  if (s === true) return 'gate-met'
-  if (s === false) return 'gate-not-met'
-  return 'gate-pending'
-})
-
-const gateStatusText = computed(() => {
-  const s = evaluateGate()
-  if (s === true) return 'MET'
-  if (s === false) return 'NOT MET'
-  return 'PENDING'
-})
 
 function evaluateGate(): boolean | null {
   const children = props.node.children || []
@@ -382,6 +390,8 @@ const leafClass = computed(() => {
   else if (effectiveMet.value) { classes.push('leaf-met') }
   else { classes.push('leaf-unmet') }
   if (isDimmed.value) classes.push('leaf-dimmed')
+  if (reviewState.value === 'accepted') classes.push('leaf-reviewed-accepted')
+  if (reviewState.value === 'rejected') classes.push('leaf-reviewed-rejected')
   return classes.join(' ')
 })
 
@@ -392,7 +402,7 @@ const leafIcon = computed(() => {
 })
 
 const leafIconColor = computed(() => {
-  if (props.node.negated) return 'grey'
+  if (props.node.negated) return 'success'
   if (effectiveMet.value) return 'success'
   return 'error'
 })
@@ -408,17 +418,6 @@ const leafName = computed(() => {
   return props.node.name || props.node.id || 'Unknown Criterion'
 })
 
-const leafBadgeClass = computed(() => {
-  if (props.node.negated) return 'badge-auto'
-  if (effectiveMet.value) return 'badge-met'
-  return 'badge-unmet'
-})
-
-const leafBadgeText = computed(() => {
-  if (props.node.negated) return 'AUTO'
-  if (effectiveMet.value) return 'MET'
-  return 'NOT MET'
-})
 
 const guidanceText = computed(() => {
   if (props.node.search_description) {
@@ -494,16 +493,6 @@ const isDimmed = computed(() => {
   font-weight: 500;
   flex-shrink: 0;
 }
-.gate-status {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-.gate-met { color: #137333; background: #E6F4EA; }
-.gate-not-met { color: #C5221F; background: #FCE8E6; }
-.gate-pending { color: #B06000; background: #FEF7E0; }
 
 .gate-children {
   border-left: 2px solid #E8EAED;
@@ -529,8 +518,8 @@ const isDimmed = computed(() => {
   background: #FFFCFC;
 }
 .leaf-auto {
-  border-left: 3px solid #9AA0A6;
-  background: #FAFAFA;
+  border-left: 3px solid #34A853;
+  background: #F6FFF8;
 }
 .leaf-overridden {
   border-style: dashed;
@@ -578,25 +567,78 @@ const isDimmed = computed(() => {
   vertical-align: middle;
 }
 .negated-badge {
-  color: #80868B;
-  background: #E8EAED;
+  color: #137333;
+  background: #E6F4EA;
 }
 .override-badge {
   color: #7B1FA2;
   background: #F3E8FD;
 }
 
-.leaf-badge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 2px 6px;
+
+.header-action {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 8px;
   border-radius: 4px;
+  border: 1px solid;
+  cursor: pointer;
   flex-shrink: 0;
-  letter-spacing: 0.3px;
+  transition: all 0.1s;
 }
-.badge-met { color: #137333; background: #E6F4EA; }
-.badge-unmet { color: #C5221F; background: #FCE8E6; }
-.badge-auto { color: #5F6368; background: #E8EAED; }
+.header-resolve {
+  color: #1967D2;
+  border-color: #1967D2;
+  background: #E8F0FE;
+}
+.header-resolve:hover { background: #D2E3FC; }
+.header-reject {
+  color: #C5221F;
+  border-color: transparent;
+  background: none;
+}
+.header-reject:hover { background: #FCE8E6; border-color: #EA4335; }
+.header-undo {
+  color: #7B1FA2;
+  border-color: transparent;
+  background: none;
+}
+.header-undo:hover { background: #F3E8FD; border-color: #7B1FA2; }
+.header-accept {
+  color: #137333;
+  border-color: #34A853;
+  background: #E6F4EA;
+}
+.header-accept:hover { background: #CEEAD6; }
+.header-override {
+  color: #5F6368;
+  border-color: transparent;
+  background: none;
+}
+.header-override:hover { background: #E8EAED; border-color: #80868B; }
+
+/* Review badges */
+.review-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.review-accepted { color: #137333; background: #E6F4EA; }
+.review-rejected { color: #C5221F; background: #FCE8E6; }
+
+/* Reviewed leaf states */
+.leaf-reviewed-accepted .evidence-text {
+  border-left-color: #34A853;
+  background: #F6FFF8;
+}
+.leaf-reviewed-rejected .evidence-text {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
 
 .expand-chevron {
   color: #80868B;

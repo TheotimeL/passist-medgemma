@@ -13,6 +13,9 @@ End-to-end pipeline that extracts clinical evidence from patient notes using a l
 ## Architecture
 
 ```
+  Policy PDF ──→ extract_policy.py ──→ Policy Tree JSONs
+  (Gemini)        (PyMuPDF + LangExtract)   │
+                                             │
                           ┌─────────────────────────────────────────┐
                           │           Web UI (Vue 3 + Vuetify)      │
                           │  Landing Page → Workspace (split panel) │
@@ -34,6 +37,49 @@ End-to-end pipeline that extracts clinical evidence from patient notes using a l
                                                    pdf_form.py
 ```
 
+## Policy Extraction Pipeline (`extract_policy.py`)
+
+Converts a raw insurance policy PDF into the structured decision tree JSONs used by the rest of the system. Uses Google Gemini (not MedGemma) for extraction since this is a one-time offline step.
+
+```
+UHC_Commercial_Medical_Policy_Adalimumab.pdf
+        │
+        ▼  Step 1: PyMuPDF (fitz)
+  Raw text (~38K chars)
+        │
+        ▼  Step 2: Gemini 2.0-Flash — text cleaning
+  RA-specific section (~2.8K chars)
+  (headers/footers removed, numbering preserved)
+        │
+        ▼  Step 3: LangExtract + Gemini 2.5-Flash — structured extraction
+  .jsonl with 31 items:
+  LogicGates (AND/OR), Criteria (leaf nodes), EvidenceRequirements
+  Each with logic_path encoding tree position
+        │
+        ▼  Step 4: Tree reconstruction
+  Nested AND/OR tree with auto-generated IDs
+  → rheumatoid_arthritis_initial_auth_decision_tree.json
+        │
+        ▼  Step 5: Clinical enrichment — Gemini 2.5-Flash
+  keywords, anti_keywords, search_descriptions per leaf
+  → rheumatoid_arthritis_initial_auth_decision_tree_enriched.json
+```
+
+### Running
+```bash
+# Full pipeline: PDF → clean text → extract → tree → enrich
+python extract_policy.py
+
+# Enrich an existing tree only
+python extract_policy.py --enrich-only <tree.json> --enrich-output <enriched.json>
+```
+
+### Key Design Decisions
+- **LangExtract** ensures consistent tree shape without brittle regex parsing
+- **Few-shot examples** use generic policy text to bias structure without leaking specifics
+- **No hardcoded disease logic** — works for any disease/drug/payer combination
+- **Two tree outputs**: original (shorter, used in MedGemma prompt) and enriched (keywords, used in validation pipeline)
+
 ## Key Files
 
 ### Backend
@@ -45,8 +91,9 @@ End-to-end pipeline that extracts clinical evidence from patient notes using a l
 | `api/extraction.py` | SSE live extraction + pre-computed results fallback |
 | `api/form.py` | PDF generation endpoint |
 | `patient_data.py` | FHIR parser, Section VI/IX formatter, form fill orchestrator |
-| `policy_tree.py` | PolicyNode/PolicyStatus dataclasses, tree loading, evaluation |
+| `policy_tree.py` | PolicyNode/PolicyStatus dataclasses, tree loading, evaluation, ID assignment + enrichment |
 | `pdf_form.py` | PDFFormManager class (pypdf AcroForm filling) |
+| `extract_policy.py` | Policy PDF → decision tree pipeline (PyMuPDF + LangExtract + Gemini) |
 
 ### Frontend (`frontend/src/`)
 | File | Purpose |
@@ -66,11 +113,15 @@ End-to-end pipeline that extracts clinical evidence from patient notes using a l
 |---|---|
 | `rheumatoid_arthritis_initial_auth_decision_tree_enriched.json` | Enriched policy tree with keywords/anti_keywords |
 | `rheumatoid_arthritis_initial_auth_decision_tree.json` | Original tree (shorter descriptions, used in prompt) |
+| `rheumatoid_arthritis_initial_auth_extractions.jsonl` | Flat LangExtract output (31 items with logic_path) |
+| `rheumatoid_arthritis_initial_auth_clean.txt` | Cleaned policy text (RA section only) |
+| `rheumatoid_arthritis_initial_auth_visualization.html` | LangExtract HTML visualization of extractions |
 
 ## Data Sources (all local)
 
 | Source | Location |
 |---|---|
+| Policy PDF (input) | `UHC_Commercial_Medical_Policy_Adalimumab.pdf` |
 | FHIR bundles (Synthea) | `generations/output_{region}/fhir/*.json` |
 | SOAP notes | `soap_notes/*.txt` |
 | Clinical notes | `clinical_notes/*.txt` |

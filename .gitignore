@@ -212,8 +212,24 @@ __marimo__/
 *.txt
 .python-version
 
+# ── Project-specific ignores ─────────────────────────────────────────────────
+
+# MLX / HuggingFace model weights (large binaries, download at runtime)
+mlx-community/
+mlx_models/
+
+# Generated PDFs
+pa_form_*.pdf
+resultat_final.pdf
+
+# macOS
+.DS_Store
+
+# Deployment artifacts
+.vercel
+
 # ── Deployment exceptions ────────────────────────────────────────────────────
-# These files must be tracked for cloud deployment (Vercel reads from git).
+# These files must be tracked for cloud deployment.
 !rheumatoid_arthritis_initial_auth_decision_tree*.json
 !extraction_*.json
 !soap_notes/*.txt
@@ -223,4 +239,3 @@ __marimo__/
 !requirements.txt
 !requirements-cloud.txt
 !.python-version
-.vercel

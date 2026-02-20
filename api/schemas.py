@@ -33,6 +33,9 @@ class PatientFhir(BaseModel):
     insurer: str
     latest_encounter_date: str
     encounter_class: str
+    icd10_code: str = ""
+    icd_version: str = ""
+    place_of_service: str = ""
 
 
 class NoteFile(BaseModel):
@@ -85,5 +88,5 @@ class FormFieldUpdate(BaseModel):
 class GeneratePdfRequest(BaseModel):
     uuid: str
     fields: list[FormFieldUpdate]
-    insurer: str = "uhc"  # "uhc" or "bcbs"
+    insurer: str = "bcbs"  # "uhc" or "bcbs"
     justification_text: str | None = None  # Doctor-edited justification (overrides auto-generated)

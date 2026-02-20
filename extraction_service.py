@@ -372,7 +372,7 @@ class ExtractionService:
         self.patients = self._discover_patients()
         print(f"  Discovered {len(self.patients)} patients")
 
-        backend = os.environ.get("EXTRACTION_BACKEND", "mlx")
+        backend = os.environ.get("EXTRACTION_BACKEND") or "mlx"
         self._backend = backend
 
         if backend == "mlx":
@@ -507,17 +507,17 @@ class ExtractionService:
         return output.strip()
 
     def _run_inference_gemini(self, prompt: str, max_tokens: int = 8000) -> str:
-        import google.generativeai as genai
+        from google import genai
 
         api_key = os.environ.get("LANGEXTRACT_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             raise RuntimeError("LANGEXTRACT_API_KEY or GOOGLE_API_KEY env var required for Gemini backend")
 
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=genai.types.GenerateContentConfig(
                 temperature=0.1,
                 top_p=0.9,
                 max_output_tokens=max_tokens,

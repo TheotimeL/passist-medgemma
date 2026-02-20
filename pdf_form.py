@@ -1,14 +1,21 @@
-"""PDFFormManager — extracted from form_interactions.ipynb for importability."""
+"""PDFFormManager — PDF AcroForm filler with appearance stream generation.
+
+Uses pypdf's update_page_form_field_values() for text fields to generate proper
+appearance streams (/AP), so filled values render in ALL PDF viewers including
+Chrome's embedded viewer (which ignores /NeedAppearances).
+
+Checkboxes are handled separately via direct annotation writes since pypdf's
+update method doesn't handle them well.
+"""
 
 import io
 import requests
 from pypdf import PdfReader, PdfWriter
-from pypdf.generic import NameObject, BooleanObject
+from pypdf.generic import NameObject, BooleanObject, TextStringObject
 
 
 class PDFFormManager:
     def __init__(self, source_path_or_url):
-        self.reader = None
         self.fields_map = {}
 
         if source_path_or_url.startswith("http"):
@@ -34,38 +41,55 @@ class PDFFormManager:
         else:
             print("No fields found.")
 
-    def set_value(self, field_id, value):
-        if field_id in self.fields_map:
-            self.fields_map[field_id]["value"] = value
-        else:
-            pass  # Silently skip missing fields (dual UHC/BCBS support)
-
-    def get_fields(self):
-        return dict(self.fields_map)
-
     def generate_pdf(self, output_filename):
-        writer = PdfWriter()
-        writer.append_pages_from_reader(self.reader)
-
-        if "/AcroForm" in self.reader.root_object:
-            writer.root_object.update(
-                {NameObject("/AcroForm"): self.reader.root_object["/AcroForm"]}
-            )
+        writer = PdfWriter(clone_from=self.reader)
 
         data_to_write = {
             k: v["value"] for k, v in self.fields_map.items() if v["value"] is not None
         }
 
-        for page in writer.pages:
-            writer.update_page_form_field_values(page, data_to_write)
+        if not data_to_write:
+            with open(output_filename, "wb") as f:
+                writer.write(f)
+            print(f"PDF saved to: {output_filename} (no fields to fill)")
+            return
 
+        # Split into text fields and checkboxes
+        field_types = {k: v["type"] for k, v in self.fields_map.items()}
+        text_fields = {k: v for k, v in data_to_write.items() if field_types.get(k, "/Tx") != "/Btn"}
+        checkbox_fields = {k: v for k, v in data_to_write.items() if field_types.get(k) == "/Btn"}
+
+        # --- Text fields: use update_page_form_field_values() ---
+        # This generates proper /AP appearance streams so values render
+        # in Chrome's embedded PDF viewer (not just /NeedAppearances).
+        if text_fields:
+            for page in writer.pages:
+                writer.update_page_form_field_values(page, text_fields)
+
+        # --- Checkboxes: write directly to annotation objects ---
+        # pypdf's update method doesn't handle checkboxes well,
+        # so we set /V and /AS manually.
+        if checkbox_fields:
+            for page in writer.pages:
+                if "/Annots" not in page:
+                    continue
+                for annot in page["/Annots"]:
+                    obj = annot.get_object()
+                    field_name = str(obj.get("/T", ""))
+                    if field_name not in checkbox_fields:
+                        continue
+                    value = checkbox_fields[field_name]
+                    obj[NameObject("/V")] = NameObject(value)
+                    obj[NameObject("/AS")] = NameObject(value)
+
+        # Also set /NeedAppearances as fallback for viewers that support it
         if "/AcroForm" in writer.root_object:
             acro_form = writer.root_object["/AcroForm"]
             if hasattr(acro_form, "get_object"):
                 acro_form = acro_form.get_object()
-            acro_form.update({NameObject("/NeedAppearances"): BooleanObject(True)})
+            acro_form[NameObject("/NeedAppearances")] = BooleanObject(True)
 
-        with open(output_filename, "wb") as output_stream:
-            writer.write(output_stream)
+        with open(output_filename, "wb") as f:
+            writer.write(f)
 
         print(f"PDF saved to: {output_filename}")

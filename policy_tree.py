@@ -201,22 +201,6 @@ def tree_to_dict(node: PolicyNode) -> dict:
 # Evaluation
 # ---------------------------------------------------------------------------
 
-def set_criterion(
-    results: dict[str, CriterionResult],
-    criterion_id: str,
-    met: bool,
-    evidence: str = "",
-    source_ref: str = "",
-) -> None:
-    """Record a criterion evaluation result."""
-    results[criterion_id] = CriterionResult(
-        criterion_id=criterion_id,
-        met=met,
-        evidence=evidence,
-        source_ref=source_ref,
-    )
-
-
 def _eval_and(child_results: list[bool | None]) -> bool | None:
     if not child_results:
         return None  # empty node = indeterminate

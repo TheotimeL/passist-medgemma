@@ -59,36 +59,6 @@ GENDER_TO_FIELD: dict[str, str] = {
 }
 
 
-def _extract_drug_from_keywords(text: str, keywords: list[str]) -> str:
-    """Find a drug name in text by matching against a criterion's keyword list.
-
-    Prefers single-word keyword matches (which are drug/brand names like
-    "methotrexate", "humira") over multi-word matches (which tend to be
-    action phrases like "inadequate response", "previously treated with").
-
-    Among same-word-count matches, prefers longer ones (e.g.,
-    "hydroxychloroquine" over "ra").
-
-    Args:
-        text: Evidence text or combined search string.
-        keywords: The criterion leaf's keywords list from the policy tree.
-
-    Returns:
-        Best-matching drug name (title-cased), or "" if none found.
-    """
-    text_lower = text.lower()
-    matches = []
-    for kw in keywords:
-        kw_lower = kw.lower()
-        if len(kw.split()) <= 2 and 4 <= len(kw) <= 25 and kw_lower in text_lower:
-            matches.append(kw)
-    if not matches:
-        return ""
-    # Sort: single-word first (drug names), then by length descending within each group
-    matches.sort(key=lambda kw: (len(kw.split()), -len(kw)))
-    return matches[0].title()
-
-
 def _infer_requested_drug(tree: PolicyNode) -> str:
     """Infer the drug being requested for PA from the policy tree.
 
@@ -561,9 +531,9 @@ def fill_pa_form(
         "Patient's Address - ZIP Code": addr_zip,
     })
     if gender_fields_uhc:
-        filled += _set(pdf, {gender_fields_uhc: "/Yes"})
+        filled += _set(pdf, {gender_fields_uhc: "/On"})
     if gender_fields_bcbs:
-        filled += _set(pdf, {gender_fields_bcbs: "/Yes"})
+        filled += _set(pdf, {gender_fields_bcbs: "/On"})
 
     # Provider info
     filled += _set(pdf, {
@@ -577,7 +547,8 @@ def fill_pa_form(
         "Prescriber's Name": patient_data["provider_name"],
         "Prescriber's NPI Number": patient_data["provider_npi"],
         "Prescriber's Specialty": prescriber_specialty,
-        "Prescriber's Office Contact Name": patient_data["provider_name"],
+        # Office contact is a separate person (admin/nurse) — not the prescriber.
+        # Leave blank; the doctor fills this in the review queue.
     })
 
     # Diagnosis
@@ -605,14 +576,14 @@ def fill_pa_form(
         "Requested Prescription Drug Name": requested_drug,
         "Requested Prescription Drug Strength": requested_dose,
         "For Provider Administered Drugs Only - HCPCS Code": hcpcs_code,
-        "New therapy": "/Yes",
+        "New therapy": "/On",
     })
 
     # Administrative
     today = datetime.now().strftime("%m/%d/%Y")
     filled += _set(pdf, {
         "Submission Date": today,
-        "Request Type - Initial": "/Yes",
+        "Request Type - Initial": "/On",
         "Issuer Name": patient_data.get("insurer", ""),
         "Date Submitted": today,
         "Submitted to": patient_data.get("insurer", ""),
@@ -621,7 +592,7 @@ def fill_pa_form(
     # Service location (UHC only)
     location_field = ENCOUNTER_CLASS_TO_LOCATION.get(patient_data["encounter_class"])
     if location_field:
-        filled += _set(pdf, {location_field: "/Yes"})
+        filled += _set(pdf, {location_field: "/On"})
 
     # --- Drug history table (BCBS has 6 rows for prior medications) ---
     # Uses LLM-provided fields (drug_name, is_prior_therapy, failure_reason)

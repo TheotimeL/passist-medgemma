@@ -15,6 +15,24 @@
       </div>
     </div>
 
+    <!-- Review Progress Bar -->
+    <div v-if="extractionStore.complete && extractionStore.totalReviewableCriteria > 0" class="review-progress">
+      <div class="review-progress-header">
+        <span class="review-progress-label">
+          {{ extractionStore.reviewedCriteriaCount }}/{{ extractionStore.totalReviewableCriteria }} criteria reviewed
+        </span>
+        <span v-if="extractionStore.allCriteriaReviewed" class="review-complete-badge">
+          <v-icon size="10" class="mr-1">mdi-check</v-icon>Complete
+        </span>
+      </div>
+      <div class="review-progress-bar">
+        <div
+          class="review-progress-fill"
+          :style="{ width: (extractionStore.reviewedCriteriaCount / extractionStore.totalReviewableCriteria * 100) + '%' }"
+        />
+      </div>
+    </div>
+
     <!-- Tree Nodes -->
     <div class="tree-content">
       <template v-if="treeData">
@@ -227,6 +245,8 @@ onMounted(async () => {
     if (res.ok) {
       const data = await res.json()
       treeData.value = data
+      // Store reference for computing reviewable criteria count
+      extractionStore.setPolicyTree(data)
     }
   } catch {
     // Ignore — tree will show as loading
@@ -315,6 +335,48 @@ onMounted(async () => {
   background: #FCE8E6;
   padding: 1px 6px;
   border-radius: 4px;
+}
+
+/* Review Progress */
+.review-progress {
+  margin: 0 8px 8px;
+  padding: 8px 10px;
+  background: #F8F9FA;
+  border-radius: 6px;
+  border: 1px solid #E8EAED;
+}
+.review-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.review-progress-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #3C4043;
+}
+.review-complete-badge {
+  font-size: 9px;
+  font-weight: 600;
+  color: #137333;
+  background: #E6F4EA;
+  padding: 1px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+.review-progress-bar {
+  height: 4px;
+  background: #E8EAED;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.review-progress-fill {
+  height: 100%;
+  background: #34A853;
+  border-radius: 2px;
+  transition: width 0.3s ease;
 }
 
 /* Tree Content */

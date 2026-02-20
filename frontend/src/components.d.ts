@@ -11,15 +11,10 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    DossierPanel: typeof import('./components/DossierPanel.vue')['default']
-    FhirSummary: typeof import('./components/FhirSummary.vue')['default']
     FormField: typeof import('./components/FormField.vue')['default']
-    FormPanel: typeof import('./components/FormPanel.vue')['default']
     NoteViewer: typeof import('./components/NoteViewer.vue')['default']
-    PolicyTextView: typeof import('./components/PolicyTextView.vue')['default']
     PolicyTree: typeof import('./components/PolicyTree.vue')['default']
     PolicyTreeNode: typeof import('./components/PolicyTreeNode.vue')['default']
-    PolicyTreeView: typeof import('./components/PolicyTreeView.vue')['default']
     ReviewQueue: typeof import('./components/ReviewQueue.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

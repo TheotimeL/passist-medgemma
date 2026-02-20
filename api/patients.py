@@ -139,11 +139,23 @@ def list_patients():
 
 @router.get("/patients/{uuid}/fhir", response_model=PatientFhir)
 def get_patient_fhir(uuid: str):
+    from patient_data import SNOMED_TO_ICD10, ENCOUNTER_CLASS_TO_LOCATION
+
     full_uuid = _resolve_uuid(uuid)
     bundle_path = _find_fhir_bundle(full_uuid)
     if not bundle_path:
         raise HTTPException(status_code=404, detail="No FHIR bundle found for this patient")
     data = load_patient_from_fhir(bundle_path)
+
+    # Compute derived fields from FHIR data
+    icd_info = SNOMED_TO_ICD10.get(data.get("condition_snomed", ""))
+    if icd_info:
+        data["icd10_code"] = icd_info[0]
+        data["icd_version"] = "ICD-10"
+    data["place_of_service"] = ENCOUNTER_CLASS_TO_LOCATION.get(
+        data.get("encounter_class", ""), ""
+    )
+
     return PatientFhir(**data)
 
 

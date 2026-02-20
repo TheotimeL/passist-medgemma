@@ -31,13 +31,13 @@
           class="mr-2"
           @click="formStore.acceptAll(); triggerPdfRefresh()"
         >
-          Accept All ({{ formStore.suggestedCount }})
+          Save ({{ formStore.suggestedCount }})
         </v-btn>
         <v-btn
           color="primary"
           size="small"
           :loading="generatingPdf"
-          :disabled="formStore.acceptedCount === 0 && formStore.totalFilledCount === 0"
+          :disabled="!pdfSaveEnabled"
           @click="downloadPdf"
         >
           <v-icon start size="16">mdi-download</v-icon>
@@ -53,19 +53,99 @@
 
     <!-- Main Content: Review Queue (left) + PDF Preview (right) -->
     <div class="workspace-content">
-      <!-- Left Panel: Review Queue -->
-      <div class="workspace-left">
-        <ReviewQueue @field-accepted="onFieldAccepted" @view-source="onViewSource" />
+      <!-- Left Panel: Review Queue / Notes -->
+      <div class="workspace-left" :style="{ width: leftWidth + '%' }">
+        <!-- Left Panel Tabs -->
+        <div class="left-header">
+          <div class="left-tabs">
+            <button
+              class="left-tab"
+              :class="{ 'left-tab-active': leftMode === 'review' }"
+              @click="leftMode = 'review'"
+            >
+              <v-icon size="14" class="mr-1">mdi-clipboard-check</v-icon>
+              Review
+              <span v-if="formStore.suggestedCount > 0 && leftMode !== 'review'" class="tab-pending-dot" />
+            </button>
+            <button
+              class="left-tab"
+              :class="{ 'left-tab-active': leftMode === 'notes' }"
+              @click="leftMode = 'notes'"
+            >
+              <v-icon size="14" class="mr-1">mdi-file-document</v-icon>
+              Clinical Notes
+            </button>
+          </div>
+        </div>
+
+        <!-- Left: Review Queue -->
+        <div v-show="leftMode === 'review'" class="left-body">
+          <template v-if="fhirLoading">
+            <div class="ehr-loading">
+              <div class="ehr-loading-header">
+                <v-progress-circular indeterminate size="16" width="2" color="primary" class="mr-2" />
+                <span class="ehr-loading-status">{{ fhirLoadingStatus }}</span>
+              </div>
+              <div class="ehr-skeleton">
+                <div class="skeleton-section">
+                  <div class="skeleton-title" style="width: 40%">&nbsp;</div>
+                  <div class="skeleton-row" style="width: 70%">&nbsp;</div>
+                  <div class="skeleton-row" style="width: 55%">&nbsp;</div>
+                  <div class="skeleton-row" style="width: 65%">&nbsp;</div>
+                  <div class="skeleton-row" style="width: 45%">&nbsp;</div>
+                </div>
+                <div class="skeleton-section">
+                  <div class="skeleton-title" style="width: 35%">&nbsp;</div>
+                  <div class="skeleton-row" style="width: 60%">&nbsp;</div>
+                  <div class="skeleton-row" style="width: 50%">&nbsp;</div>
+                </div>
+                <div class="skeleton-section">
+                  <div class="skeleton-title" style="width: 30%">&nbsp;</div>
+                  <div class="skeleton-row" style="width: 75%">&nbsp;</div>
+                  <div class="skeleton-row" style="width: 40%">&nbsp;</div>
+                </div>
+              </div>
+            </div>
+          </template>
+          <ReviewQueue v-else @field-accepted="onFieldAccepted" @view-source="onViewSource" />
+        </div>
+
+        <!-- Left: Clinical Notes -->
+        <div v-if="leftMode === 'notes'" class="left-body left-notes-body">
+          <NoteViewer
+            v-if="patientStore.notes.length > 0"
+            :notes="patientStore.notes"
+            :selected-index="patientStore.selectedNoteIndex"
+            :highlight-text="highlightEvidence"
+            @update:selected-index="patientStore.selectedNoteIndex = $event"
+          />
+          <div v-else class="right-placeholder">
+            <v-icon size="40" color="grey-lighten-2">mdi-file-document-outline</v-icon>
+            <p class="text-body-2 text-medium-emphasis mt-3">No clinical notes available</p>
+          </div>
+        </div>
       </div>
 
-      <!-- Divider -->
-      <div class="workspace-divider" />
+      <!-- Resizable Divider -->
+      <div
+        class="workspace-divider"
+        :class="{ 'divider-dragging': isDragging }"
+        @mousedown="startDrag"
+      />
 
       <!-- Right Panel: PDF or Notes -->
       <div class="workspace-right">
         <!-- Right Panel Header (mode toggle) -->
         <div class="right-header">
           <div class="right-tabs">
+            <button
+              class="right-tab"
+              :class="{ 'right-tab-active': rightMode === 'notes' }"
+              @click="rightMode = 'notes'"
+            >
+              <v-icon size="14" class="mr-1">mdi-file-document</v-icon>
+              Clinical Notes
+            </button>
             <button
               class="right-tab"
               :class="{ 'right-tab-active': rightMode === 'pdf' }"
@@ -76,35 +156,32 @@
             </button>
             <button
               class="right-tab"
-              :class="{ 'right-tab-active': rightMode === 'notes' }"
-              @click="rightMode = 'notes'"
-            >
-              <v-icon size="14" class="mr-1">mdi-file-document</v-icon>
-              Clinical Notes
-              <span v-if="highlightEvidence" class="notes-dot" />
-            </button>
-            <button
-              v-if="extractionStore.results.length > 0 || extractionStore.complete"
-              class="right-tab"
-              :class="{ 'right-tab-active': rightMode === 'policy' }"
+              :class="{ 'right-tab-active': rightMode === 'policy', 'right-tab-complete': extractionStore.allCriteriaReviewed }"
               @click="rightMode = 'policy'"
             >
               <v-icon size="14" class="mr-1">mdi-shield-check</v-icon>
               Policy
-              <span v-if="extractionStore.treeEligibility === true" class="policy-dot policy-dot-pass" />
-              <span v-else-if="extractionStore.treeEligibility === false" class="policy-dot policy-dot-fail" />
+              <span v-if="extractionStore.allCriteriaReviewed" class="tab-complete-dot" />
+              <span v-else-if="extractionStore.results.length > 0 && !extractionStore.allCriteriaReviewed" class="tab-pending-dot" />
             </button>
-            <button
-              v-if="extractionStore.complete"
-              class="right-tab"
-              :class="{ 'right-tab-active': rightMode === 'justification' }"
-              @click="rightMode = 'justification'"
-            >
-              <v-icon size="14" class="mr-1">mdi-file-document-edit</v-icon>
-              Justification
-              <span v-if="formStore.justificationLoading" class="justification-dot justification-dot-loading" />
-              <span v-else-if="formStore.justificationText" class="justification-dot justification-dot-ready" />
-            </button>
+            <v-tooltip :text="!justificationTabAvailable ? 'Review all policy criteria first' : ''" location="bottom" :disabled="justificationTabAvailable">
+              <template #activator="{ props: tooltipProps }">
+                <button
+                  v-bind="tooltipProps"
+                  class="right-tab"
+                  :class="{ 'right-tab-active': rightMode === 'justification', 'right-tab-disabled': !justificationTabAvailable, 'right-tab-complete': justificationVisited }"
+                  :disabled="!justificationTabAvailable"
+                  @click="rightMode = 'justification'; justificationVisited = true"
+                >
+                  <v-icon v-if="!justificationTabAvailable" size="12" class="mr-1">mdi-lock-outline</v-icon>
+                  <v-icon v-else size="14" class="mr-1">mdi-file-document-edit</v-icon>
+                  Justification
+                  <span v-if="formStore.justificationLoading" class="justification-dot justification-dot-loading" />
+                  <span v-else-if="justificationVisited && formStore.justificationText" class="tab-complete-dot" />
+                  <span v-else-if="justificationTabAvailable && !justificationVisited" class="tab-pending-dot" />
+                </button>
+              </template>
+            </v-tooltip>
           </div>
           <div class="right-actions">
             <template v-if="rightMode === 'pdf'">
@@ -159,7 +236,7 @@
 
         <!-- Policy Mode -->
         <div v-show="rightMode === 'policy'" class="right-body policy-body">
-          <PolicyTree @view-source="(ev: string, sn?: string) => onViewSource(ev, sn)" />
+          <PolicyTree @view-source="(ev: string, sn?: string) => onPolicyViewSource(ev, sn)" />
         </div>
 
         <!-- Justification Mode — split: criteria reference + editor -->
@@ -240,7 +317,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePatientStore } from '@/stores/patient'
 import { useExtractionStore } from '@/stores/extraction'
@@ -277,10 +354,20 @@ const successMessage = ref('')
 const pdfPreviewUrl = ref<string | null>(null)
 const pdfStale = ref(false)
 const rightMode = ref<'pdf' | 'notes' | 'policy' | 'justification'>('notes')
+const leftMode = ref<'review' | 'notes'>('review')
+const leftWidth = ref(38)
+const isDragging = ref(false)
+const fhirLoading = ref(true)
+const fhirLoadingStatus = ref('Connecting to EHR...')
 const highlightEvidence = ref<string | null>(null)
 const pdfPage = ref(2) // Default to page 2 (actual form, not instructions)
 const pdfKey = ref(0) // Force iframe re-render on page change
+const justificationVisited = ref(false) // Track if justification tab was visited
 let refreshDebounce: ReturnType<typeof setTimeout> | null = null
+
+// Tab availability rules
+const justificationTabAvailable = computed(() => extractionStore.allCriteriaReviewed)
+const pdfSaveEnabled = computed(() => justificationVisited.value && (formStore.acceptedCount > 0 || formStore.totalFilledCount > 0))
 
 // Map field sections to PDF pages
 const sectionToPage: Record<string, number> = {
@@ -337,11 +424,11 @@ watch(() => extractionStore.results, (newResults) => {
   }
 }, { deep: true })
 
-// Watch extraction completion
+// Watch extraction completion — auto-switch to Policy tab
 watch(() => extractionStore.complete, (done) => {
   if (done && extractionStore.policyStatus) {
     const ps = extractionStore.policyStatus
-    successMessage.value = `Extraction complete: ${ps.met_count}/${ps.total_count} criteria met`
+    successMessage.value = `Extraction complete — review ${ps.met_count} criteria to continue`
     showSuccess.value = true
     // Fetch clinical justification after extraction, passing live results
     formStore.fetchJustification(uuid.value, extractionStore.results)
@@ -352,10 +439,25 @@ watch(() => extractionStore.complete, (done) => {
   }
 })
 
+// Watch all criteria reviewed — unlock justification tab
+watch(() => extractionStore.allCriteriaReviewed, (allDone) => {
+  if (allDone) {
+    successMessage.value = 'All criteria reviewed — review justification letter'
+    showSuccess.value = true
+    rightMode.value = 'justification'
+    justificationVisited.value = true
+  }
+})
+
 onMounted(async () => {
   formStore.reset()
   extractionStore.reset()
+  fhirLoading.value = true
+  fhirLoadingStatus.value = 'Connecting to EHR...'
   await patientStore.selectPatient(uuid.value)
+  fhirLoadingStatus.value = 'Loading patient records...'
+  await new Promise(resolve => setTimeout(resolve, 1500))
+  fhirLoading.value = false
   if (patientStore.fhirData) {
     formStore.buildFromFhir(patientStore.fhirData)
     formStore.addManualFields()
@@ -367,12 +469,37 @@ onMounted(async () => {
   }
 })
 
-function onViewSource(evidence: string, sourceNote?: string) {
+// --- Resizable divider ---
+function startDrag(e: MouseEvent) {
+  e.preventDefault()
+  isDragging.value = true
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', stopDrag)
+}
+
+function onDrag(e: MouseEvent) {
+  const container = document.querySelector('.workspace-content') as HTMLElement
+  if (!container) return
+  const rect = container.getBoundingClientRect()
+  const pct = ((e.clientX - rect.left) / rect.width) * 100
+  leftWidth.value = Math.min(70, Math.max(20, pct))
+}
+
+function stopDrag() {
+  isDragging.value = false
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
+}
+
+onUnmounted(() => {
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
+})
+
+function navigateToNote(evidence: string, sourceNote?: string) {
   if (sourceNote) {
-    // Navigate to the specific note that contains this evidence
     patientStore.selectNoteByFilename(sourceNote)
   } else if (evidence && patientStore.notes.length > 1) {
-    // Search all notes for the evidence text and select the matching one
     const evidenceNorm = evidence.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 80)
     const matchIdx = patientStore.notes.findIndex(note =>
       note.content.toLowerCase().replace(/\s+/g, ' ').includes(evidenceNorm)
@@ -382,7 +509,18 @@ function onViewSource(evidence: string, sourceNote?: string) {
     }
   }
   highlightEvidence.value = evidence
+}
+
+// ReviewQueue (left panel) → open notes in right panel
+function onViewSource(evidence: string, sourceNote?: string) {
+  navigateToNote(evidence, sourceNote)
   rightMode.value = 'notes'
+}
+
+// PolicyTree (right panel) → open notes in left panel
+function onPolicyViewSource(evidence: string, sourceNote?: string) {
+  navigateToNote(evidence, sourceNote)
+  leftMode.value = 'notes'
 }
 
 function onFieldAccepted(fieldIdOrSection: string) {
@@ -432,7 +570,7 @@ async function generatePreview() {
       body: JSON.stringify({
         uuid: uuid.value,
         fields: fieldUpdates,
-        insurer: 'uhc',
+        insurer: 'bcbs',
         justification_text: formStore.justificationText || null,
       }),
     })
@@ -469,7 +607,7 @@ async function downloadPdf() {
       body: JSON.stringify({
         uuid: uuid.value,
         fields: fieldUpdates,
-        insurer: 'uhc',
+        insurer: 'bcbs',
         justification_text: formStore.justificationText || null,
       }),
     })
@@ -567,7 +705,6 @@ async function downloadPdf() {
   overflow: hidden;
 }
 .workspace-left {
-  width: 38%;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -576,9 +713,15 @@ async function downloadPdf() {
   background: #fff;
 }
 .workspace-divider {
-  width: 1px;
+  width: 5px;
   background: #E0E0E0;
   flex-shrink: 0;
+  cursor: col-resize;
+  transition: background 0.15s;
+}
+.workspace-divider:hover,
+.divider-dragging {
+  background: #1967D2;
 }
 .workspace-right {
   flex: 1 1 0;
@@ -586,6 +729,49 @@ async function downloadPdf() {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+}
+
+/* --- Left Panel Tabs --- */
+.left-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: #fff;
+  border-bottom: 1px solid #E8EAED;
+}
+.left-tabs {
+  display: flex;
+  gap: 0;
+}
+.left-tab {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #5F6368;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.left-tab:hover {
+  color: #202124;
+  background: #F8F9FA;
+}
+.left-tab-active {
+  color: #1967D2;
+  border-bottom-color: #1967D2;
+}
+.left-body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+.left-notes-body {
+  padding: 16px;
 }
 
 /* --- Right Panel --- */
@@ -622,6 +808,31 @@ async function downloadPdf() {
 .right-tab-active {
   color: #1967D2;
   border-bottom-color: #1967D2;
+}
+.right-tab-disabled {
+  color: #BDC1C6 !important;
+  cursor: not-allowed !important;
+}
+.right-tab-disabled:hover {
+  background: none !important;
+  color: #BDC1C6 !important;
+}
+.right-tab-complete {
+  color: #137333;
+}
+.tab-complete-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34A853;
+  margin-left: 4px;
+}
+.tab-pending-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #F9AB00;
+  margin-left: 4px;
 }
 .notes-dot {
   width: 6px;
@@ -802,5 +1013,54 @@ async function downloadPdf() {
   justify-content: center;
   height: 100%;
   background: #F8F9FA;
+}
+
+/* EHR Loading State */
+.ehr-loading {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+}
+.ehr-loading-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 0 16px;
+}
+.ehr-loading-status {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1967D2;
+}
+.ehr-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.skeleton-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #FAFAFA;
+  border-radius: 6px;
+}
+.skeleton-title {
+  height: 10px;
+  background: #E0E0E0;
+  border-radius: 3px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+.skeleton-row {
+  height: 14px;
+  background: #E8EAED;
+  border-radius: 3px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+.skeleton-row:nth-child(odd) { animation-delay: 0.2s; }
+.skeleton-row:nth-child(even) { animation-delay: 0.4s; }
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 </style>

@@ -23,6 +23,18 @@
       </div>
     </div>
 
+    <!-- Expand/Collapse All -->
+    <div class="section-toolbar">
+      <button class="toolbar-btn" @click="expandAll">
+        <v-icon size="14" class="mr-1">mdi-unfold-more-horizontal</v-icon>
+        Expand All
+      </button>
+      <button class="toolbar-btn" @click="collapseAll">
+        <v-icon size="14" class="mr-1">mdi-unfold-less-horizontal</v-icon>
+        Collapse All
+      </button>
+    </div>
+
     <!-- Scrollable Review Content -->
     <div class="review-scroll">
       <!-- Section Groups -->
@@ -55,10 +67,10 @@
           </span>
           <button
             v-if="sectionPending(section.id) > 0"
-            class="accept-all-btn"
+            class="save-section-btn"
             @click.stop="acceptSection(section.id)"
           >
-            Accept{{ section.needsExtraction && extractionStore.isExtracting ? ' Current' : ' All' }}
+            Save{{ section.needsExtraction && extractionStore.isExtracting ? ' Current' : '' }}
           </button>
         </div>
 
@@ -70,57 +82,146 @@
             class="compact-row"
             :class="compactRowClass(field)"
           >
-            <span class="compact-label">{{ field.label }}</span>
+            <span class="compact-label" :class="{ 'compact-label-required': field.required }">{{ field.label }}</span>
 
             <!-- Editing inline -->
             <template v-if="editingField === field.fieldId">
               <input
-                ref="editInputRef"
+                :ref="autoFocus"
                 v-model="editValue"
                 class="compact-edit-input"
                 @keyup.enter="saveEdit(field.fieldId)"
-                @keyup.escape="editingField = null"
+                @keyup.escape="cancelEdit()"
+                @blur="saveEdit(field.fieldId)"
               />
-              <button class="compact-btn compact-save" @click="saveEdit(field.fieldId)">
-                <v-icon size="12">mdi-check</v-icon>
-              </button>
-              <button class="compact-btn compact-cancel" @click="editingField = null">
-                <v-icon size="12">mdi-close</v-icon>
-              </button>
             </template>
 
             <!-- Normal display -->
             <template v-else>
               <template v-if="field.value">
-                <span class="compact-value">{{ field.value }}</span>
-                <span v-if="field.status !== 'suggested'" class="compact-status">
-                  <v-icon size="12" :color="statusColor(field)">{{ statusIcon(field) }}</v-icon>
-                </span>
-                <button class="compact-edit-btn" @click.stop="startEdit(field)" title="Edit">
-                  <v-icon size="11">mdi-pencil</v-icon>
-                </button>
+                <span class="compact-value compact-clickable-value" @click.stop="startEdit(field)">{{ field.value }}</span>
+                <span class="source-chip" :class="'source-' + field.source">{{ sourceLabel(field.source) }}</span>
               </template>
               <template v-else-if="manualEntryField === field.fieldId">
                 <input
-                  ref="manualInputRef"
+                  :ref="autoFocus"
                   v-model="manualEntryValue"
                   class="compact-edit-input"
                   :placeholder="'Enter ' + field.label.toLowerCase()"
                   @keyup.enter="saveManualEntry(field.fieldId)"
-                  @keyup.escape="manualEntryField = null"
+                  @keyup.escape="cancelManualEntry()"
+                  @blur="saveManualEntry(field.fieldId)"
                 />
-                <button class="compact-btn compact-save" @click="saveManualEntry(field.fieldId)">
-                  <v-icon size="12">mdi-check</v-icon>
-                </button>
-                <button class="compact-btn compact-cancel" @click="manualEntryField = null">
-                  <v-icon size="12">mdi-close</v-icon>
-                </button>
               </template>
               <template v-else>
-                <span class="compact-value compact-empty compact-clickable" @click.stop="startManualEntry(field)">—</span>
+                <span
+                  v-if="field.required"
+                  class="compact-value compact-empty-required"
+                  @click.stop="startManualEntry(field)"
+                >Enter {{ field.label.toLowerCase() }}</span>
+                <span v-else class="compact-value compact-empty compact-clickable" @click.stop="startManualEntry(field)">—</span>
               </template>
             </template>
           </div>
+        </div>
+
+        <!-- DRUG HISTORY TABLE VIEW -->
+        <div v-if="!sectionCollapsed[section.id] && section.table" class="drug-table-wrap">
+          <table v-if="fieldGroups(section.id).length > 0" class="drug-table">
+            <thead>
+              <tr>
+                <th>Drug</th>
+                <th>Dose</th>
+                <th>Dates</th>
+                <th>Failure Reason</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="group in fieldGroups(section.id)"
+                :key="group.key"
+                class="drug-table-row"
+                :class="{ 'drug-table-row-reviewed': groupIsReviewed(group) }"
+              >
+                <td v-for="col in ['name', 'dose', 'dates', 'reason']" :key="col" class="drug-table-cell">
+                  <!-- Inline edit (existing value) -->
+                  <template v-if="editingField === tableFieldId(group, col)">
+                    <input
+                      :ref="autoFocus"
+                      v-model="editValue"
+                      class="compact-edit-input"
+                      @keyup.enter="saveEdit(tableFieldId(group, col))"
+                      @keyup.escape="cancelEdit()"
+                      @blur="saveEdit(tableFieldId(group, col))"
+                    />
+                  </template>
+                  <!-- Manual entry (empty cell) -->
+                  <template v-else-if="manualEntryField === tableFieldId(group, col)">
+                    <input
+                      :ref="autoFocus"
+                      v-model="manualEntryValue"
+                      class="compact-edit-input"
+                      @keyup.enter="saveManualEntry(tableFieldId(group, col))"
+                      @keyup.escape="cancelManualEntry()"
+                      @blur="saveManualEntry(tableFieldId(group, col))"
+                    />
+                  </template>
+                  <!-- Display -->
+                  <template v-else>
+                    <span
+                      v-if="tableFieldValue(group, col)"
+                      class="drug-table-value compact-clickable-value"
+                      @click.stop="startEdit(tableField(group, col)!)"
+                    >{{ tableFieldValue(group, col) }}</span>
+                    <span
+                      v-else-if="tableField(group, col)"
+                      class="drug-table-empty compact-clickable"
+                      @click.stop="startManualEntry(tableField(group, col)!)"
+                    >—</span>
+                    <span v-else class="drug-table-empty">—</span>
+                  </template>
+                </td>
+                <td class="drug-table-actions">
+                  <span v-if="groupPending(group) > 0" class="source-chip source-llm">AI</span>
+                  <button
+                    v-if="group.evidence && groupPending(group) > 0"
+                    class="action-link"
+                    @click="emit('viewSource', group.evidence!, group.sourceNote)"
+                    title="View in Notes"
+                  >
+                    <v-icon size="12">mdi-text-search</v-icon>
+                  </button>
+                  <button v-if="groupIsReviewed(group)" class="undo-btn drug-table-undo" @click="undoGroup(group)">undo</button>
+                  <button class="btn-remove" @click="removeGroup(group)" title="Remove drug">
+                    <v-icon size="12">mdi-delete-outline</v-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Skeleton during extraction -->
+          <div v-if="fieldGroups(section.id).length === 0 && extractionStore.isExtracting && section.needsExtraction" class="drug-table-skeleton">
+            <div class="skeleton-line" style="width: 100%">&nbsp;</div>
+            <div class="skeleton-line" style="width: 90%">&nbsp;</div>
+          </div>
+
+          <!-- Empty state -->
+          <div v-if="fieldGroups(section.id).length === 0 && !extractionStore.isExtracting" class="drug-empty">
+            <v-icon size="16" color="grey" class="mr-1">mdi-information-outline</v-icon>
+            <span>No drug history extracted</span>
+          </div>
+
+          <!-- Add Prior Drug button -->
+          <button
+            v-if="!extractionStore.isExtracting"
+            class="add-drug-btn"
+            @click="addManualDrugEntry(section.id)"
+          >
+            <v-icon size="14" class="mr-1">mdi-plus-circle-outline</v-icon>
+            Add Prior Drug
+          </button>
         </div>
 
         <!-- GROUPED DRUG VIEW for drug sections -->
@@ -133,15 +234,13 @@
             :class="{'drug-group-reviewed': groupIsReviewed(group), 'drug-group-empty': groupAllEmpty(group)}"
           >
             <div class="drug-group-header">
-              <v-icon size="14" :color="groupIsReviewed(group) ? 'success' : groupAllEmpty(group) ? '#80868B' : '#7B1FA2'" class="flex-shrink-0">
-                {{ groupIsReviewed(group) ? 'mdi-check-circle' : groupAllEmpty(group) ? 'mdi-clipboard-text-outline' : 'mdi-pill' }}
-              </v-icon>
               <span class="drug-group-name">{{ group.drugName }}</span>
               <span v-if="groupPending(group) > 0" class="source-chip source-llm">AI</span>
               <div class="drug-group-actions">
-                <button v-if="groupPending(group) > 0" class="btn-reject drug-btn" @click="rejectGroup(group)">Reject</button>
-                <button v-if="groupPending(group) > 0" class="btn-accept drug-btn" @click="acceptGroup(group)">Accept</button>
-                <button v-else-if="groupIsReviewed(group)" class="undo-btn drug-undo" @click="undoGroup(group)">undo</button>
+                <button v-if="groupIsReviewed(group)" class="undo-btn drug-undo" @click="undoGroup(group)">undo</button>
+                <button class="btn-remove drug-btn" @click="removeGroup(group)" title="Remove drug">
+                  <v-icon size="12">mdi-delete-outline</v-icon>
+                </button>
               </div>
             </div>
             <div class="drug-group-fields">
@@ -153,41 +252,28 @@
                 <span class="drug-field-label">{{ field.label }}</span>
                 <template v-if="editingField === field.fieldId">
                   <input
-                    ref="editInputRef"
+                    :ref="autoFocus"
                     v-model="editValue"
                     class="compact-edit-input"
                     @keyup.enter="saveEdit(field.fieldId)"
-                    @keyup.escape="editingField = null"
+                    @keyup.escape="cancelEdit()"
+                    @blur="saveEdit(field.fieldId)"
                   />
-                  <button class="compact-btn compact-save" @click="saveEdit(field.fieldId)">
-                    <v-icon size="12">mdi-check</v-icon>
-                  </button>
-                  <button class="compact-btn compact-cancel" @click="editingField = null">
-                    <v-icon size="12">mdi-close</v-icon>
-                  </button>
                 </template>
                 <template v-else>
                   <template v-if="field.value">
-                    <span class="drug-field-value">{{ field.value }}</span>
-                    <button class="compact-edit-btn" @click.stop="startEdit(field)" title="Edit">
-                      <v-icon size="11">mdi-pencil</v-icon>
-                    </button>
+                    <span class="drug-field-value compact-clickable-value" @click.stop="startEdit(field)">{{ field.value }}</span>
                   </template>
                   <template v-else-if="manualEntryField === field.fieldId">
                     <input
-                      ref="manualInputRef"
+                      :ref="autoFocus"
                       v-model="manualEntryValue"
                       class="compact-edit-input"
                       :placeholder="'Enter ' + field.label.toLowerCase()"
                       @keyup.enter="saveManualEntry(field.fieldId)"
-                      @keyup.escape="manualEntryField = null"
+                      @keyup.escape="cancelManualEntry()"
+                      @blur="saveManualEntry(field.fieldId)"
                     />
-                    <button class="compact-btn compact-save" @click="saveManualEntry(field.fieldId)">
-                      <v-icon size="12">mdi-check</v-icon>
-                    </button>
-                    <button class="compact-btn compact-cancel" @click="manualEntryField = null">
-                      <v-icon size="12">mdi-close</v-icon>
-                    </button>
                   </template>
                   <template v-else>
                     <span class="drug-field-value compact-empty">—</span>
@@ -224,7 +310,7 @@
         </div>
 
         <!-- CARD VIEW for AI-extracted sections (need more review) -->
-        <div v-if="!sectionCollapsed[section.id] && !section.compact && !section.grouped" class="section-fields">
+        <div v-if="!sectionCollapsed[section.id] && !section.compact && !section.grouped && !section.table" class="section-fields">
           <div
             v-for="field in sectionFields(section.id)"
             :key="field.fieldId"
@@ -234,11 +320,8 @@
             <!-- Accepted/Edited/Rejected: compact row -->
             <template v-if="field.status !== 'suggested'">
               <div class="item-compact">
-                <v-icon size="14" :color="statusColor(field)" class="flex-shrink-0">
-                  {{ statusIcon(field) }}
-                </v-icon>
                 <span class="item-label-sm">{{ field.label }}</span>
-                <span class="item-value-sm" :class="{ 'text-decoration-line-through text-disabled': field.status === 'rejected' }">
+                <span class="item-value-sm compact-clickable-value" :class="{ 'text-decoration-line-through text-disabled': field.status === 'rejected' }" @click.stop="startEdit(field)">
                   {{ field.value || field.originalValue }}
                 </span>
                 <button class="undo-btn" @click="undoField(field)">undo</button>
@@ -249,12 +332,15 @@
             <template v-else-if="field.value">
               <div class="item-pending">
                 <div class="item-top">
-                  <span class="item-label">{{ field.label }}</span>
+                  <span class="item-label" :class="{ 'compact-label-required': field.required }">{{ field.label }}</span>
                   <span class="source-chip" :class="'source-' + field.source">
                     {{ sourceLabel(field.source) }}
                   </span>
+                  <button v-if="field.evidence" class="action-link item-top-link" @click.stop="toggleEvidence(field)">
+                    {{ expandedEvidence === field.fieldId ? 'Hide Source' : 'View Source' }}
+                  </button>
                 </div>
-                <div class="item-value">{{ field.value }}</div>
+                <div class="item-value compact-clickable-value" @click.stop="startEdit(field)">{{ field.value }}</div>
 
                 <!-- Inline Evidence (expandable) -->
                 <div v-if="field.evidence && expandedEvidence === field.fieldId" class="evidence-box">
@@ -268,28 +354,16 @@
                   <p class="evidence-text">{{ field.evidence }}</p>
                 </div>
 
-                <div class="item-actions">
-                  <button v-if="field.evidence" class="action-link" @click="toggleEvidence(field)">
-                    {{ expandedEvidence === field.fieldId ? 'Hide Source' : 'View Source' }}
-                  </button>
-                  <div class="action-buttons">
-                    <button class="btn-reject" @click="formStore.rejectField(field.fieldId)">Reject</button>
-                    <button class="btn-edit" @click="startEdit(field)">Edit</button>
-                    <button class="btn-accept" @click="acceptAndNotify(field.fieldId)">Accept</button>
-                  </div>
-                </div>
-
                 <!-- Inline Edit -->
                 <div v-if="editingField === field.fieldId" class="edit-row">
                   <input
-                    ref="editInputRef"
+                    :ref="autoFocus"
                     v-model="editValue"
                     class="edit-input"
                     @keyup.enter="saveEdit(field.fieldId)"
-                    @keyup.escape="editingField = null"
+                    @keyup.escape="cancelEdit()"
+                    @blur="saveEdit(field.fieldId)"
                   />
-                  <button class="btn-save" @click="saveEdit(field.fieldId)">Save</button>
-                  <button class="btn-cancel" @click="editingField = null">Cancel</button>
                 </div>
               </div>
             </template>
@@ -301,15 +375,14 @@
                 <span class="item-label-sm">{{ field.label }}</span>
                 <template v-if="manualEntryField === field.fieldId">
                   <input
-                    ref="manualInputRef"
+                    :ref="autoFocus"
                     v-model="manualEntryValue"
                     class="edit-input manual-inline-input"
                     :placeholder="'Enter ' + field.label.toLowerCase()"
                     @keyup.enter="saveManualEntry(field.fieldId)"
-                    @keyup.escape="manualEntryField = null"
+                    @keyup.escape="cancelManualEntry()"
+                    @blur="saveManualEntry(field.fieldId)"
                   />
-                  <button class="btn-save btn-save-sm" @click="saveManualEntry(field.fieldId)">Save</button>
-                  <button class="btn-cancel btn-cancel-sm" @click="manualEntryField = null">Cancel</button>
                 </template>
                 <template v-else>
                   <button class="add-manually-btn" @click="startManualEntry(field)">
@@ -321,8 +394,8 @@
           </div>
         </div>
 
-        <!-- Skeleton for sections still loading -->
-        <div v-if="!sectionCollapsed[section.id] && sectionFields(section.id).length === 0 && extractionStore.isExtracting && section.needsExtraction" class="section-fields">
+        <!-- Skeleton for sections still loading (non-table sections only; table has its own) -->
+        <div v-if="!sectionCollapsed[section.id] && !section.table && sectionFields(section.id).length === 0 && extractionStore.isExtracting && section.needsExtraction" class="section-fields">
           <div class="review-item">
             <div class="skeleton-line" style="width: 60%">&nbsp;</div>
             <div class="skeleton-line" style="width: 80%">&nbsp;</div>
@@ -330,26 +403,102 @@
         </div>
       </div>
 
-      <!-- Eligibility + Justification hint — points to Policy tab -->
-      <div class="section-group" v-if="extractionStore.results.length > 0 || extractionStore.complete">
-        <div class="policy-hint-banner" :class="policyBadgeClass">
-          <v-icon size="16" class="mr-2">mdi-shield-check</v-icon>
-          <div class="policy-hint-text">
-            <span class="policy-hint-title">
-              {{ extractionStore.effectiveMetCount }}/{{ extractionStore.policyStatus?.total_count || '?' }} criteria met
-            </span>
-            <span class="policy-hint-sub">
-              Open the <strong>Policy</strong> tab to review eligibility tree &amp; clinical justification
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
+
+    <!-- Add Drug Dialog -->
+    <v-dialog v-model="showAddDrugDialog" max-width="420">
+      <v-card>
+        <v-card-title class="text-subtitle-1">
+          Add {{ addDrugTargetSection === 'step_therapy' ? 'Prior Drug' : 'Drug Request' }}
+        </v-card-title>
+        <v-card-text class="pb-2">
+          <v-text-field
+            v-model="addDrugForm.name"
+            label="Drug Name *"
+            density="compact"
+            variant="outlined"
+            class="mb-2"
+            hide-details
+          />
+          <v-text-field
+            v-model="addDrugForm.dose"
+            label="Dose"
+            density="compact"
+            variant="outlined"
+            class="mb-2"
+            hide-details
+          />
+          <template v-if="addDrugTargetSection === 'step_therapy'">
+            <v-text-field
+              v-model="addDrugForm.dates"
+              label="Dates"
+              density="compact"
+              variant="outlined"
+              class="mb-2"
+              hide-details
+            />
+            <v-text-field
+              v-model="addDrugForm.failureReason"
+              label="Failure Reason"
+              density="compact"
+              variant="outlined"
+              hide-details
+            />
+          </template>
+          <template v-else>
+            <v-text-field
+              v-model="addDrugForm.quantity"
+              label="Quantity"
+              density="compact"
+              variant="outlined"
+              class="mb-2"
+              hide-details
+            />
+            <v-text-field
+              v-model="addDrugForm.daysSupply"
+              label="Days Supply"
+              density="compact"
+              variant="outlined"
+              class="mb-2"
+              hide-details
+            />
+            <v-text-field
+              v-model="addDrugForm.route"
+              label="Route of Administration"
+              density="compact"
+              variant="outlined"
+              class="mb-2"
+              hide-details
+            />
+            <v-text-field
+              v-model="addDrugForm.duration"
+              label="Expected Therapy Duration"
+              density="compact"
+              variant="outlined"
+              class="mb-2"
+              hide-details
+            />
+            <v-text-field
+              v-model="addDrugForm.hcpcs"
+              label="HCPCS / J-Code"
+              density="compact"
+              variant="outlined"
+              hide-details
+            />
+          </template>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showAddDrugDialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" :disabled="!addDrugForm.name.trim()" @click="submitAddDrug">Add</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useFormStore, type FormField } from '@/stores/form'
 import { useExtractionStore } from '@/stores/extraction'
 
@@ -365,10 +514,28 @@ const sectionCollapsed = ref<Record<string, boolean>>({})
 const expandedEvidence = ref<string | null>(null)
 const editingField = ref<string | null>(null)
 const editValue = ref('')
-const editInputRef = ref<HTMLInputElement | null>(null)
 const manualEntryField = ref<string | null>(null)
 const manualEntryValue = ref('')
-const manualInputRef = ref<HTMLInputElement | null>(null)
+
+// Auto-focus callback: used as :ref on inputs so they focus immediately when mounted
+function autoFocus(el: any) {
+  if (el instanceof HTMLInputElement) el.focus()
+}
+
+// Add Drug Dialog state
+const showAddDrugDialog = ref(false)
+const addDrugTargetSection = ref<'step_therapy' | 'drug_request'>('step_therapy')
+const addDrugForm = ref({
+  name: '',
+  dose: '',
+  dates: '',
+  failureReason: '',
+  quantity: '',
+  daysSupply: '',
+  route: '',
+  duration: '',
+  hcpcs: '',
+})
 
 // Auto-collapse sections where all fields are reviewed, reopen when new AI fields arrive
 watch(() => formStore.fieldsBySection, () => {
@@ -390,11 +557,11 @@ watch(() => formStore.fieldsBySection, () => {
 // compact: false = show as cards (AI-extracted, needs review)
 // grouped: true = show as grouped drug cards (related fields together)
 const sections = [
-  { id: 'demographics', label: 'Patient Info', needsExtraction: false, compact: true, grouped: false },
-  { id: 'provider', label: 'Provider', needsExtraction: true, compact: true, grouped: false },
-  { id: 'diagnosis', label: 'Diagnosis', needsExtraction: true, compact: true, grouped: false },
-  { id: 'step_therapy', label: 'Drug History', needsExtraction: true, compact: false, grouped: true },
-  { id: 'drug_request', label: 'Drug Request', needsExtraction: true, compact: false, grouped: true },
+  { id: 'demographics', label: 'Patient Info', needsExtraction: false, compact: true, grouped: false, table: false },
+  { id: 'provider', label: 'Provider', needsExtraction: true, compact: true, grouped: false, table: false },
+  { id: 'diagnosis', label: 'Diagnosis', needsExtraction: true, compact: true, grouped: false, table: false },
+  { id: 'step_therapy', label: 'Drug History', needsExtraction: true, compact: false, grouped: false, table: true },
+  { id: 'drug_request', label: 'Drug Request', needsExtraction: true, compact: true, grouped: false, table: false },
 ]
 
 interface DrugGroup {
@@ -410,38 +577,28 @@ function fieldGroups(sectionId: string): DrugGroup[] {
   if (fields.length === 0) return []
 
   if (sectionId === 'drug_request') {
-    // Separate drug-specific fields from standalone service fields
-    const drugFields = fields.filter(f => f.fieldId.startsWith('requested_') || f.fieldId.startsWith('manual_drug_'))
-    const serviceFields = fields.filter(f => !f.fieldId.startsWith('requested_') && !f.fieldId.startsWith('manual_drug_'))
+    // All drug_request fields in one card
     const groups: DrugGroup[] = []
 
-    if (drugFields.length > 0) {
-      const nameField = drugFields.find(f => f.label.toLowerCase().includes('drug'))
+    if (fields.length > 0) {
+      const nameField = fields.find(f => f.label.toLowerCase().includes('drug') && !f.label.toLowerCase().includes('duration'))
       groups.push({
         key: 'drug_request',
         drugName: nameField?.value || 'Drug Request',
-        fields: drugFields,
-        evidence: drugFields[0]?.evidence,
-        sourceNote: drugFields[0]?.sourceNote,
-      })
-    }
-
-    if (serviceFields.length > 0) {
-      groups.push({
-        key: 'service_details',
-        drugName: 'Service Details',
-        fields: serviceFields,
+        fields,
+        evidence: fields.find(f => f.evidence)?.evidence,
+        sourceNote: fields.find(f => f.sourceNote)?.sourceNote,
       })
     }
 
     return groups
   }
 
-  // Group by prefix (strip _name, _dates, _reason, _dose suffix)
+  // Group by prefix (strip field suffix)
   const groupMap: Record<string, FormField[]> = {}
   const groupOrder: string[] = []
   for (const f of fields) {
-    const key = f.fieldId.replace(/_(name|dates|reason|dose)$/, '')
+    const key = f.fieldId.replace(/_(name|dates|reason|dose|quantity|days_supply|route|duration|hcpcs)$/, '')
     if (!groupMap[key]) {
       groupMap[key] = []
       groupOrder.push(key)
@@ -497,27 +654,108 @@ function undoGroup(group: DrugGroup) {
   }
 }
 
+function removeGroup(group: DrugGroup) {
+  for (const f of group.fields) {
+    formStore.removeField(f.fieldId)
+  }
+}
+
+// Table view helpers — map column names to field suffixes
+const colSuffixMap: Record<string, string[]> = {
+  name: ['_name'],
+  dose: ['_dose'],
+  dates: ['_dates'],
+  reason: ['_reason'],
+}
+
+function tableField(group: DrugGroup, col: string): FormField | undefined {
+  const suffixes = colSuffixMap[col] || [`_${col}`]
+  return group.fields.find(f => suffixes.some(s => f.fieldId.endsWith(s)))
+}
+
+function tableFieldId(group: DrugGroup, col: string): string {
+  return tableField(group, col)?.fieldId ?? ''
+}
+
+function tableFieldValue(group: DrugGroup, col: string): string {
+  return tableField(group, col)?.value ?? ''
+}
+
 let manualDrugCounter = 0
 
 function addManualDrugEntry(sectionId: string) {
-  manualDrugCounter++
-  const prefix = sectionId === 'step_therapy'
-    ? `manual_prior_drug_${manualDrugCounter}`
-    : `manual_drug_${manualDrugCounter}`
+  addDrugTargetSection.value = sectionId as 'step_therapy' | 'drug_request'
+  addDrugForm.value = { name: '', dose: '', dates: '', failureReason: '', quantity: '', daysSupply: '', route: '', duration: '', hcpcs: '' }
+  showAddDrugDialog.value = true
+}
 
-  if (sectionId === 'step_therapy') {
+function submitAddDrug() {
+  const form = addDrugForm.value
+  const section = addDrugTargetSection.value
+
+  if (section === 'step_therapy') {
+    manualDrugCounter++
+    const prefix = `manual_prior_drug_${manualDrugCounter}`
     formStore.addManualDrug(prefix, 'step_therapy', [
       { suffix: '_name', label: 'Prior Drug' },
       { suffix: '_dates', label: 'Dates' },
       { suffix: '_reason', label: 'Failure Reason' },
       { suffix: '_dose', label: 'Dose' },
     ])
+    if (form.name.trim()) formStore.editField(`${prefix}_name`, form.name.trim())
+    if (form.dose.trim()) formStore.editField(`${prefix}_dose`, form.dose.trim())
+    if (form.dates.trim()) formStore.editField(`${prefix}_dates`, form.dates.trim())
+    if (form.failureReason.trim()) formStore.editField(`${prefix}_reason`, form.failureReason.trim())
   } else {
-    formStore.addManualDrug(prefix, 'drug_request', [
-      { suffix: '_name', label: 'Requested Drug' },
-      { suffix: '_dose', label: 'Drug Dose' },
-    ])
+    const hasRequestedDrug = !!formStore.fields['requested_drug']
+    let prefix: string
+    if (!hasRequestedDrug) {
+      prefix = 'requested'
+      formStore.addManualDrug(prefix, 'drug_request', [
+        { suffix: '_drug', label: 'Requested Drug' },
+        { suffix: '_dose', label: 'Drug Dose' },
+      ])
+      if (form.name.trim()) formStore.editField(`${prefix}_drug`, form.name.trim())
+      if (form.dose.trim()) formStore.editField(`${prefix}_dose`, form.dose.trim())
+    } else {
+      manualDrugCounter++
+      prefix = `manual_drug_${manualDrugCounter}`
+      formStore.addManualDrug(prefix, 'drug_request', [
+        { suffix: '_name', label: 'Requested Drug' },
+        { suffix: '_dose', label: 'Drug Dose' },
+        { suffix: '_quantity', label: 'Quantity' },
+        { suffix: '_days_supply', label: 'Days Supply' },
+        { suffix: '_route', label: 'Route of Administration' },
+        { suffix: '_duration', label: 'Expected Therapy Duration' },
+        { suffix: '_hcpcs', label: 'HCPCS / J-Code' },
+      ])
+      if (form.name.trim()) formStore.editField(`${prefix}_name`, form.name.trim())
+      if (form.dose.trim()) formStore.editField(`${prefix}_dose`, form.dose.trim())
+      if (form.quantity.trim()) formStore.editField(`${prefix}_quantity`, form.quantity.trim())
+      if (form.daysSupply.trim()) formStore.editField(`${prefix}_days_supply`, form.daysSupply.trim())
+      if (form.route.trim()) formStore.editField(`${prefix}_route`, form.route.trim())
+      if (form.duration.trim()) formStore.editField(`${prefix}_duration`, form.duration.trim())
+      if (form.hcpcs.trim()) formStore.editField(`${prefix}_hcpcs`, form.hcpcs.trim())
+    }
+    // Also populate the standalone fields if they exist and are empty
+    if (form.quantity.trim() && formStore.fields['quantity'] && !formStore.fields['quantity'].value) {
+      formStore.editField('quantity', form.quantity.trim())
+    }
+    if (form.daysSupply.trim() && formStore.fields['days_supply'] && !formStore.fields['days_supply'].value) {
+      formStore.editField('days_supply', form.daysSupply.trim())
+    }
+    if (form.route.trim() && formStore.fields['route_of_admin'] && !formStore.fields['route_of_admin'].value) {
+      formStore.editField('route_of_admin', form.route.trim())
+    }
+    if (form.duration.trim() && formStore.fields['therapy_duration'] && !formStore.fields['therapy_duration'].value) {
+      formStore.editField('therapy_duration', form.duration.trim())
+    }
+    if (form.hcpcs.trim() && formStore.fields['hcpcs_code'] && !formStore.fields['hcpcs_code'].value) {
+      formStore.editField('hcpcs_code', form.hcpcs.trim())
+    }
   }
+
+  showAddDrugDialog.value = false
 }
 
 const totalCount = computed(() => Object.values(formStore.fields).filter(f => f.value).length)
@@ -533,18 +771,6 @@ const rejectedCount = computed(() =>
 const progressPercent = computed(() => {
   if (totalCount.value === 0) return 0
   return (reviewedCount.value / totalCount.value) * 100
-})
-
-const policyBadgeClass = computed(() => {
-  const ps = extractionStore.policyStatus
-  if (!ps) return ''
-  const treeResult = extractionStore.treeEligibility
-  if (treeResult === true) return 'status-done'
-  if (treeResult === false && extractionStore.overrideCount === 0) return 'status-rejected'
-  if (extractionStore.effectiveMetCount >= ps.total_count) return 'status-done'
-  if (ps.overall === true) return 'status-done'
-  if (ps.overall === false && extractionStore.overrideCount === 0) return 'status-rejected'
-  return 'status-pending'
 })
 
 function sectionFields(section: string) {
@@ -572,6 +798,18 @@ function sectionIconColor(section: string) {
 
 function toggleSection(id: string) {
   sectionCollapsed.value[id] = !sectionCollapsed.value[id]
+}
+
+function expandAll() {
+  for (const section of sections) {
+    sectionCollapsed.value[section.id] = false
+  }
+}
+
+function collapseAll() {
+  for (const section of sections) {
+    sectionCollapsed.value[section.id] = true
+  }
 }
 
 function acceptSection(section: string) {
@@ -649,27 +887,40 @@ function toggleEvidence(field: FormField) {
 function startEdit(field: FormField) {
   editValue.value = field.value
   editingField.value = field.fieldId
-  nextTick(() => editInputRef.value?.focus())
+  if (field.evidence) {
+    emit('viewSource', field.evidence, field.sourceNote)
+  }
 }
 
 function startManualEntry(field: FormField) {
   manualEntryValue.value = ''
   manualEntryField.value = field.fieldId
-  nextTick(() => manualInputRef.value?.focus())
 }
 
 function saveManualEntry(fieldId: string) {
+  if (!manualEntryField.value) return  // Already closed (by Escape or another save)
   if (manualEntryValue.value.trim()) {
     formStore.editField(fieldId, manualEntryValue.value.trim())
     manualEntryField.value = null
     emit('fieldAccepted', fieldId)
+  } else {
+    manualEntryField.value = null
   }
 }
 
+function cancelManualEntry() {
+  manualEntryField.value = null
+}
+
 function saveEdit(fieldId: string) {
+  if (!editingField.value) return  // Already closed (by Escape or another save)
   formStore.editField(fieldId, editValue.value)
   editingField.value = null
   emit('fieldAccepted', fieldId)
+}
+
+function cancelEdit() {
+  editingField.value = null  // Setting to null first means blur handler's saveEdit will no-op
 }
 </script>
 
@@ -726,6 +977,32 @@ function saveEdit(fieldId: string) {
 .stat-edited { color: #1967D2; background: #E8F0FE; }
 .stat-rejected { color: #C5221F; background: #FCE8E6; }
 
+/* --- Section Toolbar --- */
+.section-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+  padding: 4px 12px;
+  border-bottom: 1px solid #F1F3F4;
+}
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #5F6368;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.1s;
+}
+.toolbar-btn:hover {
+  color: #1967D2;
+  background: #E8F0FE;
+}
+
 /* --- Scroll --- */
 .review-scroll {
   flex: 1;
@@ -778,7 +1055,7 @@ function saveEdit(fieldId: string) {
 .status-done { color: #137333; background: #E6F4EA; }
 .status-rejected { color: #C5221F; background: #FCE8E6; }
 .status-empty { color: #5F6368; background: #E8EAED; }
-.accept-all-btn {
+.save-section-btn {
   font-size: 10px;
   font-weight: 600;
   color: #137333;
@@ -790,7 +1067,7 @@ function saveEdit(fieldId: string) {
   margin-left: 6px;
   transition: all 0.15s ease;
 }
-.accept-all-btn:hover { background: #E6F4EA; }
+.save-section-btn:hover { background: #E6F4EA; }
 .ai-pending-badge {
   display: inline-flex;
   align-items: center;
@@ -821,27 +1098,51 @@ function saveEdit(fieldId: string) {
 .compact-row:hover {
   background: #F1F3F4;
 }
-.compact-row:hover .compact-edit-btn {
-  opacity: 1;
-}
 .compact-label {
   font-size: 11px;
   color: #80868B;
   min-width: 90px;
   flex-shrink: 0;
 }
+.compact-label-required {
+  font-weight: 600;
+  color: #3C4043;
+}
 .compact-value {
   font-size: 12px;
   color: #202124;
   font-weight: 500;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
+  white-space: normal;
 }
 .compact-empty {
   color: #BDC1C6;
   font-weight: 400;
+}
+.compact-clickable-value {
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.compact-clickable-value:hover {
+  text-decoration: underline dashed;
+  color: #1967D2;
+}
+.compact-empty-required {
+  cursor: text;
+  font-weight: 400;
+  font-size: 11px;
+  color: #B06000;
+  background: #FFF8E1;
+  border: 1px dashed #F9AB00;
+  border-radius: 4px;
+  padding: 1px 8px;
+  flex: 1;
+  transition: all 0.1s;
+}
+.compact-empty-required:hover {
+  background: #FFF3CD;
+  border-color: #E69500;
 }
 .compact-clickable {
   cursor: text;
@@ -851,24 +1152,6 @@ function saveEdit(fieldId: string) {
 .compact-clickable:hover {
   color: #1967D2;
   border-bottom-color: #1967D2;
-}
-.compact-status {
-  flex-shrink: 0;
-}
-.compact-edit-btn {
-  opacity: 0;
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #80868B;
-  padding: 2px;
-  border-radius: 3px;
-  transition: all 0.1s;
-}
-.compact-edit-btn:hover {
-  color: #1967D2;
-  background: #E8F0FE;
 }
 .compact-accepted { background: #F6FFF8; }
 .compact-edited { background: #F0F7FF; }
@@ -937,9 +1220,8 @@ function saveEdit(fieldId: string) {
   color: #202124;
   font-weight: 500;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
+  white-space: normal;
 }
 .item-done { background: #FAFAFA; }
 .item-done:hover { background: #F1F3F4; }
@@ -960,8 +1242,8 @@ function saveEdit(fieldId: string) {
 /* Pending card (needs review) */
 .item-pending {
   padding: 10px 12px;
-  background: #FFFBF0;
-  border: 1px solid #F9AB00;
+  background: #FAFBFC;
+  border: 1px solid #E8EAED;
   border-left: 3px solid #F9AB00;
   border-radius: 6px;
   margin-bottom: 4px;
@@ -985,6 +1267,9 @@ function saveEdit(fieldId: string) {
   padding: 1px 6px;
   border-radius: 8px;
   text-transform: uppercase;
+}
+.item-top-link {
+  margin-left: auto;
 }
 .source-fhir { color: #1967D2; background: #E8F0FE; }
 .source-llm { color: #7B1FA2; background: #F3E8FD; }
@@ -1167,6 +1452,19 @@ function saveEdit(fieldId: string) {
   font-size: 10px !important;
   padding: 2px 10px !important;
 }
+.btn-remove {
+  color: #80868B;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px !important;
+  border-radius: 4px;
+  transition: all 0.1s;
+}
+.btn-remove:hover {
+  color: #C5221F;
+  background: #FCE8E6;
+}
 .drug-undo {
   opacity: 1 !important;
 }
@@ -1180,9 +1478,6 @@ function saveEdit(fieldId: string) {
   padding: 1px 0;
   min-height: 22px;
 }
-.drug-field-row:hover .compact-edit-btn {
-  opacity: 1;
-}
 .drug-field-label {
   font-size: 10px;
   color: #80868B;
@@ -1194,9 +1489,8 @@ function saveEdit(fieldId: string) {
   color: #202124;
   font-weight: 500;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
+  white-space: normal;
 }
 .drug-group-footer {
   padding: 2px 10px 6px 30px;
@@ -1230,44 +1524,68 @@ function saveEdit(fieldId: string) {
 }
 
 /* ========================================
-   POLICY HINT BANNER
+   DRUG HISTORY TABLE VIEW
    ======================================== */
-.policy-hint-banner {
+.drug-table-wrap {
+  padding: 4px 8px 6px;
+}
+.drug-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.drug-table th {
+  font-size: 10px;
+  font-weight: 600;
+  color: #80868B;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid #E8EAED;
+  white-space: nowrap;
+}
+.drug-table-row {
+  transition: background 0.1s;
+}
+.drug-table-row:hover {
+  background: #F1F3F4;
+}
+.drug-table-row-reviewed {
+  opacity: 0.7;
+}
+.drug-table-cell {
+  padding: 5px 8px;
+  border-bottom: 1px solid #F1F3F4;
+  vertical-align: top;
+}
+.drug-table-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: #202124;
+  word-break: break-word;
+  white-space: normal;
+  display: block;
+}
+.drug-table-empty {
+  color: #BDC1C6;
+  font-weight: 400;
+  cursor: text;
+}
+.drug-table-actions {
+  padding: 4px 4px;
+  border-bottom: 1px solid #F1F3F4;
+  white-space: nowrap;
   display: flex;
   align-items: center;
-  padding: 10px 12px;
-  margin: 0 8px 4px;
-  border-radius: 8px;
-  border: 1px solid #E8EAED;
-  background: #F8F9FA;
-  cursor: default;
+  gap: 4px;
+  justify-content: flex-end;
 }
-.policy-hint-banner.status-done {
-  background: #E6F4EA;
-  border-color: #34A853;
+.drug-table-undo {
+  opacity: 1 !important;
 }
-.policy-hint-banner.status-rejected {
-  background: #FCE8E6;
-  border-color: #EA4335;
-}
-.policy-hint-banner.status-pending {
-  background: #FEF7E0;
-  border-color: #F9AB00;
-}
-.policy-hint-text {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-.policy-hint-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #202124;
-}
-.policy-hint-sub {
-  font-size: 10px;
-  color: #5F6368;
-  margin-top: 1px;
+.drug-table-skeleton {
+  padding: 8px 12px;
 }
 
 /* Skeleton */

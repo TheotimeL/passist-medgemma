@@ -23,14 +23,17 @@ from fastapi.staticfiles import StaticFiles
 async def lifespan(app: FastAPI):
     print("PA Form Auto-Fill API starting...")
 
-    # Load MedGemma model at startup (unless SKIP_MODEL=1)
-    if not os.environ.get("SKIP_MODEL"):
+    # Load extraction service at startup
+    # SKIP_MODEL only skips the heavy MLX model; Gemini backend is lightweight
+    skip = os.environ.get("SKIP_MODEL")
+    backend = os.environ.get("EXTRACTION_BACKEND") or "mlx"
+    if not skip or backend != "mlx":
         try:
             from extraction_service import ExtractionService
             svc = ExtractionService.get_instance()
             svc.initialize()
         except Exception as e:
-            print(f"WARNING: Failed to load MedGemma model: {e}")
+            print(f"WARNING: Failed to initialize extraction service: {e}")
             print("Live extraction will be unavailable. Pre-computed results still work.")
     else:
         print("SKIP_MODEL=1 — using pre-computed extraction results only.")

@@ -29,6 +29,9 @@ export interface PatientFhir {
   insurer: string
   latest_encounter_date: string
   encounter_class: string
+  icd10_code: string
+  icd_version: string
+  place_of_service: string
 }
 
 export interface NoteFile {
