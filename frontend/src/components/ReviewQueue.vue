@@ -232,13 +232,11 @@
                       @click.stop="startEdit(tableField(group, col.key)!)"
                     >{{ tableFieldValue(group, col.key) }}</span>
                     <span
-                      v-else-if="tableField(group, col.key) && col.key === 'strength' && tableFieldValue(group, 'name')"
-                      class="drug-table-empty drug-table-warning compact-clickable"
+                      v-else-if="tableField(group, col.key)?.required || (tableField(group, col.key) && col.key === 'strength' && tableFieldValue(group, 'name'))"
+                      class="compact-empty-required"
+                      :class="{ 'compact-empty-required-error': formStore.highlightedRequiredFields.has(tableField(group, col.key)!.fieldId) }"
                       @click.stop="startManualEntry(tableField(group, col.key)!)"
-                    >
-                      <v-icon size="12" color="warning" class="mr-1">mdi-alert-circle</v-icon>
-                      Add strength
-                    </span>
+                    >Enter {{ tableField(group, col.key)!.label.toLowerCase() }}</span>
                     <span
                       v-else-if="tableField(group, col.key)"
                       class="drug-table-empty compact-clickable"
@@ -604,13 +602,6 @@
               class="mb-2"
               hide-details
             />
-            <v-text-field
-              v-model="addDrugForm.hcpcs"
-              label="HCPCS / J-Code"
-              density="compact"
-              variant="outlined"
-              hide-details
-            />
           </template>
         </v-card-text>
         <v-card-actions>
@@ -637,6 +628,7 @@ const formStore = useFormStore()
 const extractionStore = useExtractionStore()
 
 const sectionCollapsed = ref<Record<string, boolean>>({})
+const userExpandedSections = ref<Set<string>>(new Set())
 const expandedEvidence = ref<string | null>(null)
 const editingField = ref<string | null>(null)
 const editValue = ref('')
@@ -678,7 +670,6 @@ const addDrugForm = ref({
   daysSupply: '',
   route: '',
   duration: '',
-  hcpcs: '',
 })
 
 // Check if a section has empty manual/required fields that still need doctor input
@@ -689,8 +680,12 @@ function sectionHasEmptyManualFields(section: string): boolean {
 }
 
 // Smart auto-collapse: collapse sections as fields are reviewed, but pending AI fields stay visible
+// Sections the user manually expanded stay open until the user manually collapses them.
 watch(() => formStore.fieldsBySection, () => {
   for (const section of sections) {
+    // Skip auto-collapsing sections the user has manually expanded
+    if (userExpandedSections.value.has(section.id)) continue
+
     const fields = sectionFields(section.id)
     const pending = sectionPending(section.id)
     const aiPending = sectionAiPending(section.id)
@@ -758,7 +753,7 @@ function fieldGroups(sectionId: string): DrugGroup[] {
   const groupMap: Record<string, FormField[]> = {}
   const groupOrder: string[] = []
   for (const f of fields) {
-    const key = f.fieldId.replace(/_(name|dates|reason|dose|strength|frequency|quantity|days_supply|route|duration|hcpcs)$/, '')
+    const key = f.fieldId.replace(/_(name|dates|reason|dose|strength|frequency|quantity|days_supply|route|duration)$/, '')
     if (!groupMap[key]) {
       groupMap[key] = []
       groupOrder.push(key)
@@ -836,7 +831,6 @@ const colSuffixMap: Record<string, string[]> = {
   frequency: ['_frequency'],
   dates: ['_dates'],
   reason: ['_reason'],
-  hcpcs: ['_hcpcs'],
   quantity: ['_quantity'],
   days_supply: ['_days_supply'],
   route: ['_route'],
@@ -855,7 +849,6 @@ function tableColumns(sectionId: string): TableColumn[] {
       { key: 'quantity', label: 'Qty' },
       { key: 'days_supply', label: 'Days' },
       { key: 'duration', label: 'Duration' },
-      { key: 'hcpcs', label: 'HCPCS' },
     ]
   }
   return [
@@ -871,7 +864,6 @@ function tableColumns(sectionId: string): TableColumn[] {
 const drugRequestFieldMap: Record<string, string[]> = {
   name: ['requested_drug'],
   strength: ['requested_dose'],
-  hcpcs: ['hcpcs_code'],
   quantity: ['quantity'],
   days_supply: ['days_supply'],
   route: ['route_of_admin'],
@@ -902,7 +894,7 @@ let manualDrugCounter = 0
 
 function addManualDrugEntry(sectionId: string) {
   addDrugTargetSection.value = sectionId as 'step_therapy' | 'drug_request'
-  addDrugForm.value = { name: '', dose: '', frequency: '', dates: '', failureReason: '', quantity: '', daysSupply: '', route: '', duration: '', hcpcs: '' }
+  addDrugForm.value = { name: '', dose: '', frequency: '', dates: '', failureReason: '', quantity: '', daysSupply: '', route: '', duration: '' }
   showAddDrugDialog.value = true
 }
 
@@ -946,7 +938,6 @@ function submitAddDrug() {
         { suffix: '_days_supply', label: 'Days Supply' },
         { suffix: '_route', label: 'Route of Administration' },
         { suffix: '_duration', label: 'Expected Therapy Duration' },
-        { suffix: '_hcpcs', label: 'HCPCS / J-Code' },
       ])
       if (form.name.trim()) formStore.editField(`${prefix}_name`, form.name.trim())
       if (form.dose.trim()) formStore.editField(`${prefix}_dose`, form.dose.trim())
@@ -954,7 +945,6 @@ function submitAddDrug() {
       if (form.daysSupply.trim()) formStore.editField(`${prefix}_days_supply`, form.daysSupply.trim())
       if (form.route.trim()) formStore.editField(`${prefix}_route`, form.route.trim())
       if (form.duration.trim()) formStore.editField(`${prefix}_duration`, form.duration.trim())
-      if (form.hcpcs.trim()) formStore.editField(`${prefix}_hcpcs`, form.hcpcs.trim())
     }
     // Also populate the standalone fields if they exist and are empty
     if (form.quantity.trim() && formStore.fields['quantity'] && !formStore.fields['quantity'].value) {
@@ -968,9 +958,6 @@ function submitAddDrug() {
     }
     if (form.duration.trim() && formStore.fields['therapy_duration'] && !formStore.fields['therapy_duration'].value) {
       formStore.editField('therapy_duration', form.duration.trim())
-    }
-    if (form.hcpcs.trim() && formStore.fields['hcpcs_code'] && !formStore.fields['hcpcs_code'].value) {
-      formStore.editField('hcpcs_code', form.hcpcs.trim())
     }
   }
 
@@ -1077,12 +1064,21 @@ function sectionIconColor(section: string) {
 }
 
 function toggleSection(id: string) {
-  sectionCollapsed.value[id] = !sectionCollapsed.value[id]
+  const willCollapse = !sectionCollapsed.value[id]
+  sectionCollapsed.value[id] = willCollapse
+  if (willCollapse) {
+    // User manually collapsed — remove from userExpandedSections so auto-collapse can work
+    userExpandedSections.value.delete(id)
+  } else {
+    // User manually expanded — protect from auto-collapse
+    userExpandedSections.value.add(id)
+  }
 }
 
 function expandAll() {
   for (const section of sections) {
     sectionCollapsed.value[section.id] = false
+    userExpandedSections.value.add(section.id)
   }
 }
 
@@ -1090,6 +1086,7 @@ function collapseAll() {
   for (const section of sections) {
     sectionCollapsed.value[section.id] = true
   }
+  userExpandedSections.value.clear()
 }
 
 function acceptSection(section: string) {
@@ -1150,6 +1147,8 @@ function toggleEvidence(field: FormField) {
 function startEdit(field: FormField) {
   editValue.value = field.value
   editingField.value = field.fieldId
+  // Protect this section from auto-collapse while the doctor is working in it
+  userExpandedSections.value.add(field.section)
   if (field.evidence) {
     emit('viewSource', field.evidence, field.sourceNote)
   }
@@ -1158,6 +1157,8 @@ function startEdit(field: FormField) {
 function startManualEntry(field: FormField) {
   manualEntryValue.value = ''
   manualEntryField.value = field.fieldId
+  // Protect this section from auto-collapse while the doctor is working in it
+  userExpandedSections.value.add(field.section)
 }
 
 function saveManualEntry(fieldId: string) {

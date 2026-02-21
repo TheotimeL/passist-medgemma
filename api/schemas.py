@@ -89,3 +89,12 @@ class GeneratePdfRequest(BaseModel):
     fields: list[FormFieldUpdate]
     insurer: str = "bcbs"
     justification_text: str | None = None  # Doctor-edited justification (overrides auto-generated)
+
+
+class GeneratePasBundleRequest(BaseModel):
+    uuid: str
+    fields: list[FormFieldUpdate]
+    insurer: str = "bcbs"
+    justification_text: str | None = None
+    met_criteria: list[dict] = []
+    overrides: dict[str, bool] = {}

@@ -74,8 +74,6 @@ FIELD_ID_TO_PDF: dict[str, list[str]] = {
     "days_supply": ["Requested Prescription Drug Days Supply"],
     "route_of_admin": ["Requested Prescription Drug Route of Administration"],
     "therapy_duration": ["Requested Prescription Drug Expected Therapy Duration"],
-    "hcpcs_code": ["For Provider Administered Drugs Only - HCPCS Code"],
-
     # --- Section VII: Diagnosis ---
     "icd10_code": ["ICD Code"],
     "icd_version": ["ICD Version"],
@@ -317,13 +315,7 @@ def generate_pdf(request: GeneratePdfRequest):
         )
         _pdf_set(pdf, "Patients diagnosis related to this request", diag_combined)
 
-    # --- HCPCS auto-inference from drug name ---
     if "requested_drug" in accepted:
-        if "hcpcs_code" not in accepted:
-            hcpcs = DRUG_TO_HCPCS.get(accepted["requested_drug"].lower(), "")
-            if hcpcs:
-                _pdf_set(pdf, "For Provider Administered Drugs Only - HCPCS Code", hcpcs)
-                filled += 1
         _pdf_set(pdf, "New therapy", "/On")
 
     # --- Manual drug request (manual_drug_N_name/dose → requested drug fields) ---

@@ -20,7 +20,7 @@
           :results-map="resultsMap"
           :overrides="overrides"
           :depth="depth + 1"
-          :parent-or-satisfied="node.type === 'OR' && evaluateGate() === true"
+          :parent-or-satisfied="parentOrSatisfied || (node.type === 'OR' && evaluateGate() === true)"
           @view-source="(ev: string, sn?: string) => emit('viewSource', ev, sn)"
         />
       </div>
@@ -48,7 +48,7 @@
             </span>
             <button class="header-action header-undo" @click.stop="undoReview">Undo</button>
           </template>
-          <template v-else-if="isBlocker && !showResolve">
+          <template v-else-if="(isBlocker || (isDimmed && !effectiveMet && !node.negated)) && !showResolve">
             <button
               class="header-action header-resolve"
               @click.stop="showResolve = true; expanded = true"
@@ -148,9 +148,29 @@
 
           <!-- No evidence (not met) — read-only guidance -->
           <div v-else class="leaf-guidance">
-            <div v-if="isDimmed" class="or-satisfied-note">
-              <v-icon size="12" color="grey" class="mr-1">mdi-information-outline</v-icon>
-              <span>Not required — another option in this group is already met</span>
+            <div v-if="isDimmed" class="or-satisfied-note-section">
+              <div class="or-satisfied-note">
+                <v-icon size="12" color="grey" class="mr-1">mdi-information-outline</v-icon>
+                <span>Not required — another option in this group is already met</span>
+              </div>
+              <div v-if="showResolve" class="resolve-input">
+                <textarea
+                  v-model="resolveText"
+                  class="resolve-textarea"
+                  rows="2"
+                  placeholder="Provide evidence or justification..."
+                  @click.stop
+                />
+                <div class="resolve-actions">
+                  <button class="btn-sm btn-cancel" @click.stop="showResolve = false; resolveText = ''">
+                    Cancel
+                  </button>
+                  <button class="btn-sm btn-save" @click.stop="saveResolve" :disabled="!resolveText.trim()">
+                    <v-icon size="12" class="mr-1">mdi-check</v-icon>
+                    Mark as Met
+                  </button>
+                </div>
+              </div>
             </div>
             <div v-else-if="isBlocker" class="blocker-section">
               <div class="blocker-warning">

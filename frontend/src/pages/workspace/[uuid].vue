@@ -32,6 +32,17 @@
       </div>
       <div class="topbar-right">
         <v-btn
+          variant="outlined"
+          color="teal"
+          size="small"
+          :loading="generatingFhir"
+          :disabled="!pdfSaveEnabled"
+          @click="exportFhir"
+        >
+          <v-icon start size="16">mdi-code-json</v-icon>
+          Export FHIR
+        </v-btn>
+        <v-btn
           color="primary"
           size="small"
           :loading="generatingPdf"
@@ -412,6 +423,7 @@ const criteriaList = computed(() => {
 })
 
 const generatingPdf = ref(false)
+const generatingFhir = ref(false)
 const generatingPreview = ref(false)
 const showError = ref(false)
 const errorMessage = ref('')
@@ -722,6 +734,55 @@ async function downloadPdf() {
     generatingPdf.value = false
   }
 }
+
+async function exportFhir() {
+  generatingFhir.value = true
+  try {
+    const fieldUpdates = Object.values(formStore.fields)
+      .filter(f => f.status !== 'rejected' && f.value)
+      .map(f => ({ field_id: f.fieldId, value: f.value }))
+
+    const metCriteria = extractionStore.results.filter(r => r.met)
+    const overridesMap: Record<string, boolean> = {}
+    for (const [id, ov] of Object.entries(extractionStore.overrides)) {
+      overridesMap[id] = (ov as { met: boolean }).met
+    }
+
+    const res = await fetch('/api/form/generate-pas-bundle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uuid: uuid.value,
+        fields: fieldUpdates,
+        insurer: 'bcbs',
+        justification_text: formStore.justificationText || null,
+        met_criteria: metCriteria,
+        overrides: overridesMap,
+      }),
+    })
+
+    if (res.ok) {
+      const json = await res.json()
+      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `pas_bundle_${patientStore.fhirData?.name?.replace(/\s+/g, '_') || 'bundle'}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      successMessage.value = 'FHIR bundle downloaded'
+      showSuccess.value = true
+    } else {
+      errorMessage.value = 'Failed to generate FHIR bundle.'
+      showError.value = true
+    }
+  } catch {
+    errorMessage.value = 'Network error generating FHIR bundle.'
+    showError.value = true
+  } finally {
+    generatingFhir.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -780,6 +841,7 @@ async function downloadPdf() {
 .topbar-right {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .extraction-progress {

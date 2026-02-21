@@ -170,7 +170,6 @@ export const useFormStore = defineStore('form', () => {
             _addField(id, label, '', 'manual', 'drug_request')
           }
         }
-        _ensureDrugField('hcpcs_code', 'HCPCS / J-Code')
         _ensureDrugField('quantity', 'Quantity', ext.drug_quantity || ext.drug_strength)
         _ensureDrugField('days_supply', 'Days Supply', ext.drug_days_supply)
         _ensureDrugField('route_of_admin', 'Route of Administration', ext.drug_route)
@@ -292,7 +291,6 @@ export const useFormStore = defineStore('form', () => {
     // --- Section V: Drug Request ---
     _maybe('requested_drug', 'Requested Drug', 'drug_request')
     _maybe('requested_dose', 'Strength', 'drug_request')
-    _maybe('hcpcs_code', 'HCPCS / J-Code', 'drug_request')
     _maybe('quantity', 'Quantity', 'drug_request')
     _maybe('days_supply', 'Days Supply', 'drug_request')
     _maybe('route_of_admin', 'Route of Administration', 'drug_request')

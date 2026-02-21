@@ -133,7 +133,7 @@ const router = useRouter()
 const patientStore = usePatientStore()
 
 const selectedPatient = ref<string | null>(null)
-const selectedInsurer = ref('BCBS Texas')
+const selectedInsurer = ref('UHC')
 const selectedDrug = ref('Adalimumab (Humira)')
 const navigating = ref(false)
 
@@ -146,7 +146,7 @@ const patientItems = computed(() =>
   }))
 )
 
-const insurerItems = ['BCBS Texas']
+const insurerItems = ['UHC']
 const drugItems = ['Adalimumab (Humira)']
 
 onMounted(() => {

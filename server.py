@@ -72,10 +72,12 @@ app.add_middleware(
 from api.patients import router as patients_router
 from api.extraction import router as extraction_router
 from api.form import router as form_router
+from api.pas_bundle import router as pas_bundle_router
 
 app.include_router(patients_router, prefix="/api")
 app.include_router(extraction_router, prefix="/api")
 app.include_router(form_router, prefix="/api")
+app.include_router(pas_bundle_router, prefix="/api")
 
 
 @app.get("/api/health")
