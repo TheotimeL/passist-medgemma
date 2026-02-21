@@ -48,25 +48,9 @@
                   no-data-text="No patients found"
                   class="mb-2"
                 >
-                  <template #item="{ props: itemProps, item }">
+                  <template #item="{ props: itemProps }">
                     <v-list-item v-bind="itemProps">
                       <template #append>
-                        <v-chip
-                          v-if="item.raw.metCount != null"
-                          size="x-small"
-                          :color="item.raw.metCount === item.raw.totalCount ? 'success' : item.raw.metCount! > item.raw.totalCount! / 2 ? 'warning' : 'error'"
-                          variant="tonal"
-                        >
-                          {{ item.raw.metCount }}/{{ item.raw.totalCount }} met
-                        </v-chip>
-                        <v-chip
-                          v-else
-                          size="x-small"
-                          color="grey"
-                          variant="tonal"
-                        >
-                          Pending
-                        </v-chip>
                       </template>
                     </v-list-item>
                   </template>
@@ -136,8 +120,6 @@ const patientItems = computed(() =>
   patientStore.patients.map(p => ({
     text: p.name,
     value: p.uuid,
-    metCount: p.met_count,
-    totalCount: p.total_count,
   }))
 )
 

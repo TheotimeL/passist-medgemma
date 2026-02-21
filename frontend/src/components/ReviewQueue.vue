@@ -90,6 +90,15 @@
           </button>
         </div>
 
+        <!-- Drug field parsing failure warning -->
+        <div
+          v-if="(section.id === 'step_therapy' || section.id === 'drug_request') && extractionStore.drugFieldsError && !isDrugSectionLocked(section.id)"
+          class="drug-parse-warning"
+        >
+          <v-icon size="14" color="warning" class="mr-1">mdi-alert-outline</v-icon>
+          {{ extractionStore.drugFieldsError }}
+        </div>
+
         <!-- COMPACT TABLE VIEW for EHR sections -->
         <div v-if="sectionContentVisible(section.id) && section.compact" class="compact-table">
           <div
@@ -1356,6 +1365,15 @@ defineExpose({ scrollToField, focusField })
   opacity: 0.6;
 }
 .section-header-disabled:hover { background: #FAFAFA; }
+.drug-parse-warning {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  color: #B06000;
+  background: #FEF7E0;
+  padding: 6px 10px;
+  border-bottom: 1px solid #F0E6D2;
+}
 .save-section-btn {
   font-size: 10px;
   font-weight: 600;

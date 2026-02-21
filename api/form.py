@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import tempfile
 from datetime import datetime
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +20,11 @@ from patient_data import (
     SNOMED_TO_ICD10,
     DRUG_TO_HCPCS,
 )
+from config import TREE_PATH
 from policy_tree import load_tree, get_status, get_all_criteria, CriterionResult, tree_to_dict
 from pdf_form import PDFFormManager
 
 router = APIRouter()
-
-TREE_PATH = "rheumatoid_arthritis_initial_auth_decision_tree_enriched.json"
 
 # Form template URLs
 FORM_TEMPLATES = {
@@ -194,8 +191,11 @@ async def parse_drug_fields(request: ParseDrugFieldsRequest):
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(None, parser.parse, request.entries)
 
-    logger.info("parse-drug-fields: Returning %d entries", len(result))
-    return {"entries": result}
+    has_drug_fields = any(e.get("drug_name") for e in result)
+    if not has_drug_fields:
+        logger.warning("parse-drug-fields: No drug fields extracted from %d entries", len(result))
+    logger.info("parse-drug-fields: Returning %d entries (parse_success=%s)", len(result), has_drug_fields)
+    return {"entries": result, "parse_success": has_drug_fields}
 
 
 class JustificationRequest(BaseModel):
@@ -214,20 +214,6 @@ def get_justification(uuid: str, body: JustificationRequest):
     tree = load_tree(TREE_PATH)
 
     extraction_results: list[dict] = body.met_criteria
-
-    # Fall back to disk-cached results if frontend didn't send any
-    if not extraction_results:
-        for json_file in Path(".").glob("extraction_*.json"):
-            try:
-                data = json.loads(json_file.read_text())
-                if isinstance(data, list):
-                    for entry in data:
-                        if entry.get("uuid", "").startswith(uuid[:8]):
-                            extraction_results = entry.get("met_criteria", [])
-                            break
-            except (json.JSONDecodeError, KeyError):
-                logger.warning("Failed to parse extraction file: %s", path)
-                continue
 
     if not extraction_results:
         return {"text": "", "generated": False}
@@ -408,33 +394,7 @@ def generate_pdf(request: GeneratePdfRequest):
         _pdf_set(pdf, "Date Submitted", today)
 
     # --- Section IX clinical justification ---
-    if request.justification_text:
-        section_vi = request.justification_text
-    else:
-        section_vi = ""
-        extraction_results: list[dict] = []
-        for json_file in Path(".").glob("extraction_*.json"):
-            try:
-                data = json.loads(json_file.read_text())
-                if isinstance(data, list):
-                    for entry in data:
-                        if entry.get("uuid", "").startswith(request.uuid[:8]):
-                            extraction_results = entry.get("met_criteria", [])
-                            break
-            except (json.JSONDecodeError, KeyError):
-                logger.warning("Failed to parse extraction file: %s", path)
-                continue
-        if extraction_results:
-            cr_results: dict[str, CriterionResult] = {}
-            for ext in extraction_results:
-                cid = ext.get("criterion_id", "")
-                cr_results[cid] = CriterionResult(
-                    criterion_id=cid,
-                    met=ext.get("met", False),
-                    evidence=ext.get("evidence", ""),
-                )
-            policy_status = get_status(tree, cr_results)
-            section_vi = format_section_vi(patient_data, policy_status, extraction_results, tree)
+    section_vi = request.justification_text or ""
 
     if section_vi:
         _pdf_set(pdf, "Section IX \u2015 Justification (See Instruction Page Section IX)", section_vi)
@@ -442,7 +402,7 @@ def generate_pdf(request: GeneratePdfRequest):
     # --- Generate PDF ---
     output_path = tempfile.mktemp(suffix=".pdf", prefix="pa_form_")
     pdf.generate_pdf(output_path)
-    print(f"[PDF] Generated with {filled} accepted fields")
+    logger.info("[PDF] Generated with %d accepted fields", filled)
 
     return FileResponse(
         output_path,

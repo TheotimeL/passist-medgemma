@@ -373,10 +373,6 @@ export const useFormStore = defineStore('form', () => {
     )
   )
 
-  const suggestedCount = computed(() =>
-    Object.values(fields.value).filter(f => f.status === 'suggested' && f.value).length
-  )
-
   const pendingReviewCount = computed(() =>
     Object.values(fields.value).filter(f => f.status === 'suggested' && f.value).length
   )
@@ -419,7 +415,6 @@ export const useFormStore = defineStore('form', () => {
     justificationLoading,
     fieldsBySection,
     missingMandatoryFields,
-    suggestedCount,
     acceptedCount,
     totalFilledCount,
     fieldStatuses,

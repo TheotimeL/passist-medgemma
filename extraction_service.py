@@ -25,18 +25,11 @@ from typing import Generator
 
 # HF_TOKEN is read from environment if needed for MLX model download
 
+from config import TREE_PATH, TREE_PATH_ORIGINAL, NOTES_ROOT, NOTES_ROOT_NEW, UUID_PATTERN
 from policy_tree import load_tree, get_all_criteria, CriterionResult, get_status
 
 # Config
 MODEL_ID = "mlx-community/medgemma-27b-text-it-bf16"
-TREE_PATH = "rheumatoid_arthritis_initial_auth_decision_tree_enriched.json"
-TREE_PATH_ORIGINAL = "rheumatoid_arthritis_initial_auth_decision_tree.json"
-NOTES_ROOT = Path("soap_notes")       # legacy
-NOTES_ROOT_NEW = Path("notes")        # new multi-note structure
-
-UUID_PATTERN = re.compile(
-    r"^(?P<name>.+)_(?P<uuid>[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.txt$"
-)
 
 # ── Synthetic few-shot example (verbatim from test_extraction_soap.py) ──
 EXAMPLE_NOTE = """SOAP NOTE — Specialist Clinic Visit

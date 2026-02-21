@@ -10,9 +10,6 @@ class PatientSummary(BaseModel):
     name: str
     files: list[str]
     has_fhir: bool
-    eligible: bool | None = None  # None = no extraction yet
-    met_count: int | None = None
-    total_count: int | None = None
 
 
 class PatientFhir(BaseModel):

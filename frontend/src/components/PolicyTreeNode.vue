@@ -486,14 +486,6 @@ const leafName = computed(() => {
 })
 
 
-const guidanceText = computed(() => {
-  if (props.node.search_description) {
-    const desc = props.node.search_description
-    return desc.length > 200 ? desc.slice(0, 200) + '...' : desc
-  }
-  return 'No evidence found in clinical notes. Doctor may provide evidence manually.'
-})
-
 const isBlocker = computed(() => {
   // Not a blocker if parent OR is already satisfied
   if (props.parentOrSatisfied) return false

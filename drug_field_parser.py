@@ -91,7 +91,7 @@ class DrugFieldParser:
 
         self._ensure_loaded()
 
-        print(f"[DrugFieldParser] Parsing {len(entries)} entries")
+        logger.info("Parsing %d entries", len(entries))
 
         # Build prompt with the evidence texts
         lines = []
@@ -105,9 +105,11 @@ class DrugFieldParser:
         raw = self._run_inference(prompt)
         if getattr(self, "_backend", "mlx") == "mlx":
             raw = "[" + raw
-        print(f"[DrugFieldParser] Raw output (first 500 chars): {raw[:500]}")
+        logger.debug("Raw output (first 500 chars): %s", raw[:500])
         parsed = self._parse_json(raw)
-        print(f"[DrugFieldParser] Parsed {len(parsed) if parsed else 'None'} entries")
+        if parsed is None:
+            logger.warning("[DrugFieldParser] _parse_json returned None. Raw output (first 800 chars): %s", raw[:800])
+        logger.info("Parsed %s entries", len(parsed) if parsed else "None")
 
         if parsed:
             _DRUG_FIELDS = (
@@ -115,15 +117,15 @@ class DrugFieldParser:
                 "drug_dates", "is_prior_therapy", "failure_reason", "source_text",
             )
             if len(parsed) < len(entries):
-                print(f"[DrugFieldParser] Partial: got {len(parsed)}/{len(entries)} entries (truncated)")
+                logger.warning("Partial: got %d/%d entries (truncated)", len(parsed), len(entries))
             for entry, result in zip(entries, parsed):
                 for field in _DRUG_FIELDS:
                     val = result.get(field)
                     if val is not None and val != "":
                         entry[field] = val
-                print(f"[DrugFieldParser] {entry.get('criterion_id', '?')[:40]} → name={entry.get('drug_name', '')}, strength={entry.get('drug_strength', '')}, prior={entry.get('is_prior_therapy', '')}")
+                logger.debug("%s → name=%s, strength=%s, prior=%s", entry.get('criterion_id', '?')[:40], entry.get('drug_name', ''), entry.get('drug_strength', ''), entry.get('is_prior_therapy', ''))
         else:
-            print(f"[DrugFieldParser] Failed to parse any results")
+            logger.warning("Failed to parse any results")
 
         return entries
 
@@ -165,7 +167,7 @@ class DrugFieldParser:
         response = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt,
-            config=genai.types.GenerateContentConfig(temperature=0.0, max_output_tokens=512),
+            config=genai.types.GenerateContentConfig(temperature=0.0, max_output_tokens=2048),
         )
         return response.text.strip()
 

@@ -132,6 +132,7 @@ export const useExtractionStore = defineStore('extraction', () => {
   const complete = ref(false)
   const modelLoaded = ref(false)
   const drugFieldsParsing = ref(false)
+  const drugFieldsError = ref<string | null>(null)
   const overrides = ref<Record<string, CriterionOverride>>({})
   /** Doctor review state per criterion: 'accepted' or 'rejected' */
   const criterionReviews = ref<Record<string, 'accepted' | 'rejected'>>({})
@@ -318,20 +319,21 @@ export const useExtractionStore = defineStore('extraction', () => {
   /** Extract structured drug fields from evidence using MedGemma 4B. */
   async function parseDrugFields() {
     const entries = results.value.filter(r => r.evidence && r.evidence !== 'No mention found')
-    console.log('[parseDrugFields] entries to parse:', entries.length, entries.map(e => e.criterion_id))
     if (entries.length === 0) return
 
     drugFieldsParsing.value = true
+    drugFieldsError.value = null
     try {
       const res = await fetch('/api/form/parse-drug-fields', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entries: entries.map(r => ({ criterion_id: r.criterion_id, evidence: r.evidence, source_note: r.source_note })) }),
       })
-      console.log('[parseDrugFields] response status:', res.status)
       if (res.ok) {
-        const { entries: parsed } = await res.json()
-        console.log('[parseDrugFields] parsed entries:', parsed)
+        const { entries: parsed, parse_success } = await res.json()
+        if (parse_success === false) {
+          drugFieldsError.value = 'Drug field parsing failed — drug names, dosages, and dates may need to be filled manually.'
+        }
         const _DRUG_FIELDS = ['drug_name', 'drug_strength', 'drug_route', 'drug_frequency', 'drug_dates', 'is_prior_therapy', 'failure_reason'] as const
         for (const parsedEntry of parsed) {
           const match = results.value.find(r => r.criterion_id === parsedEntry.criterion_id)
@@ -348,12 +350,11 @@ export const useExtractionStore = defineStore('extraction', () => {
             }
           }
         }
-        console.log('[parseDrugFields] results after merge:', results.value.filter(r => r.drug_name).map(r => ({ id: r.criterion_id, drug: r.drug_name, prior: r.is_prior_therapy })))
         // Trigger reactivity — watcher will re-run addExtractionResults
         results.value = [...results.value]
       }
-    } catch (e) {
-      console.warn('[parseDrugFields] failed:', e)
+    } catch {
+      // Drug field parsing failed — fields may need manual entry
     } finally {
       drugFieldsParsing.value = false
     }
@@ -374,6 +375,7 @@ export const useExtractionStore = defineStore('extraction', () => {
     error.value = null
     complete.value = false
     drugFieldsParsing.value = false
+    drugFieldsError.value = null
     overrides.value = {}
     criterionReviews.value = {}
     treeEligibility.value = null
@@ -389,6 +391,7 @@ export const useExtractionStore = defineStore('extraction', () => {
     complete,
     modelLoaded,
     drugFieldsParsing,
+    drugFieldsError,
     overrides,
     overrideCount,
     effectiveMetCount,

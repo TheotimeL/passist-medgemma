@@ -4,26 +4,16 @@ from __future__ import annotations
 
 import json
 import logging
-import re
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, HTTPException
 
 from api.schemas import PatientSummary, PatientFhir, NotesResponse, NoteFile
+from config import NOTES_ROOT, NOTES_ROOT_NEW, FHIR_ROOT, FHIR_BUNDLED, UUID_PATTERN
 from patient_data import load_patient_from_fhir
 
 router = APIRouter()
-
-NOTES_ROOT = Path("soap_notes")        # legacy
-NOTES_ROOT_NEW = Path("notes")         # new multi-note structure
-FHIR_ROOT = Path("generations")
-FHIR_BUNDLED = Path("fhir")           # pre-selected bundles for deployment
-EXTRACTIONS_DIR = Path(".")
-UUID_PATTERN = re.compile(
-    r"^(?P<name>.+)_(?P<uuid>[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.txt$"
-)
 
 
 def _find_fhir_bundle(uuid: str) -> str | None:
@@ -101,25 +91,6 @@ def _resolve_uuid(uuid_or_prefix: str) -> str:
     raise HTTPException(status_code=404, detail="Patient not found")
 
 
-def _find_eligibility(uuid: str) -> dict:
-    """Look up pre-computed extraction eligibility for a patient."""
-    for json_file in EXTRACTIONS_DIR.glob("extraction_*.json"):
-        try:
-            data = json.loads(json_file.read_text())
-            entries = data if isinstance(data, list) else [data]
-            for entry in entries:
-                if entry.get("uuid", "").startswith(uuid[:8]):
-                    return {
-                        "eligible": entry.get("eligible"),
-                        "met_count": entry.get("met_count"),
-                        "total_count": entry.get("total_count"),
-                    }
-        except (json.JSONDecodeError, KeyError):
-            logger.warning("Failed to parse extraction file: %s", path)
-            continue
-    return {"eligible": None, "met_count": None, "total_count": None}
-
-
 @router.get("/patients", response_model=list[PatientSummary])
 def list_patients():
     patients = _discover_patients()
@@ -127,16 +98,12 @@ def list_patients():
     for uuid, info in patients.items():
         if _find_fhir_bundle(uuid) is None:
             continue
-        elig = _find_eligibility(uuid)
         result.append(
             PatientSummary(
                 uuid=uuid,
                 name=info["name"],
                 files=info["files"],
                 has_fhir=True,
-                eligible=elig["eligible"],
-                met_count=elig["met_count"],
-                total_count=elig["total_count"],
             )
         )
     return sorted(result, key=lambda p: p.name)
