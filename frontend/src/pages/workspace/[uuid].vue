@@ -412,14 +412,17 @@ const formStore = useFormStore()
 const criteriaList = computed(() => {
   const ps = extractionStore.policyStatus
   if (!ps) return []
-  return ps.criteria.map((c: { id: string; name: string; status: string }) => {
-    const override = extractionStore.overrides[c.id]
-    const met = override ? override.met : c.status === 'met'
-    const name = c.name
-      .replace(/^\([^)]+\)\s*/, '')
-      .replace(/^[ivx]+\.\s*/i, '')
-    return { id: c.id, name, met }
-  })
+  return ps.criteria
+    .filter((c: { id: string; name: string; status: string }) => {
+      const override = extractionStore.overrides[c.id]
+      return override ? override.met : c.status === 'met'
+    })
+    .map((c: { id: string; name: string; status: string }) => {
+      const name = c.name
+        .replace(/^\([^)]+\)\s*/, '')
+        .replace(/^[ivx]+\.\s*/i, '')
+      return { id: c.id, name, met: true }
+    })
 })
 
 const generatingPdf = ref(false)
@@ -536,8 +539,6 @@ watch(() => extractionStore.allCriteriaReviewed, (allDone) => {
   if (allDone) {
     successMessage.value = 'All criteria reviewed — review justification letter'
     showSuccess.value = true
-    rightMode.value = 'justification'
-    justificationVisited.value = true
   }
 })
 

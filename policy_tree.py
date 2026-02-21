@@ -267,7 +267,7 @@ def get_status(tree: PolicyNode, results: dict[str, CriterionResult]) -> PolicyS
 
         criteria_list.append({
             "id": cid,
-            "name": leaf.name or leaf.summary,
+            "name": leaf.source_text or leaf.name or leaf.summary,
             "status": status,
             "evidence": cr.evidence if cr else "",
             "source_ref": cr.source_ref if cr else "",
