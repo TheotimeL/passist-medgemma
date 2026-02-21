@@ -2,7 +2,7 @@
 
 Run with: uvicorn server:app --reload --port 8000
 
-Set SKIP_MODEL=1 to skip MedGemma loading (uses pre-computed results only).
+Set EXTRACTION_BACKEND=gemini to use Gemini instead of local MedGemma.
 """
 
 import logging
@@ -37,9 +37,12 @@ async def lifespan(app: FastAPI):
             svc.initialize()
         except Exception as e:
             logger.warning("Failed to initialize extraction service: %s", e)
-            logger.warning("Live extraction will be unavailable. Pre-computed results still work.")
+            logger.warning("Live extraction will be unavailable.")
+
+        # 4B drug field parser loads lazily on first use (after 27B finishes)
+        # to avoid Metal GPU conflicts during startup
     else:
-        logger.info("SKIP_MODEL=1 — using pre-computed extraction results only.")
+        logger.info("SKIP_MODEL=1 — extraction will be unavailable.")
 
     yield
     logger.info("Shutting down...")

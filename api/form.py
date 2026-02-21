@@ -167,8 +167,40 @@ def get_policy_criteria():
     ]
 
 
+class ParseDrugFieldsRequest(BaseModel):
+    entries: list[dict]
+
+
+@router.post("/form/parse-drug-fields")
+async def parse_drug_fields(request: ParseDrugFieldsRequest):
+    """Extract structured drug fields from evidence using MedGemma 4B.
+
+    Called by the frontend after extraction completes. The 4B model parses
+    drug_name, drug_strength, drug_route, drug_frequency, drug_dates,
+    is_prior_therapy, and failure_reason from the evidence text.
+
+    Serialized via the same GPU lock as the 27B extraction to prevent
+    Metal GPU conflicts.
+    """
+    import asyncio
+    from extraction_service import ExtractionService
+    from drug_field_parser import DrugFieldParser
+
+    logger.info("parse-drug-fields: Received %d entries", len(request.entries))
+    svc = ExtractionService.get_instance()
+    parser = DrugFieldParser.get_instance()
+
+    async with svc._gpu_lock:
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, parser.parse, request.entries)
+
+    logger.info("parse-drug-fields: Returning %d entries", len(result))
+    return {"entries": result}
+
+
 class JustificationRequest(BaseModel):
     met_criteria: list[dict] = []
+    field_overrides: dict[str, str] = {}
 
 
 @router.post("/patients/{uuid}/justification")
@@ -210,7 +242,10 @@ def get_justification(uuid: str, body: JustificationRequest):
             evidence=ext.get("evidence", ""),
         )
     policy_status = get_status(tree, cr_results)
-    section_vi = format_section_vi(patient_data, policy_status, extraction_results, tree)
+    section_vi = format_section_vi(
+        patient_data, policy_status, extraction_results, tree,
+        field_overrides=body.field_overrides or None,
+    )
     return {"text": section_vi, "generated": True}
 
 
@@ -339,7 +374,7 @@ def generate_pdf(request: GeneratePdfRequest):
     # --- Prior drug history (rows 1–6) ---
     # Group prior drugs by base key (e.g., prior_drug_methotrexate, manual_prior_drug_1).
     # Uses known suffixes (_name, _dates, _reason, _dose) instead of fragile rfind("_").
-    _PRIOR_DRUG_SUFFIXES = ("_name", "_dates", "_reason", "_dose")
+    _PRIOR_DRUG_SUFFIXES = ("_name", "_dates", "_reason", "_dose", "_strength", "_frequency")
     prior_drugs: dict[str, dict[str, str]] = {}
     for field_id, value in accepted.items():
         if not (field_id.startswith("prior_drug_") or field_id.startswith("manual_prior_drug_")):
@@ -361,7 +396,7 @@ def generate_pdf(request: GeneratePdfRequest):
             continue
         filled += _pdf_set_many(pdf, {
             f"Drugs Patient has Taken for Diagnosis - Drug Name {drug_row}": drug_name,
-            f"Strength of Drug {drug_row}": drug_data.get("dose", ""),
+            f"Strength of Drug {drug_row}": drug_data.get("strength") or drug_data.get("dose", ""),
             f"Dates Started and Stopped or Approximate Duration of Drug {drug_row}": drug_data.get("dates", ""),
             f"Describe Response Reason for Failure or Allergy of Drug {drug_row}": drug_data.get("reason", ""),
         })

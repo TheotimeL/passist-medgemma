@@ -4,7 +4,7 @@
     <div class="review-header">
       <div class="progress-row">
         <span class="progress-label">
-          {{ reviewedCount }}/{{ totalCount }} fields reviewed
+          {{ reviewedSections }}/{{ totalSections }} sections reviewed
         </span>
         <div class="progress-track">
           <div class="progress-fill" :style="{ width: progressPercent + '%' }" />
@@ -44,44 +44,60 @@
         class="section-group"
       >
         <!-- Section Header -->
-        <div class="section-header" @click="toggleSection(section.id)">
-          <v-icon size="14" class="mr-1" :color="sectionIconColor(section.id)">
-            {{ sectionCollapsed[section.id] ? 'mdi-chevron-right' : 'mdi-chevron-down' }}
+        <div
+          class="section-header"
+          :class="{ 'section-header-disabled': isDrugSectionLocked(section.id) }"
+          @click="!isDrugSectionLocked(section.id) && toggleSection(section.id)"
+        >
+          <v-icon size="14" class="mr-1" :color="isDrugSectionLocked(section.id) ? 'grey-lighten-1' : sectionIconColor(section.id)">
+            {{ isDrugSectionLocked(section.id) ? 'mdi-lock-outline' : (sectionCollapsed[section.id] ? 'mdi-chevron-right' : 'mdi-chevron-down') }}
           </v-icon>
           <span class="section-title">{{ section.label }}</span>
-          <span class="section-count">{{ sectionFields(section.id).length }}</span>
+          <span v-if="!isDrugSectionLocked(section.id)" class="section-count">{{ sectionFields(section.id).length }}</span>
           <div class="section-status">
-            <span v-if="sectionPending(section.id) > 0" class="status-badge status-pending">
-              {{ sectionPending(section.id) }} to review
-            </span>
-            <span v-else-if="sectionHasReviewed(section.id)" class="status-badge status-done">
-              Done
-            </span>
-            <span v-else-if="sectionEmptyCount(section.id) > 0" class="status-badge status-empty">
-              {{ sectionEmptyCount(section.id) }} to fill
-            </span>
+            <template v-if="isDrugSectionLocked(section.id)">
+              <span class="status-badge status-locked">
+                <v-icon size="10" class="mr-1">mdi-loading mdi-spin</v-icon>
+                {{ drugSectionLoadingText(section.id) }}
+              </span>
+            </template>
+            <template v-else>
+              <span v-if="isSectionSmartCollapsed(section.id)" class="status-badge status-pending">
+                {{ sectionAiPending(section.id) }} AI to review
+              </span>
+              <span v-else-if="sectionPending(section.id) > 0" class="status-badge status-pending">
+                {{ sectionPending(section.id) }} to review
+              </span>
+              <span v-else-if="sectionHasReviewed(section.id)" class="status-badge status-done">
+                Done
+              </span>
+              <span v-else-if="sectionEmptyCount(section.id) > 0" class="status-badge status-empty">
+                {{ sectionEmptyCount(section.id) }} to fill
+              </span>
+            </template>
           </div>
-          <span v-if="section.needsExtraction && extractionStore.isExtracting && sectionFields(section.id).length > 0" class="ai-pending-badge">
+          <span v-if="!isDrugSectionLocked(section.id) && section.needsExtraction && extractionStore.isExtracting && sectionFields(section.id).length > 0" class="ai-pending-badge">
             <v-icon size="10" class="mr-1">mdi-loading mdi-spin</v-icon>
             AI updating
           </span>
           <button
-            v-if="sectionPending(section.id) > 0"
+            v-if="!isDrugSectionLocked(section.id) && sectionNonAiPending(section.id) > 0"
             class="save-section-btn"
             @click.stop="acceptSection(section.id)"
+            :title="sectionAiPending(section.id) > 0 ? 'AI fields need individual review' : ''"
           >
-            Save{{ section.needsExtraction && extractionStore.isExtracting ? ' Current' : '' }}
+            Accept ({{ sectionNonAiPending(section.id) }})
           </button>
         </div>
 
         <!-- COMPACT TABLE VIEW for EHR sections -->
-        <div v-if="!sectionCollapsed[section.id] && section.compact" class="compact-table">
+        <div v-if="sectionContentVisible(section.id) && section.compact" class="compact-table">
           <div
-            v-for="field in sectionFields(section.id)"
+            v-for="field in visibleFields(section.id)"
             :key="field.fieldId"
             :data-field-id="field.fieldId"
             class="compact-row"
-            :class="[compactRowClass(field), { 'field-flash': flashFieldId === field.fieldId }]"
+            :class="[compactRowClass(field), { 'field-flash': flashFieldId === field.fieldId, 'compact-empty-required-error': formStore.highlightedRequiredFields.has(field.fieldId) }]"
           >
             <span class="compact-label" :class="{ 'compact-label-required': field.required }">{{ field.label }}</span>
 
@@ -95,13 +111,37 @@
                 @keyup.escape="cancelEdit()"
                 @blur="cancelEdit()"
               />
+              <button class="compact-confirm-btn" @mousedown.prevent="saveEdit(field.fieldId)" title="Confirm">
+                <v-icon size="14" color="success">mdi-check</v-icon>
+              </button>
             </template>
 
             <!-- Normal display -->
             <template v-else>
               <template v-if="field.value">
                 <span class="compact-value compact-clickable-value" @click.stop="startEdit(field)">{{ field.value }}</span>
-                <span class="source-chip" :class="'source-' + field.source">{{ sourceLabel(field.source) }}</span>
+                <v-tooltip v-if="field.source === 'inferred'" :text="field.inferenceReason || 'Automatically derived from available clinical data'" location="top">
+                  <template #activator="{ props: tp }">
+                    <span v-bind="tp" class="source-chip source-inferred">{{ sourceLabel(field.source) }}</span>
+                  </template>
+                </v-tooltip>
+                <span v-else class="source-chip" :class="'source-' + field.source">{{ sourceLabel(field.source) }}</span>
+                <template v-if="field.status === 'suggested'">
+                  <!-- AI fields with evidence: must view source before accepting -->
+                  <template v-if="field.source === 'llm' && field.evidence && !viewedAiFields.has(field.fieldId)">
+                    <button class="compact-accept-btn" @click.stop="viewAiSource(field)" title="View source">
+                      <v-icon size="14" color="primary">mdi-eye-outline</v-icon>
+                    </button>
+                  </template>
+                  <template v-else>
+                    <button class="compact-accept-btn" @click.stop="acceptAndNotify(field.fieldId)" title="Accept">
+                      <v-icon size="14" color="success">mdi-check</v-icon>
+                    </button>
+                  </template>
+                  <button class="compact-reject-btn" @click.stop="formStore.rejectField(field.fieldId)" title="Reject">
+                    <v-icon size="14" color="error">mdi-close</v-icon>
+                  </button>
+                </template>
               </template>
               <template v-else-if="manualEntryField === field.fieldId">
                 <input
@@ -113,6 +153,9 @@
                   @keyup.escape="cancelManualEntry()"
                   @blur="cancelManualEntry()"
                 />
+                <button class="compact-confirm-btn" @mousedown.prevent="saveManualEntry(field.fieldId)" title="Confirm">
+                  <v-icon size="14" color="success">mdi-check</v-icon>
+                </button>
               </template>
               <template v-else>
                 <span
@@ -127,75 +170,94 @@
         </div>
 
         <!-- DRUG HISTORY TABLE VIEW -->
-        <div v-if="!sectionCollapsed[section.id] && section.table" class="drug-table-wrap">
-          <table v-if="fieldGroups(section.id).length > 0" class="drug-table">
+        <div v-if="sectionContentVisible(section.id) && section.table" class="drug-table-wrap">
+          <table v-if="visibleGroups(section.id).length > 0" class="drug-table">
             <thead>
               <tr>
-                <th>Drug</th>
-                <th>Dose</th>
-                <th>Dates</th>
-                <th>Failure Reason</th>
+                <th v-for="col in tableColumns(section.id)" :key="col.key">{{ col.label }}</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="group in fieldGroups(section.id)"
+                v-for="group in visibleGroups(section.id)"
                 :key="group.key"
-                :data-field-id="tableFieldId(group, 'name')"
+                :data-field-id="tableFieldId(group, tableColumns(section.id)[0]?.key || 'name')"
                 class="drug-table-row"
                 :class="{ 'drug-table-row-reviewed': groupIsReviewed(group) }"
               >
-                <td v-for="col in ['name', 'dose', 'dates', 'reason']" :key="col" :data-field-id="tableFieldId(group, col)" class="drug-table-cell">
+                <td v-for="col in tableColumns(section.id)" :key="col.key" :data-field-id="tableFieldId(group, col.key)" class="drug-table-cell">
                   <!-- Inline edit (existing value) -->
-                  <template v-if="editingField === tableFieldId(group, col)">
+                  <template v-if="editingField === tableFieldId(group, col.key)">
                     <input
                       :ref="autoFocus"
                       v-model="editValue"
                       class="compact-edit-input"
-                      @keyup.enter="saveEdit(tableFieldId(group, col))"
+                      @keyup.enter="saveEdit(tableFieldId(group, col.key))"
                       @keyup.escape="cancelEdit()"
                       @blur="cancelEdit()"
                     />
+                    <button class="compact-confirm-btn" @mousedown.prevent="saveEdit(tableFieldId(group, col.key))" title="Confirm">
+                      <v-icon size="14" color="success">mdi-check</v-icon>
+                    </button>
                   </template>
                   <!-- Manual entry (empty cell) -->
-                  <template v-else-if="manualEntryField === tableFieldId(group, col)">
+                  <template v-else-if="manualEntryField === tableFieldId(group, col.key)">
                     <input
                       :ref="autoFocus"
                       v-model="manualEntryValue"
                       class="compact-edit-input"
-                      @keyup.enter="saveManualEntry(tableFieldId(group, col))"
+                      @keyup.enter="saveManualEntry(tableFieldId(group, col.key))"
                       @keyup.escape="cancelManualEntry()"
                       @blur="cancelManualEntry()"
                     />
+                    <button class="compact-confirm-btn" @mousedown.prevent="saveManualEntry(tableFieldId(group, col.key))" title="Confirm">
+                      <v-icon size="14" color="success">mdi-check</v-icon>
+                    </button>
                   </template>
                   <!-- Display -->
                   <template v-else>
                     <span
-                      v-if="tableFieldValue(group, col)"
+                      v-if="tableFieldValue(group, col.key)"
                       class="drug-table-value compact-clickable-value"
-                      @click.stop="startEdit(tableField(group, col)!)"
-                    >{{ tableFieldValue(group, col) }}</span>
+                      @click.stop="startEdit(tableField(group, col.key)!)"
+                    >{{ tableFieldValue(group, col.key) }}</span>
                     <span
-                      v-else-if="tableField(group, col)"
+                      v-else-if="tableField(group, col.key) && col.key === 'strength' && tableFieldValue(group, 'name')"
+                      class="drug-table-empty drug-table-warning compact-clickable"
+                      @click.stop="startManualEntry(tableField(group, col.key)!)"
+                    >
+                      <v-icon size="12" color="warning" class="mr-1">mdi-alert-circle</v-icon>
+                      Add strength
+                    </span>
+                    <span
+                      v-else-if="tableField(group, col.key)"
                       class="drug-table-empty compact-clickable"
-                      @click.stop="startManualEntry(tableField(group, col)!)"
+                      @click.stop="startManualEntry(tableField(group, col.key)!)"
                     >—</span>
                     <span v-else class="drug-table-empty">—</span>
                   </template>
                 </td>
                 <td class="drug-table-actions">
                   <span v-if="groupPending(group) > 0" class="source-chip source-llm">AI</span>
-                  <button
-                    v-if="group.evidence && groupPending(group) > 0"
-                    class="action-link"
-                    @click="emit('viewSource', group.evidence!, group.sourceNote)"
-                    title="View in Notes"
-                  >
-                    <v-icon size="12">mdi-text-search</v-icon>
-                  </button>
+                  <template v-if="groupPending(group) > 0">
+                    <!-- AI groups with evidence: must view source before accepting -->
+                    <template v-if="group.evidence && !viewedAiFields.has(group.key)">
+                      <button class="compact-accept-btn" @click.stop="viewAiGroupSource(group)" title="View source">
+                        <v-icon size="14" color="primary">mdi-eye-outline</v-icon>
+                      </button>
+                    </template>
+                    <template v-else>
+                      <button class="compact-accept-btn" @click.stop="acceptGroup(group)" title="Accept row">
+                        <v-icon size="14" color="success">mdi-check</v-icon>
+                      </button>
+                    </template>
+                    <button class="compact-reject-btn" @click.stop="rejectGroup(group)" title="Reject row">
+                      <v-icon size="14" color="error">mdi-close</v-icon>
+                    </button>
+                  </template>
                   <button v-if="groupIsReviewed(group)" class="undo-btn drug-table-undo" @click="undoGroup(group)">undo</button>
-                  <button class="btn-remove" @click="removeGroup(group)" title="Remove drug">
+                  <button v-if="section.id !== 'drug_request'" class="btn-remove" @click="removeGroup(group)" title="Remove drug">
                     <v-icon size="12">mdi-delete-outline</v-icon>
                   </button>
                 </td>
@@ -212,12 +274,12 @@
           <!-- Empty state -->
           <div v-if="fieldGroups(section.id).length === 0 && !extractionStore.isExtracting" class="drug-empty">
             <v-icon size="16" color="grey" class="mr-1">mdi-information-outline</v-icon>
-            <span>No drug history extracted</span>
+            <span>No {{ section.id === 'step_therapy' ? 'drug history' : 'drug request' }} extracted</span>
           </div>
 
-          <!-- Add Prior Drug button -->
+          <!-- Add Drug button (step_therapy only — drug_request is always 1 row) -->
           <button
-            v-if="!extractionStore.isExtracting"
+            v-if="!extractionStore.isExtracting && section.id === 'step_therapy'"
             class="add-drug-btn"
             @click="addManualDrugEntry(section.id)"
           >
@@ -227,10 +289,10 @@
         </div>
 
         <!-- GROUPED DRUG VIEW for drug sections -->
-        <div v-if="!sectionCollapsed[section.id] && section.grouped" class="section-fields drug-section">
+        <div v-if="sectionContentVisible(section.id) && section.grouped" class="section-fields drug-section">
           <!-- Existing drug groups -->
           <div
-            v-for="group in fieldGroups(section.id)"
+            v-for="group in visibleGroups(section.id)"
             :key="group.key"
             class="drug-group"
             :class="{'drug-group-reviewed': groupIsReviewed(group), 'drug-group-empty': groupAllEmpty(group)}"
@@ -239,6 +301,21 @@
               <span class="drug-group-name">{{ group.drugName }}</span>
               <span v-if="groupPending(group) > 0" class="source-chip source-llm">AI</span>
               <div class="drug-group-actions">
+                <template v-if="groupPending(group) > 0">
+                  <template v-if="group.evidence && !viewedAiFields.has(group.key)">
+                    <button class="compact-accept-btn" @click.stop="viewAiGroupSource(group)" title="View source">
+                      <v-icon size="14" color="primary">mdi-eye-outline</v-icon>
+                    </button>
+                  </template>
+                  <template v-else>
+                    <button class="compact-accept-btn" @click.stop="acceptGroup(group)" title="Accept">
+                      <v-icon size="14" color="success">mdi-check</v-icon>
+                    </button>
+                  </template>
+                  <button class="compact-reject-btn" @click.stop="rejectGroup(group)" title="Reject">
+                    <v-icon size="14" color="error">mdi-close</v-icon>
+                  </button>
+                </template>
                 <button v-if="groupIsReviewed(group)" class="undo-btn drug-undo" @click="undoGroup(group)">undo</button>
                 <button class="btn-remove drug-btn" @click="removeGroup(group)" title="Remove drug">
                   <v-icon size="12">mdi-delete-outline</v-icon>
@@ -261,6 +338,9 @@
                     @keyup.escape="cancelEdit()"
                     @blur="cancelEdit()"
                   />
+                  <button class="compact-confirm-btn" @mousedown.prevent="saveEdit(field.fieldId)" title="Confirm">
+                    <v-icon size="14" color="success">mdi-check</v-icon>
+                  </button>
                 </template>
                 <template v-else>
                   <template v-if="field.value">
@@ -276,6 +356,9 @@
                       @keyup.escape="cancelManualEntry()"
                       @blur="cancelManualEntry()"
                     />
+                    <button class="compact-confirm-btn" @mousedown.prevent="saveManualEntry(field.fieldId)" title="Confirm">
+                      <v-icon size="14" color="success">mdi-check</v-icon>
+                    </button>
                   </template>
                   <template v-else>
                     <span class="drug-field-value compact-empty">—</span>
@@ -300,21 +383,21 @@
             <span>No {{ section.label.toLowerCase() }} extracted</span>
           </div>
 
-          <!-- Add entry button -->
+          <!-- Add entry button (step_therapy only — drug_request is always a single drug) -->
           <button
-            v-if="!extractionStore.isExtracting"
+            v-if="!extractionStore.isExtracting && section.id === 'step_therapy'"
             class="add-drug-btn"
             @click="addManualDrugEntry(section.id)"
           >
             <v-icon size="14" class="mr-1">mdi-plus-circle-outline</v-icon>
-            Add {{ section.id === 'step_therapy' ? 'Prior Drug' : 'Drug' }}
+            Add Prior Drug
           </button>
         </div>
 
         <!-- CARD VIEW for AI-extracted sections (need more review) -->
-        <div v-if="!sectionCollapsed[section.id] && !section.compact && !section.grouped && !section.table" class="section-fields">
+        <div v-if="sectionContentVisible(section.id) && !section.compact && !section.grouped && !section.table" class="section-fields">
           <div
-            v-for="field in sectionFields(section.id)"
+            v-for="field in visibleFields(section.id)"
             :key="field.fieldId"
             :data-field-id="field.fieldId"
             class="review-item"
@@ -336,7 +419,12 @@
               <div class="item-pending">
                 <div class="item-top">
                   <span class="item-label" :class="{ 'compact-label-required': field.required }">{{ field.label }}</span>
-                  <span class="source-chip" :class="'source-' + field.source">
+                  <v-tooltip v-if="field.source === 'inferred'" :text="field.inferenceReason || 'Automatically derived from available clinical data'" location="top">
+                    <template #activator="{ props: tp }">
+                      <span v-bind="tp" class="source-chip source-inferred">{{ sourceLabel(field.source) }}</span>
+                    </template>
+                  </v-tooltip>
+                  <span v-else class="source-chip" :class="'source-' + field.source">
                     {{ sourceLabel(field.source) }}
                   </span>
                   <button v-if="field.evidence" class="action-link item-top-link" @click.stop="toggleEvidence(field)">
@@ -367,6 +455,21 @@
                     @keyup.escape="cancelEdit()"
                     @blur="cancelEdit()"
                   />
+                  <button class="compact-confirm-btn" @mousedown.prevent="saveEdit(field.fieldId)" title="Confirm">
+                    <v-icon size="14" color="success">mdi-check</v-icon>
+                  </button>
+                </div>
+
+                <!-- Accept / Reject actions -->
+                <div v-if="editingField !== field.fieldId" class="item-actions">
+                  <button class="btn-accept" @click.stop="acceptAndNotify(field.fieldId)">
+                    <v-icon size="14" class="mr-1">mdi-check</v-icon>
+                    Accept
+                  </button>
+                  <button class="btn-reject" @click.stop="formStore.rejectField(field.fieldId)">
+                    <v-icon size="14" class="mr-1">mdi-close</v-icon>
+                    Reject
+                  </button>
                 </div>
               </div>
             </template>
@@ -386,6 +489,9 @@
                     @keyup.escape="cancelManualEntry()"
                     @blur="cancelManualEntry()"
                   />
+                  <button class="compact-confirm-btn" @mousedown.prevent="saveManualEntry(field.fieldId)" title="Confirm">
+                    <v-icon size="14" color="success">mdi-check</v-icon>
+                  </button>
                 </template>
                 <template v-else>
                   <button class="add-manually-btn" @click="startManualEntry(field)">
@@ -398,7 +504,7 @@
         </div>
 
         <!-- Skeleton for sections still loading (non-table sections only; table has its own) -->
-        <div v-if="!sectionCollapsed[section.id] && !section.table && sectionFields(section.id).length === 0 && extractionStore.isExtracting && section.needsExtraction" class="section-fields">
+        <div v-if="sectionContentVisible(section.id) && !section.table && sectionFields(section.id).length === 0 && extractionStore.isExtracting && section.needsExtraction" class="section-fields">
           <div class="review-item">
             <div class="skeleton-line" style="width: 60%">&nbsp;</div>
             <div class="skeleton-line" style="width: 80%">&nbsp;</div>
@@ -425,13 +531,21 @@
           />
           <v-text-field
             v-model="addDrugForm.dose"
-            label="Dose"
+            :label="addDrugTargetSection === 'step_therapy' ? 'Strength' : 'Dose'"
             density="compact"
             variant="outlined"
             class="mb-2"
             hide-details
           />
           <template v-if="addDrugTargetSection === 'step_therapy'">
+            <v-text-field
+              v-model="addDrugForm.frequency"
+              label="Frequency"
+              density="compact"
+              variant="outlined"
+              class="mb-2"
+              hide-details
+            />
             <v-text-field
               v-model="addDrugForm.dates"
               label="Dates"
@@ -525,12 +639,30 @@ function autoFocus(el: any) {
   if (el instanceof HTMLInputElement) el.focus()
 }
 
+// "View source first" for AI fields in compact sections and drug table rows
+const viewedAiFields = ref<Set<string>>(new Set())
+
+function viewAiSource(field: FormField) {
+  viewedAiFields.value = new Set([...viewedAiFields.value, field.fieldId])
+  if (field.evidence) {
+    emit('viewSource', field.evidence, field.sourceNote)
+  }
+}
+
+function viewAiGroupSource(group: DrugGroup) {
+  viewedAiFields.value = new Set([...viewedAiFields.value, group.key])
+  if (group.evidence) {
+    emit('viewSource', group.evidence, group.sourceNote)
+  }
+}
+
 // Add Drug Dialog state
 const showAddDrugDialog = ref(false)
 const addDrugTargetSection = ref<'step_therapy' | 'drug_request'>('step_therapy')
 const addDrugForm = ref({
   name: '',
   dose: '',
+  frequency: '',
   dates: '',
   failureReason: '',
   quantity: '',
@@ -540,17 +672,33 @@ const addDrugForm = ref({
   hcpcs: '',
 })
 
-// Auto-collapse sections where all fields are reviewed, reopen when new AI fields arrive
+// Check if a section has empty manual/required fields that still need doctor input
+function sectionHasEmptyManualFields(section: string): boolean {
+  return (formStore.fieldsBySection[section] || []).some(
+    f => !f.value && f.status === 'suggested' && (f.source === 'manual' || f.required)
+  )
+}
+
+// Smart auto-collapse: collapse sections as fields are reviewed, but pending AI fields stay visible
 watch(() => formStore.fieldsBySection, () => {
   for (const section of sections) {
     const fields = sectionFields(section.id)
     const pending = sectionPending(section.id)
-    if (fields.length > 0 && pending === 0) {
-      if (sectionCollapsed.value[section.id] === undefined) {
-        sectionCollapsed.value[section.id] = true
-      }
-    } else if (pending > 0 && sectionCollapsed.value[section.id] === true) {
-      // New pending fields arrived (e.g. AI updated diagnosis) — reopen so doctor sees them
+    const aiPending = sectionAiPending(section.id)
+    const nonAiPending = sectionNonAiPending(section.id)
+
+    const hasReviewed = fields.some(f => f.status !== 'suggested')
+    if (fields.length > 0 && pending === 0 && hasReviewed) {
+      // All reviewed — fully collapse
+      sectionCollapsed.value[section.id] = true
+    } else if (fields.length > 0 && nonAiPending === 0 && aiPending > 0 && !sectionHasEmptyManualFields(section.id)) {
+      // Non-AI fields all reviewed but AI fields pending — smart collapse (shows only AI pending)
+      // Don't collapse if there are empty manual fields that need filling
+      sectionCollapsed.value[section.id] = true
+    } else if (aiPending > 0 && sectionCollapsed.value[section.id] === true) {
+      // New AI fields arrived while collapsed — keep collapsed (smart collapse shows them)
+    } else if (pending > 0 && nonAiPending > 0 && sectionCollapsed.value[section.id] === true) {
+      // New non-AI pending fields arrived — reopen so doctor sees them
       sectionCollapsed.value[section.id] = false
     }
   }
@@ -564,7 +712,7 @@ const sections = [
   { id: 'provider', label: 'Provider', needsExtraction: true, compact: true, grouped: false, table: false },
   { id: 'diagnosis', label: 'Diagnosis', needsExtraction: true, compact: true, grouped: false, table: false },
   { id: 'step_therapy', label: 'Drug History', needsExtraction: true, compact: false, grouped: false, table: true },
-  { id: 'drug_request', label: 'Drug Request', needsExtraction: true, compact: true, grouped: false, table: false },
+  { id: 'drug_request', label: 'Drug Request', needsExtraction: true, compact: false, grouped: false, table: true },
 ]
 
 interface DrugGroup {
@@ -601,7 +749,7 @@ function fieldGroups(sectionId: string): DrugGroup[] {
   const groupMap: Record<string, FormField[]> = {}
   const groupOrder: string[] = []
   for (const f of fields) {
-    const key = f.fieldId.replace(/_(name|dates|reason|dose|quantity|days_supply|route|duration|hcpcs)$/, '')
+    const key = f.fieldId.replace(/_(name|dates|reason|dose|strength|frequency|quantity|days_supply|route|duration|hcpcs)$/, '')
     if (!groupMap[key]) {
       groupMap[key] = []
       groupOrder.push(key)
@@ -612,14 +760,23 @@ function fieldGroups(sectionId: string): DrugGroup[] {
   return groupOrder.map(key => {
     const groupFields = groupMap[key]!
     const nameField = groupFields.find(f => f.fieldId.endsWith('_name') || f.label === 'Prior Drug')
+    // Use the _name field's evidence/sourceNote — it has the correct criterion evidence
+    const evidenceField = nameField || groupFields.find(f => f.evidence)
     return {
       key,
       drugName: nameField?.value || key.replace(/^prior_drug_/, '').replace(/_/g, ' '),
       fields: groupFields,
-      evidence: groupFields[0]?.evidence,
-      sourceNote: groupFields[0]?.sourceNote,
+      evidence: evidenceField?.evidence,
+      sourceNote: evidenceField?.sourceNote,
     }
   })
+}
+
+/** Groups to display considering smart collapse: when collapsed, only groups with pending AI fields */
+function visibleGroups(sectionId: string): DrugGroup[] {
+  const groups = fieldGroups(sectionId)
+  if (!sectionCollapsed.value[sectionId]) return groups
+  return groups.filter(g => g.fields.some(f => f.status === 'suggested' && f.value && f.source === 'llm'))
 }
 
 function groupPending(group: DrugGroup): number {
@@ -665,13 +822,61 @@ function removeGroup(group: DrugGroup) {
 
 // Table view helpers — map column names to field suffixes
 const colSuffixMap: Record<string, string[]> = {
-  name: ['_name'],
-  dose: ['_dose'],
+  name: ['_name', '_drug'],
+  strength: ['_strength', '_dose'],
+  frequency: ['_frequency'],
   dates: ['_dates'],
   reason: ['_reason'],
+  hcpcs: ['_hcpcs'],
+  quantity: ['_quantity'],
+  days_supply: ['_days_supply'],
+  route: ['_route'],
+  duration: ['_duration'],
+}
+
+interface TableColumn { key: string; label: string }
+
+function tableColumns(sectionId: string): TableColumn[] {
+  if (sectionId === 'drug_request') {
+    return [
+      { key: 'name', label: 'Drug' },
+      { key: 'strength', label: 'Strength' },
+      { key: 'frequency', label: 'Freq' },
+      { key: 'route', label: 'Route' },
+      { key: 'quantity', label: 'Qty' },
+      { key: 'days_supply', label: 'Days' },
+      { key: 'duration', label: 'Duration' },
+      { key: 'hcpcs', label: 'HCPCS' },
+    ]
+  }
+  return [
+    { key: 'name', label: 'Drug' },
+    { key: 'strength', label: 'Strength' },
+    { key: 'frequency', label: 'Frequency' },
+    { key: 'dates', label: 'Dates' },
+    { key: 'reason', label: 'Failure Reason' },
+  ]
+}
+
+// For drug_request, field IDs are flat (e.g. requested_drug, hcpcs_code) — map column keys to field IDs
+const drugRequestFieldMap: Record<string, string[]> = {
+  name: ['requested_drug'],
+  strength: ['requested_dose'],
+  hcpcs: ['hcpcs_code'],
+  quantity: ['quantity'],
+  days_supply: ['days_supply'],
+  route: ['route_of_admin'],
+  frequency: ['frequency'],
+  duration: ['therapy_duration'],
 }
 
 function tableField(group: DrugGroup, col: string): FormField | undefined {
+  // Check flat drug_request field IDs first
+  const flatIds = drugRequestFieldMap[col]
+  if (flatIds) {
+    const found = group.fields.find(f => flatIds.includes(f.fieldId))
+    if (found) return found
+  }
   const suffixes = colSuffixMap[col] || [`_${col}`]
   return group.fields.find(f => suffixes.some(s => f.fieldId.endsWith(s)))
 }
@@ -688,7 +893,7 @@ let manualDrugCounter = 0
 
 function addManualDrugEntry(sectionId: string) {
   addDrugTargetSection.value = sectionId as 'step_therapy' | 'drug_request'
-  addDrugForm.value = { name: '', dose: '', dates: '', failureReason: '', quantity: '', daysSupply: '', route: '', duration: '', hcpcs: '' }
+  addDrugForm.value = { name: '', dose: '', frequency: '', dates: '', failureReason: '', quantity: '', daysSupply: '', route: '', duration: '', hcpcs: '' }
   showAddDrugDialog.value = true
 }
 
@@ -701,12 +906,14 @@ function submitAddDrug() {
     const prefix = `manual_prior_drug_${manualDrugCounter}`
     formStore.addManualDrug(prefix, 'step_therapy', [
       { suffix: '_name', label: 'Prior Drug' },
+      { suffix: '_strength', label: 'Strength' },
+      { suffix: '_frequency', label: 'Frequency' },
       { suffix: '_dates', label: 'Dates' },
       { suffix: '_reason', label: 'Failure Reason' },
-      { suffix: '_dose', label: 'Dose' },
     ])
     if (form.name.trim()) formStore.editField(`${prefix}_name`, form.name.trim())
-    if (form.dose.trim()) formStore.editField(`${prefix}_dose`, form.dose.trim())
+    if (form.dose.trim()) formStore.editField(`${prefix}_strength`, form.dose.trim())
+    if (form.frequency.trim()) formStore.editField(`${prefix}_frequency`, form.frequency.trim())
     if (form.dates.trim()) formStore.editField(`${prefix}_dates`, form.dates.trim())
     if (form.failureReason.trim()) formStore.editField(`${prefix}_reason`, form.failureReason.trim())
   } else {
@@ -771,17 +978,78 @@ const editedCount = computed(() =>
 const rejectedCount = computed(() =>
   Object.values(formStore.fields).filter(f => f.status === 'rejected').length
 )
+
+// Section-based progress
+const sectionsWithFields = computed(() =>
+  sections.filter(s => (formStore.fieldsBySection[s.id] || []).some(f => f.value))
+)
+const totalSections = computed(() => sectionsWithFields.value.length)
+const reviewedSections = computed(() =>
+  sectionsWithFields.value.filter(s => {
+    const fields = (formStore.fieldsBySection[s.id] || []).filter(f => f.value)
+    return fields.length > 0 && fields.every(f => f.status !== 'suggested')
+  }).length
+)
 const progressPercent = computed(() => {
-  if (totalCount.value === 0) return 0
-  return (reviewedCount.value / totalCount.value) * 100
+  if (totalSections.value === 0) return 0
+  return (reviewedSections.value / totalSections.value) * 100
 })
 
 function sectionFields(section: string) {
   return formStore.fieldsBySection[section] || []
 }
 
+/** Fields to display considering smart collapse: when collapsed, show only pending AI fields */
+function visibleFields(section: string): FormField[] {
+  const all = sectionFields(section)
+  if (!sectionCollapsed.value[section]) return all
+  return all.filter(f => f.status === 'suggested' && f.value && f.source === 'llm')
+}
+
+/** Drug sections stay locked (not accessible) until extraction + drug parsing have completed */
+function isDrugSectionLocked(sectionId: string): boolean {
+  if (sectionId !== 'step_therapy' && sectionId !== 'drug_request') return false
+  // Stay locked while 4B model is parsing drug fields
+  if (extractionStore.drugFieldsParsing) return true
+  // Unlocked once extraction is complete
+  if (extractionStore.complete) return false
+  // Unlocked once AI-sourced fields exist in this section
+  const fields = sectionFields(sectionId)
+  if (fields.some(f => f.source === 'llm' && f.value)) return false
+  // Still locked — extraction hasn't started, or hasn't produced results for this section yet
+  return true
+}
+
+/** Loading message for locked drug sections */
+function drugSectionLoadingText(sectionId: string): string {
+  if (extractionStore.drugFieldsParsing) return 'Parsing drug details...'
+  return 'Waiting for AI'
+}
+
+/** Whether section content should be shown (expanded, or collapsed with pending AI) */
+function sectionContentVisible(section: string): boolean {
+  if (isDrugSectionLocked(section)) return false
+  if (!sectionCollapsed.value[section]) return true
+  // When collapsed, show content only if there are pending AI fields
+  // Check both flat fields and grouped fields (for table/grouped sections)
+  return visibleFields(section).length > 0
+}
+
+/** Whether this section is in smart-collapsed state (collapsed but showing pending AI only) */
+function isSectionSmartCollapsed(section: string): boolean {
+  return sectionCollapsed.value[section] === true && visibleFields(section).length > 0
+}
+
 function sectionPending(section: string) {
   return (formStore.fieldsBySection[section] || []).filter(f => f.status === 'suggested' && f.value).length
+}
+
+function sectionNonAiPending(section: string) {
+  return (formStore.fieldsBySection[section] || []).filter(f => f.status === 'suggested' && f.value && f.source !== 'llm').length
+}
+
+function sectionAiPending(section: string) {
+  return (formStore.fieldsBySection[section] || []).filter(f => f.status === 'suggested' && f.value && f.source === 'llm').length
 }
 
 function sectionHasReviewed(section: string) {
@@ -818,10 +1086,11 @@ function collapseAll() {
 function acceptSection(section: string) {
   const fields = formStore.fieldsBySection[section] || []
   for (const f of fields) {
-    if (f.status === 'suggested' && f.value) {
+    if (f.status === 'suggested' && f.value && f.source !== 'llm') {
       formStore.acceptField(f.fieldId)
     }
   }
+  formStore.highlightEmptyRequired(section)
   emit('fieldAccepted', section)
 }
 
@@ -1081,6 +1350,12 @@ defineExpose({ scrollToField, focusField })
 .status-done { color: #137333; background: #E6F4EA; }
 .status-rejected { color: #C5221F; background: #FCE8E6; }
 .status-empty { color: #5F6368; background: #E8EAED; }
+.status-locked { color: #80868B; background: #F1F3F4; }
+.section-header-disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.section-header-disabled:hover { background: #FAFAFA; }
 .save-section-btn {
   font-size: 10px;
   font-weight: 600;
@@ -1170,6 +1445,16 @@ defineExpose({ scrollToField, focusField })
   background: #FFF3CD;
   border-color: #E69500;
 }
+.compact-empty-required-error {
+  border: 1px solid #EA4335;
+  background: #FCE8E6;
+  border-radius: 4px;
+  animation: required-error-pulse 0.4s ease-in-out 2;
+}
+@keyframes required-error-pulse {
+  0%, 100% { background: #FCE8E6; }
+  50% { background: #F8D7DA; }
+}
 .compact-clickable {
   cursor: text;
   border-bottom: 1px dashed #E0E0E0;
@@ -1185,6 +1470,22 @@ defineExpose({ scrollToField, focusField })
   opacity: 0.4;
   text-decoration: line-through;
 }
+.compact-accept-btn,
+.compact-reject-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s;
+}
+.compact-accept-btn:hover { background: #E6F4EA; }
+.compact-reject-btn:hover { background: #FCE8E6; }
 .compact-edit-input {
   flex: 1;
   font-size: 12px;
@@ -1195,6 +1496,21 @@ defineExpose({ scrollToField, focusField })
   outline: none;
   background: #fff;
 }
+.compact-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #E6F4EA;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s;
+}
+.compact-confirm-btn:hover { background: #CEEAD6; }
 /* ========================================
    CARD VIEW (AI-extracted sections)
    ======================================== */
@@ -1577,6 +1893,17 @@ defineExpose({ scrollToField, focusField })
   color: #BDC1C6;
   font-weight: 400;
   cursor: text;
+}
+.drug-table-warning {
+  display: inline-flex;
+  align-items: center;
+  color: #B06000;
+  font-weight: 500;
+  font-size: 11px;
+}
+.drug-table-warning:hover {
+  color: #E69500;
+  text-decoration: underline;
 }
 .drug-table-actions {
   padding: 4px 4px;

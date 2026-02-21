@@ -19,7 +19,7 @@
     <div v-if="extractionStore.complete && extractionStore.totalReviewableCriteria > 0" class="review-progress">
       <div class="review-progress-header">
         <span class="review-progress-label">
-          {{ extractionStore.reviewedCriteriaCount }}/{{ extractionStore.totalReviewableCriteria }} criteria reviewed
+          Policy Criteria Verified: {{ extractionStore.reviewedCriteriaCount }}/{{ extractionStore.totalReviewableCriteria }}
         </span>
         <span v-if="extractionStore.allCriteriaReviewed" class="review-complete-badge">
           <v-icon size="10" class="mr-1">mdi-check</v-icon>Complete

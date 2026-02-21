@@ -35,7 +35,7 @@
           </v-icon>
           <div class="leaf-info">
             <span class="leaf-name">{{ leafName }}</span>
-            <span v-if="node.negated" class="negated-badge">AUTO-MET</span>
+            <span v-if="node.negated" class="negated-badge">Assumed (Verify)</span>
             <span v-if="isOverridden" class="override-badge">DOCTOR</span>
           </div>
           <!-- Inline action buttons in header -->
@@ -53,17 +53,26 @@
               class="header-action header-resolve"
               @click.stop="showResolve = true; expanded = true"
             >Resolve</button>
+            <button
+              class="header-action header-acknowledge"
+              @click.stop="acknowledgeBlocker"
+              title="Acknowledge this criterion is not met"
+            >Acknowledge</button>
           </template>
-          <template v-else-if="effectiveMet && !isOverridden && !node.negated">
-            <button class="header-action header-accept" @click.stop="acceptReview">Accept</button>
-            <button class="header-action header-reject" @click.stop="rejectReview">Reject</button>
-          </template>
-          <template v-else-if="node.negated && !isOverridden">
-            <button class="header-action header-accept" @click.stop="acceptReview">Accept</button>
-            <button class="header-action header-override" @click.stop="overrideNegated">Override</button>
-          </template>
-          <template v-else-if="isOverridden">
-            <button class="header-action header-undo" @click.stop="rejectCriterion">Undo</button>
+          <template v-else-if="effectiveMet || node.negated">
+            <!-- AI evidence not yet viewed: show View Source button first -->
+            <template v-if="effectiveEvidence && !isOverridden && !node.negated && !sourceViewed">
+              <button class="header-action header-view" @click.stop="viewSourceFirst">
+                <v-icon size="10" class="mr-1">mdi-eye-outline</v-icon>View Source
+              </button>
+              <button class="header-action header-reject" @click.stop="rejectReview">Reject</button>
+            </template>
+            <!-- After viewing or for negated/overridden: normal accept/reject/edit -->
+            <template v-else>
+              <button class="header-action header-accept" @click.stop="acceptReview">Accept</button>
+              <button class="header-action header-reject" @click.stop="rejectReview">Reject</button>
+              <button v-if="effectiveEvidence || isOverridden" class="header-action header-edit" @click.stop="startEdit">Edit Evidence</button>
+            </template>
           </template>
           <v-icon size="14" class="expand-chevron">
             {{ expanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
@@ -72,6 +81,25 @@
 
         <!-- Expanded content -->
         <div v-if="expanded" class="leaf-body">
+          <!-- Edit mode -->
+          <div v-if="showEdit" class="edit-section">
+            <textarea
+              v-model="editText"
+              class="resolve-textarea"
+              rows="3"
+              placeholder="Enter or modify evidence..."
+              @click.stop
+            />
+            <div class="resolve-actions">
+              <button class="btn-sm btn-cancel" @click.stop="cancelEdit">Cancel</button>
+              <button class="btn-sm btn-save" @click.stop="saveEdit">
+                <v-icon size="12" class="mr-1">mdi-check</v-icon>
+                Save
+              </button>
+            </div>
+          </div>
+
+          <template v-else>
           <!-- Policy requirement text -->
           <div v-if="node.source_text" class="policy-text">
             <v-icon size="11" color="grey" class="mr-1 flex-shrink-0">mdi-file-document-outline</v-icon>
@@ -96,10 +124,16 @@
             </div>
           </div>
 
-          <!-- Negated criterion (auto-met) -->
-          <div v-else-if="node.negated && !isOverridden" class="leaf-auto-met">
-            <v-icon size="12" color="success" class="mr-1">mdi-information-outline</v-icon>
-            <span>Automatically satisfied (absence of disqualifying condition)</span>
+          <!-- Negated criterion (auto-met) — requires doctor confirmation -->
+          <div v-else-if="node.negated && !isOverridden" class="leaf-auto-met-callout">
+            <div class="auto-met-header">
+              <v-icon size="14" color="success" class="mr-1">mdi-shield-check-outline</v-icon>
+              <span class="auto-met-title">Auto-Met: Absence of Disqualifying Condition</span>
+            </div>
+            <p class="auto-met-text">
+              This criterion is met by the absence of a disqualifying condition.
+              Please confirm this is accurate for your patient.
+            </p>
           </div>
 
           <!-- Doctor rejected an AI result — show undo -->
@@ -107,7 +141,7 @@
             <div class="rejected-notice">
               <v-icon size="12" color="warning" class="mr-1">mdi-account-cancel</v-icon>
               <span>Rejected by doctor</span>
-              <button class="undo-reject-link" @click.stop="rejectCriterion">Undo</button>
+              <button class="undo-reject-link" @click.stop="undoReview">Undo</button>
             </div>
             <p v-if="originalAiResult?.evidence" class="rejected-evidence">{{ originalAiResult.evidence }}</p>
           </div>
@@ -150,6 +184,7 @@
               <span>No evidence found in clinical notes</span>
             </div>
           </div>
+          </template>
         </div>
       </div>
     </template>
@@ -206,6 +241,34 @@ const isOverridden = computed(() => !!override.value)
 const reviewState = computed(() => extractionStore.criterionReviews[props.node.id || ''] as 'accepted' | 'rejected' | undefined)
 const showResolve = ref(false)
 const resolveText = ref('')
+const showEdit = ref(false)
+const editText = ref('')
+const sourceViewed = ref(false)
+
+function viewSourceFirst() {
+  sourceViewed.value = true
+  expanded.value = true
+  if (effectiveEvidence.value) {
+    emit('viewSource', effectiveEvidence.value, originalAiResult.value?.source_note)
+  }
+}
+
+function startEdit() {
+  editText.value = effectiveEvidence.value || ''
+  showEdit.value = true
+  expanded.value = true
+}
+
+function cancelEdit() {
+  showEdit.value = false
+  editText.value = ''
+}
+
+function saveEdit() {
+  extractionStore.reviewEdit(props.node.id || '', editText.value.trim())
+  showEdit.value = false
+  editText.value = ''
+}
 
 function acceptReview() {
   extractionStore.reviewAccept(props.node.id || '')
@@ -220,26 +283,16 @@ function undoReview() {
   extractionStore.reviewUndo(props.node.id || '')
 }
 
-function rejectCriterion() {
-  const id = props.node.id || ''
-  if (isOverridden.value) {
-    // Undo the override — revert to AI result
-    extractionStore.clearOverride(id)
-  } else {
-    // Override AI result — mark as NOT MET
-    extractionStore.setOverride(id, false, '')
-  }
+function acknowledgeBlocker() {
+  extractionStore.reviewAccept(props.node.id || '')
 }
 
-function overrideNegated() {
-  const id = props.node.id || ''
-  extractionStore.setOverride(id, false, '')
-}
 
 function saveResolve() {
   if (resolveText.value.trim()) {
     const evidence = resolveText.value.trim()
     extractionStore.setOverride(props.node.id || '', true, evidence)
+    extractionStore.reviewAccept(props.node.id || '')
 
     // Insert into justification letter before the signature block
     if (formStore.justificationText) {
@@ -260,6 +313,13 @@ function saveResolve() {
         formStore.justificationText += '\n' + newParagraph
       }
     }
+
+    // Update justification letter criteria count
+    formStore.updateJustificationCounts(
+      extractionStore.effectiveMetCount,
+      extractionStore.policyStatus?.total_count || 0,
+      extractionStore.treeEligibility,
+    )
 
     showResolve.value = false
     resolveText.value = ''
@@ -389,9 +449,13 @@ const nodeClass = computed(() => ({
 
 const leafClass = computed(() => {
   const classes: string[] = []
-  if (props.node.negated) { classes.push('leaf-auto') }
-  else if (effectiveMet.value) { classes.push('leaf-met') }
-  else { classes.push('leaf-unmet') }
+  if (props.node.negated) {
+    classes.push(reviewState.value === 'accepted' ? 'leaf-confirmed' : 'leaf-auto')
+  } else if (effectiveMet.value) {
+    classes.push(reviewState.value === 'accepted' ? 'leaf-confirmed' : 'leaf-met')
+  } else {
+    classes.push('leaf-unmet')
+  }
   if (isDimmed.value) classes.push('leaf-dimmed')
   if (reviewState.value === 'accepted') classes.push('leaf-reviewed-accepted')
   if (reviewState.value === 'rejected') classes.push('leaf-reviewed-rejected')
@@ -405,8 +469,8 @@ const leafIcon = computed(() => {
 })
 
 const leafIconColor = computed(() => {
-  if (props.node.negated) return 'success'
-  if (effectiveMet.value) return 'success'
+  if (props.node.negated) return reviewState.value === 'accepted' ? 'success' : 'warning'
+  if (effectiveMet.value) return reviewState.value === 'accepted' ? 'success' : 'warning'
   return 'error'
 })
 
@@ -513,16 +577,20 @@ const isDimmed = computed(() => {
   overflow: hidden;
 }
 .leaf-met {
-  border-left: 3px solid #34A853;
-  background: #FCFFFC;
+  border-left: 3px solid #F9AB00;
+  background: #FFFBF0;
 }
 .leaf-unmet {
   border-left: 3px solid #EA4335;
   background: #FFFCFC;
 }
-.leaf-auto {
+.leaf-confirmed {
   border-left: 3px solid #34A853;
-  background: #F6FFF8;
+  background: #FCFFFC;
+}
+.leaf-auto {
+  border-left: 3px solid #F9AB00;
+  background: #FFFBF0;
 }
 .leaf-dimmed {
   opacity: 0.5;
@@ -567,8 +635,8 @@ const isDimmed = computed(() => {
   vertical-align: middle;
 }
 .negated-badge {
-  color: #137333;
-  background: #E6F4EA;
+  color: #E65100;
+  background: #FFF3E0;
 }
 .override-badge {
   color: #7B1FA2;
@@ -586,12 +654,20 @@ const isDimmed = computed(() => {
   flex-shrink: 0;
   transition: all 0.1s;
 }
-.header-resolve {
+.header-resolve, .header-view {
   color: #1967D2;
   border-color: #1967D2;
   background: #E8F0FE;
+  display: inline-flex;
+  align-items: center;
 }
-.header-resolve:hover { background: #D2E3FC; }
+.header-resolve:hover, .header-view:hover { background: #D2E3FC; }
+.header-acknowledge {
+  color: #5F6368;
+  border-color: #E8EAED;
+  background: #F8F9FA;
+}
+.header-acknowledge:hover { background: #E8EAED; }
 .header-reject {
   color: #C5221F;
   border-color: transparent;
@@ -610,12 +686,12 @@ const isDimmed = computed(() => {
   background: #E6F4EA;
 }
 .header-accept:hover { background: #CEEAD6; }
-.header-override {
-  color: #5F6368;
+.header-edit {
+  color: #1967D2;
   border-color: transparent;
   background: none;
 }
-.header-override:hover { background: #E8EAED; border-color: #80868B; }
+.header-edit:hover { background: #E8F0FE; border-color: #1967D2; }
 
 /* Review badges */
 .review-badge {
@@ -804,14 +880,34 @@ const isDimmed = computed(() => {
   justify-content: flex-end;
 }
 
-/* Auto-met */
-.leaf-auto-met {
+/* Edit section */
+.edit-section {
+  padding: 6px 0;
+}
+
+/* Auto-met callout */
+.leaf-auto-met-callout {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1.5px dashed #34A853;
+  border-radius: 6px;
+  background: #F6FFF8;
+}
+.auto-met-header {
   display: flex;
   align-items: center;
-  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.auto-met-title {
   font-size: 11px;
-  color: #80868B;
-  font-style: italic;
+  font-weight: 600;
+  color: #137333;
+}
+.auto-met-text {
+  font-size: 11px;
+  color: #3C4043;
+  line-height: 1.5;
+  margin: 0;
 }
 
 /* Guidance (not met) */

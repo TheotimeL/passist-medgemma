@@ -311,6 +311,7 @@ def format_section_vi(
     policy_status: PolicyStatus,
     extraction_results: list[dict],
     tree: PolicyNode | None = None,
+    field_overrides: dict[str, str] | None = None,
 ) -> str:
     """Format extraction evidence + FHIR data as a clinical letter of medical necessity.
 
@@ -326,21 +327,34 @@ def format_section_vi(
         policy_status: PolicyStatus from policy_tree.get_status().
         extraction_results: List of met criteria dicts with 'criterion_id' and 'evidence'.
         tree: PolicyNode tree for accessing branch names and keywords.
+        field_overrides: Optional dict of field_id → value from doctor edits.
+            Supported keys: icd10_code, patient_name, patient_dob,
+            condition_display, condition_onset.
 
     Returns:
         Formatted clinical justification string (PDF-compatible line endings).
     """
     NL = "\r\n"
+    overrides = field_overrides or {}
     evidence_by_id = {r["criterion_id"]: r.get("evidence", "") for r in extraction_results}
     all_criteria = get_all_criteria(tree) if tree else {}
 
-    # Dynamic values from FHIR + tree
+    # Dynamic values from FHIR + tree, with doctor overrides taking priority
     drug_name = _infer_requested_drug(tree) if tree else ""
-    condition = patient_data["condition_display"] or "the diagnosed condition"
-    icd_info = SNOMED_TO_ICD10.get(patient_data["condition_snomed"])
-    icd_str = f" (ICD-10: {icd_info[0]})" if icd_info else ""
-    onset = patient_data["condition_onset"]
-    age = _calculate_age(patient_data["dob"])
+    patient_name = overrides.get("patient_name") or patient_data["name"]
+    patient_dob = overrides.get("patient_dob") or patient_data["dob"]
+    condition = overrides.get("condition_display") or patient_data["condition_display"] or "the diagnosed condition"
+    onset = overrides.get("condition_onset") or patient_data["condition_onset"]
+
+    # ICD-10: prefer doctor override, then SNOMED lookup
+    icd_override = overrides.get("icd10_code")
+    if icd_override:
+        icd_str = f" (ICD-10: {icd_override})"
+    else:
+        icd_info = SNOMED_TO_ICD10.get(patient_data["condition_snomed"])
+        icd_str = f" (ICD-10: {icd_info[0]})" if icd_info else ""
+
+    age = _calculate_age(patient_dob)
     gender_word = {"female": "female", "male": "male"}.get(patient_data["gender"], "")
 
     parts: list[str] = []
@@ -348,7 +362,7 @@ def format_section_vi(
     # --- Letter header ---
     drug_label = f" - {drug_name}" if drug_name else ""
     parts.append(f"RE: Prior Authorization Request{drug_label}")
-    parts.append(f"Patient: {patient_data['name']} | DOB: {patient_data['dob']} | ID: {patient_data['member_id']}")
+    parts.append(f"Patient: {patient_name} | DOB: {patient_dob} | ID: {patient_data['member_id']}")
     parts.append("")
     parts.append("To Whom It May Concern,")
     parts.append("")
@@ -359,7 +373,7 @@ def format_section_vi(
     onset_str = f", diagnosed {onset}" if onset else ""
     parts.append(
         f"I am writing to request prior authorization{drug_phrase} for my patient, "
-        f"{patient_data['name']}, a {age_str} with {condition}{icd_str}{onset_str}."
+        f"{patient_name}, a {age_str} with {condition}{icd_str}{onset_str}."
     )
     parts.append("")
 
@@ -535,12 +549,13 @@ def fill_pa_form(
         "ICD Version": "ICD-10",
     })
 
-    # Extract requested drug dose from LLM extraction
+    # Extract requested drug strength from LLM extraction (split by 4B parser)
     requested_dose = ""
     for ext in extraction_results:
-        if ext.get("is_prior_therapy") is False and ext.get("drug_dose"):
-            requested_dose = ext["drug_dose"]
-            break
+        if ext.get("is_prior_therapy") is False:
+            requested_dose = ext.get("drug_strength", "")
+            if requested_dose:
+                break
 
     # Requested drug details (BCBS field names)
     filled += _set(pdf, {
@@ -577,7 +592,7 @@ def fill_pa_form(
 
         # Use LLM-provided is_prior_therapy to decide what goes in drug history
         is_prior = ext.get("is_prior_therapy")
-        if is_prior is False:
+        if is_prior is False or is_prior == "false":
             continue  # LLM says this is NOT prior therapy — skip
 
         # Drug name: require LLM-provided drug_name for drug history entries.
@@ -592,8 +607,8 @@ def fill_pa_form(
         if not failure:
             failure = evidence[:200]
 
-        # Drug dose and dates from LLM if available
-        drug_dose = ext.get("drug_dose", "")
+        # Drug strength and dates from LLM if available (split by 4B parser)
+        drug_dose = ext.get("drug_strength", "")
         drug_dates = ext.get("drug_dates", "")
 
         # BCBS drug history field names

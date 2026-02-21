@@ -89,12 +89,7 @@ def _build_example_output(criteria: list[dict]) -> str:
         elif 'drug_failure' not in matched and ('fail' in desc or 'inadequate response' in desc):
             reasoning_lines.append(f"{cid}: Zorbitamol discontinued (inadequate response), Plaxivent discontinued (GI intolerance). MET.")
             results.append({"criterion_id": cid, "met": True,
-                            "evidence": "Zorbitamol 20 mg weekly: Started June 2018, discontinued October 2018 due to inadequate response\nPlaxivent 1000 mg BID: Started November 2018, discontinued March 2019 (GI intolerance)",
-                            "drug_name": "Zorbitamol, Plaxivent",
-                            "drug_dose": "Zorbitamol 20 mg weekly, Plaxivent 1000 mg BID",
-                            "drug_dates": "Zorbitamol June 2018 - October 2018, Plaxivent November 2018 - March 2019",
-                            "is_prior_therapy": True,
-                            "failure_reason": "Zorbitamol: inadequate response; Plaxivent: GI intolerance"})
+                            "evidence": "Zorbitamol 20 mg weekly: Started June 2018, discontinued October 2018 due to inadequate response\nPlaxivent 1000 mg BID: Started November 2018, discontinued March 2019 (GI intolerance)"})
             matched.add('drug_failure')
         elif 'prescriber' not in matched and ('specialist' in desc or 'prescrib' in desc):
             reasoning_lines.append(f"{cid}: Provider: Dr. Robert Chen, MD, Department of Specialist Medicine, Verilex Medical Group. MET.")
@@ -137,11 +132,6 @@ def _build_prompt_prefix(criteria: list[dict]) -> str:
         "- criterion_id (required): the criterion ID\n"
         "- met (required): boolean\n"
         "- evidence (required): exact text from the document\n"
-        "- drug_name (optional): specific drug mentioned, e.g. 'methotrexate', 'adalimumab'\n"
-        "- drug_dose (optional): dosage if mentioned, e.g. '20 mg weekly'\n"
-        "- drug_dates (optional): therapy dates if mentioned, e.g. 'June 2018 - October 2018'\n"
-        "- is_prior_therapy (optional): true if evidence describes a drug previously tried/failed/discontinued; false if about current or newly requested therapy\n"
-        "- failure_reason (optional): brief reason for discontinuation, e.g. 'inadequate response', 'hepatotoxicity'\n"
         "- prescriber_name (optional): provider name if this is a prescriber criterion\n"
         "- prescriber_specialty (optional): provider specialty, e.g. 'Rheumatology'\n\n"
         "RULES:\n"
@@ -149,8 +139,7 @@ def _build_prompt_prefix(criteria: list[dict]) -> str:
         "2. Each criterion needs its OWN evidence that specifically mentions what that criterion asks about.\n"
         "   Drug failure for Drug X requires evidence mentioning Drug X by name.\n"
         "3. For prescriber evidence: extract the provider line or signature block WITH name, department/specialty, and practice.\n"
-        "4. If a criterion is not clearly supported, OMIT it. Most criteria will NOT be met.\n"
-        "5. For drug-related criteria, always include drug_name, is_prior_therapy, and failure_reason when applicable.\n\n"
+        "4. If a criterion is not clearly supported, OMIT it. Most criteria will NOT be met.\n\n"
         "CRITERIA:\n"
         f"{criteria_block}\n\n"
         "DOCUMENT:\n"
@@ -388,7 +377,7 @@ class ExtractionService:
             import mlx.core as mx
 
             self.model, self.tokenizer = load(str(MODEL_ID))
-            self._sampler = make_sampler(temp=0.1, top_p=0.9)
+            self._sampler = make_sampler(temp=0.05, top_p=0.9)
             self._logits_processors = make_logits_processors(repetition_penalty=1.2)
 
             # Cache prompt prefix
@@ -521,7 +510,7 @@ class ExtractionService:
             model="gemini-2.5-flash",
             contents=prompt,
             config=genai.types.GenerateContentConfig(
-                temperature=0.1,
+                temperature=0.05,
                 top_p=0.9,
                 max_output_tokens=max_tokens,
             ),

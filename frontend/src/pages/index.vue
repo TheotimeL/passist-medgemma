@@ -36,7 +36,7 @@
               <!-- Main card -->
               <v-card class="pa-8 landing-card" elevation="0">
                 <!-- Patient Selection -->
-                <v-select
+                <v-autocomplete
                   v-model="selectedPatient"
                   :items="patientItems"
                   item-title="text"
@@ -44,6 +44,8 @@
                   label="Select Patient"
                   prepend-inner-icon="mdi-account-outline"
                   :loading="patientStore.loadingPatients"
+                  clearable
+                  no-data-text="No patients found"
                   class="mb-2"
                 >
                   <template #item="{ props: itemProps, item }">
@@ -68,7 +70,7 @@
                       </template>
                     </v-list-item>
                   </template>
-                </v-select>
+                </v-autocomplete>
 
                 <!-- Insurer & Drug in a row -->
                 <v-row dense class="mb-2">

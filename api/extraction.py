@@ -1,47 +1,14 @@
-"""MedGemma extraction endpoint with SSE streaming.
-
-Supports two modes:
-1. Pre-computed results from extraction_*.json files (GET /patients/{uuid}/extraction)
-2. Live SSE streaming from ExtractionService (GET /patients/{uuid}/extract)
-"""
+"""MedGemma extraction endpoint with SSE streaming."""
 
 from __future__ import annotations
 
 import asyncio
 import json
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 
 router = APIRouter()
-
-EXTRACTIONS_DIR = Path(".")
-
-
-def _find_extraction(uuid: str) -> dict | None:
-    """Find pre-computed extraction results for a patient UUID."""
-    for json_file in EXTRACTIONS_DIR.glob("extraction_*.json"):
-        try:
-            data = json.loads(json_file.read_text())
-            if isinstance(data, list):
-                for entry in data:
-                    if entry.get("uuid", "").startswith(uuid[:8]):
-                        return entry
-            elif isinstance(data, dict) and data.get("uuid", "").startswith(uuid[:8]):
-                return data
-        except (json.JSONDecodeError, KeyError):
-            continue
-    return None
-
-
-@router.get("/patients/{uuid}/extraction")
-def get_extraction(uuid: str):
-    """Return pre-computed extraction results."""
-    result = _find_extraction(uuid)
-    if not result:
-        raise HTTPException(status_code=404, detail="No extraction results found. Run extraction first.")
-    return JSONResponse(content=result)
 
 
 @router.get("/patients/{uuid}/extract")

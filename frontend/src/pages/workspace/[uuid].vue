@@ -8,7 +8,15 @@
         <template v-if="extractionStore.policyStatus">
           <span class="criteria-chip" :class="'chip-' + statusKey">
             <v-icon size="12" class="mr-1">{{ statusIcon }}</v-icon>
-            {{ extractionStore.effectiveMetCount }}/{{ extractionStore.policyStatus.total_count }} criteria
+            <template v-if="extractionStore.treeEligibility === true">
+              Eligible
+            </template>
+            <template v-else-if="extractionStore.treeEligibility === false">
+              Not Eligible
+            </template>
+            <template v-else>
+              {{ extractionStore.effectiveMetCount }}/{{ extractionStore.policyStatus.total_count }} criteria
+            </template>
           </span>
           <span v-if="extractionStore.overrideCount > 0" class="override-chip">
             <v-icon size="10" class="mr-1">mdi-account-edit</v-icon>
@@ -24,21 +32,11 @@
       </div>
       <div class="topbar-right">
         <v-btn
-          v-if="formStore.suggestedCount > 0"
-          variant="outlined"
-          color="success"
-          size="small"
-          class="mr-2"
-          @click="formStore.acceptAll(); triggerPdfRefresh()"
-        >
-          Save ({{ formStore.suggestedCount }})
-        </v-btn>
-        <v-btn
           color="primary"
           size="small"
           :loading="generatingPdf"
           :disabled="!pdfSaveEnabled"
-          @click="downloadPdf"
+          @click="onSavePdf"
         >
           <v-icon start size="16">mdi-download</v-icon>
           Save PDF
@@ -65,7 +63,7 @@
             >
               <v-icon size="14" class="mr-1">mdi-clipboard-check</v-icon>
               Review
-              <span v-if="formStore.suggestedCount > 0 && leftMode !== 'review'" class="tab-pending-dot" />
+              <span v-if="formStore.pendingReviewCount > 0" class="tab-pending-dot" />
             </button>
             <button
               class="left-tab"
@@ -145,19 +143,19 @@
           <div class="right-tabs">
             <button
               class="right-tab"
-              :class="{ 'right-tab-active': rightMode === 'notes' }"
-              @click="rightMode = 'notes'"
-            >
-              <v-icon size="14" class="mr-1">mdi-file-document</v-icon>
-              Clinical Notes
-            </button>
-            <button
-              class="right-tab"
               :class="{ 'right-tab-active': rightMode === 'pdf' }"
               @click="rightMode = 'pdf'"
             >
               <v-icon size="14" class="mr-1">mdi-file-pdf-box</v-icon>
               PA Form
+            </button>
+            <button
+              class="right-tab"
+              :class="{ 'right-tab-active': rightMode === 'notes' }"
+              @click="rightMode = 'notes'"
+            >
+              <v-icon size="14" class="mr-1">mdi-file-document</v-icon>
+              Clinical Notes
             </button>
             <button
               class="right-tab"
@@ -324,6 +322,62 @@
     <v-snackbar v-model="showSuccess" color="success" timeout="3000" location="bottom right">
       {{ successMessage }}
     </v-snackbar>
+
+    <!-- Missing Fields Dialog -->
+    <v-dialog v-model="showMissingFieldsDialog" max-width="480">
+      <v-card>
+        <v-card-title class="text-subtitle-1">
+          <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
+          Missing Required Fields
+        </v-card-title>
+        <v-card-text>
+          <p class="text-body-2 mb-3">The following required fields are empty or rejected. This may cause the PA request to be denied:</p>
+          <div v-for="f in formStore.missingMandatoryFields" :key="f.fieldId" class="missing-field-item">
+            <v-icon size="14" color="error" class="mr-2">mdi-close-circle</v-icon>
+            <span>{{ f.label }}</span>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showMissingFieldsDialog = false">Go Back</v-btn>
+          <v-btn color="warning" variant="flat" @click="showMissingFieldsDialog = false; showAttestationDialog = true">Download Anyway</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Attestation Dialog -->
+    <v-dialog v-model="showAttestationDialog" max-width="480">
+      <v-card>
+        <v-card-title class="text-subtitle-1">
+          <v-icon color="primary" class="mr-2">mdi-shield-check</v-icon>
+          Physician Attestation
+        </v-card-title>
+        <v-card-text>
+          <p class="text-body-2 mb-4">
+            I attest that I have reviewed the AI-extracted clinical evidence and confirm its accuracy for this Prior Authorization request.
+          </p>
+          <v-text-field
+            v-model="attestationInitials"
+            label="Type your initials to sign"
+            variant="outlined"
+            density="compact"
+            hide-details
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showAttestationDialog = false; attestationInitials = ''">Cancel</v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :disabled="attestationInitials.trim().length < 2"
+            @click="showAttestationDialog = false; attestationInitials = ''; downloadPdf()"
+          >
+            Sign & Generate
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -365,18 +419,22 @@ const showSuccess = ref(false)
 const successMessage = ref('')
 const pdfPreviewData = shallowRef<ArrayBuffer | null>(null)
 const pdfStale = ref(false)
-const rightMode = ref<'pdf' | 'notes' | 'policy' | 'justification'>('notes')
+const rightMode = ref<'pdf' | 'notes' | 'policy' | 'justification'>('pdf')
 const leftMode = ref<'review' | 'notes'>('review')
-const leftWidth = ref(38)
+const leftWidth = ref(50)
 const isDragging = ref(false)
 const fhirLoading = ref(true)
 const fhirLoadingStatus = ref('Connecting to EHR...')
 const highlightEvidence = ref<string | null>(null)
 const justificationVisited = ref(false) // Track if justification tab was visited
+const showMissingFieldsDialog = ref(false)
+const showAttestationDialog = ref(false)
+const attestationInitials = ref('')
 const fieldIdToPdfName = ref<Record<string, string[]>>({})
 const pdfViewerRef = ref<InstanceType<typeof PdfViewer> | null>(null)
 const reviewQueueRef = ref<InstanceType<typeof ReviewQueue> | null>(null)
 let refreshDebounce: ReturnType<typeof setTimeout> | null = null
+let justificationDebounce: ReturnType<typeof setTimeout> | null = null
 
 // Tab availability rules
 const justificationTabAvailable = computed(() => extractionStore.allCriteriaReviewed)
@@ -427,20 +485,39 @@ watch(() => extractionStore.results, (newResults) => {
   }
 }, { deep: true })
 
-// Watch extraction completion — auto-switch to Policy tab
-watch(() => extractionStore.complete, (done) => {
+// Watch extraction completion — parse drug fields, then justification + PDF
+watch(() => extractionStore.complete, async (done) => {
   if (done && extractionStore.policyStatus) {
     const ps = extractionStore.policyStatus
     successMessage.value = `Extraction complete — review ${ps.met_count} criteria to continue`
     showSuccess.value = true
-    // Fetch clinical justification after extraction, passing live results
-    formStore.fetchJustification(uuid.value, extractionStore.results)
+
+    // Parse drug fields from evidence using MedGemma 4B (fast post-processing)
+    await extractionStore.parseDrugFields()
+
+    // Fetch clinical justification after drug fields are populated
+    formStore.fetchJustification(uuid.value, extractionStore.results, formStore.justificationOverrides)
     // Auto-generate first PDF preview once extraction is done
     if (!pdfPreviewData.value && formStore.totalFilledCount > 0) {
       generatePreview()
     }
   }
 })
+
+// Watch effective met count + tree eligibility → sync justification letter criteria count
+watch([() => extractionStore.effectiveMetCount, () => extractionStore.treeEligibility], ([metCount, eligible]) => {
+  formStore.updateJustificationCounts(metCount, extractionStore.policyStatus?.total_count || 0, eligible)
+})
+
+// Watch justification-relevant field edits — re-fetch justification letter
+watch(() => formStore.justificationOverrides, (overrides) => {
+  // Only re-fetch if justification was already generated
+  if (!formStore.justificationText || !extractionStore.complete) return
+  if (justificationDebounce) clearTimeout(justificationDebounce)
+  justificationDebounce = setTimeout(() => {
+    formStore.fetchJustification(uuid.value, extractionStore.results, overrides)
+  }, 800)
+}, { deep: true })
 
 // Watch all criteria reviewed — unlock justification tab
 watch(() => extractionStore.allCriteriaReviewed, (allDone) => {
@@ -477,7 +554,7 @@ onMounted(async () => {
   await extractionStore.fetchExtraction(uuid.value)
   // If extraction already completed (e.g. fast SSE), trigger justification fetch now
   if (extractionStore.complete && extractionStore.policyStatus && !formStore.justificationText) {
-    formStore.fetchJustification(uuid.value, extractionStore.results)
+    formStore.fetchJustification(uuid.value, extractionStore.results, formStore.justificationOverrides)
   }
 })
 
@@ -595,6 +672,14 @@ async function generatePreview() {
     showError.value = true
   } finally {
     generatingPreview.value = false
+  }
+}
+
+function onSavePdf() {
+  if (formStore.missingMandatoryFields.length > 0) {
+    showMissingFieldsDialog.value = true
+  } else {
+    showAttestationDialog.value = true
   }
 }
 
@@ -990,6 +1075,13 @@ async function downloadPdf() {
 }
 .justification-dot-loading { background: #F9AB00; }
 .justification-dot-ready { background: #34A853; }
+.missing-field-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 13px;
+  color: #3C4043;
+}
 .right-placeholder {
   display: flex;
   flex-direction: column;
