@@ -48,9 +48,30 @@
                   no-data-text="No patients found"
                   class="mb-2"
                 >
-                  <template #item="{ props: itemProps }">
+                  <template #item="{ item, props: itemProps }">
                     <v-list-item v-bind="itemProps">
+                      <template #subtitle>
+                        <span class="text-caption" style="color: #5F6368">{{ item.raw.eligibility_reason }}</span>
+                      </template>
                       <template #append>
+                        <v-chip
+                          v-if="item.raw.eligible === true"
+                          size="small"
+                          color="success"
+                          variant="tonal"
+                          class="font-weight-medium"
+                        >
+                          Eligible
+                        </v-chip>
+                        <v-chip
+                          v-else-if="item.raw.eligible === false"
+                          size="small"
+                          color="error"
+                          variant="tonal"
+                          class="font-weight-medium"
+                        >
+                          Not Eligible
+                        </v-chip>
                       </template>
                     </v-list-item>
                   </template>
@@ -120,6 +141,8 @@ const patientItems = computed(() =>
   patientStore.patients.map(p => ({
     text: p.name,
     value: p.uuid,
+    eligible: p.eligible,
+    eligibility_reason: p.eligibility_reason,
   }))
 )
 

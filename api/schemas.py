@@ -10,6 +10,8 @@ class PatientSummary(BaseModel):
     name: str
     files: list[str]
     has_fhir: bool
+    eligible: bool | None = None
+    eligibility_reason: str = ""
 
 
 class PatientFhir(BaseModel):

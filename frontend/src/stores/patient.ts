@@ -6,6 +6,8 @@ export interface PatientSummary {
   name: string
   files: string[]
   has_fhir: boolean
+  eligible: boolean | null
+  eligibility_reason: string
 }
 
 export interface PatientFhir {

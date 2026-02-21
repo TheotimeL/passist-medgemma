@@ -1,0 +1,537 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:d840c23b-1a73-4045-9e92-49cf10be1e58",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "d840c23b-1a73-4045-9e92-49cf10be1e58",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "https://github.com/synthetichealth/synthea",
+            "value": "d840c23b-1a73-4045-9e92-49cf10be1e58"
+          },
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                  "code": "MR",
+                  "display": "Medical Record Number"
+                }
+              ],
+              "text": "Medical Record Number"
+            },
+            "system": "http://hospital.smarthealthit.org",
+            "value": "d840c23b-1a73-4045-9e92-49cf10be1e58"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Williams",
+            "given": [
+              "Patricia"
+            ],
+            "prefix": [
+              "Mrs."
+            ]
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "555-602-4381",
+            "use": "home"
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1980-04-18",
+        "address": [
+          {
+            "line": [
+              "456 Birch Lane"
+            ],
+            "city": "Austin",
+            "state": "TX",
+            "postalCode": "78745",
+            "country": "US"
+          }
+        ],
+        "communication": [
+          {
+            "language": {
+              "coding": [
+                {
+                  "system": "urn:ietf:bcp:47",
+                  "code": "en-US",
+                  "display": "English (United States)"
+                }
+              ],
+              "text": "English (United States)"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Patient"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:00141336-6c14-5001-ac17-fd03532683a1",
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "00141336-6c14-5001-ac17-fd03532683a1",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-encounter"
+          ]
+        },
+        "identifier": [
+          {
+            "use": "official",
+            "system": "https://github.com/synthetichealth/synthea",
+            "value": "00141336-6c14-5001-ac17-fd03532683a1"
+          }
+        ],
+        "status": "finished",
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "AMB"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "185347001",
+                "display": "Encounter for problem (procedure)"
+              }
+            ],
+            "text": "Encounter for problem (procedure)"
+          }
+        ],
+        "subject": {
+          "reference": "urn:uuid:d840c23b-1a73-4045-9e92-49cf10be1e58",
+          "display": "Mrs. Patricia Williams"
+        },
+        "participant": [
+          {
+            "type": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                    "code": "PPRF",
+                    "display": "primary performer"
+                  }
+                ],
+                "text": "primary performer"
+              }
+            ],
+            "period": {
+              "start": "2026-01-22T09:00:00-06:00",
+              "end": "2026-01-22T09:30:00-06:00"
+            },
+            "individual": {
+              "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|3456789012",
+              "display": "Dr. Michael Torres"
+            }
+          }
+        ],
+        "period": {
+          "start": "2026-01-22T09:00:00-06:00",
+          "end": "2026-01-22T09:30:00-06:00"
+        },
+        "reasonCode": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "69896004",
+                "display": "Rheumatoid arthritis (disorder)"
+              }
+            ]
+          }
+        ],
+        "serviceProvider": {
+          "reference": "Organization?identifier=https://github.com/synthetichealth/synthea|caa2ad6b-14d0-5ef7-bb31-d6ada2abd8f2",
+          "display": "Greenwood Family Practice"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Encounter"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:daf1e0d6-0c51-5bd4-9dfb-37a1d333752f",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "daf1e0d6-0c51-5bd4-9dfb-37a1d333752f",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-condition-encounter-diagnosis"
+          ]
+        },
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "active"
+            }
+          ]
+        },
+        "verificationStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+              "code": "confirmed"
+            }
+          ]
+        },
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+                "code": "encounter-diagnosis",
+                "display": "Encounter Diagnosis"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "69896004",
+              "display": "Rheumatoid arthritis (disorder)"
+            }
+          ],
+          "text": "Rheumatoid arthritis (disorder)"
+        },
+        "subject": {
+          "reference": "urn:uuid:d840c23b-1a73-4045-9e92-49cf10be1e58"
+        },
+        "encounter": {
+          "reference": "urn:uuid:00141336-6c14-5001-ac17-fd03532683a1"
+        },
+        "onsetDateTime": "2025-03-10",
+        "recordedDate": "2025-03-10"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Condition"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:9216479d-96b5-5d39-b632-d18ecf62addd",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "9216479d-96b5-5d39-b632-d18ecf62addd",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/medicationrequest-category",
+                "code": "community",
+                "display": "Community"
+              }
+            ],
+            "text": "Community"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "979092",
+              "display": "Hydroxychloroquine 200 MG Oral Tablet"
+            }
+          ],
+          "text": "Hydroxychloroquine 200 MG Oral Tablet"
+        },
+        "subject": {
+          "reference": "urn:uuid:d840c23b-1a73-4045-9e92-49cf10be1e58"
+        },
+        "encounter": {
+          "reference": "urn:uuid:00141336-6c14-5001-ac17-fd03532683a1"
+        },
+        "authoredOn": "2025-06-01T09:00:00-06:00",
+        "requester": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|3456789012",
+          "display": "Dr. Michael Torres"
+        },
+        "reasonReference": [
+          {
+            "reference": "urn:uuid:daf1e0d6-0c51-5bd4-9dfb-37a1d333752f",
+            "display": "Rheumatoid arthritis (disorder)"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:f01405b6-c527-5b1d-ae35-2bb49d7e9a32",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "f01405b6-c527-5b1d-ae35-2bb49d7e9a32",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/medicationrequest-category",
+                "code": "community",
+                "display": "Community"
+              }
+            ],
+            "text": "Community"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "197806",
+              "display": "Ibuprofen 400 MG Oral Tablet"
+            }
+          ],
+          "text": "Ibuprofen 400 MG Oral Tablet"
+        },
+        "subject": {
+          "reference": "urn:uuid:d840c23b-1a73-4045-9e92-49cf10be1e58"
+        },
+        "encounter": {
+          "reference": "urn:uuid:00141336-6c14-5001-ac17-fd03532683a1"
+        },
+        "authoredOn": "2025-06-01T09:00:00-06:00",
+        "requester": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|3456789012",
+          "display": "Dr. Michael Torres"
+        },
+        "reasonReference": [
+          {
+            "reference": "urn:uuid:daf1e0d6-0c51-5bd4-9dfb-37a1d333752f",
+            "display": "Rheumatoid arthritis (disorder)"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:c78f4e05-83ba-511d-a9c2-4768da6eb2c6",
+      "resource": {
+        "resourceType": "Claim",
+        "id": "c78f4e05-83ba-511d-a9c2-4768da6eb2c6",
+        "status": "active",
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+              "code": "pharmacy"
+            }
+          ]
+        },
+        "use": "claim",
+        "patient": {
+          "reference": "urn:uuid:d840c23b-1a73-4045-9e92-49cf10be1e58"
+        },
+        "billablePeriod": {
+          "start": "2026-01-22T09:00:00-06:00",
+          "end": "2026-01-22T09:30:00-06:00"
+        },
+        "created": "2026-01-22T09:00:00-06:00",
+        "provider": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|3456789012",
+          "display": "Dr. Michael Torres"
+        },
+        "priority": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/processpriority",
+              "code": "normal"
+            }
+          ]
+        },
+        "insurance": [
+          {
+            "sequence": 1,
+            "focal": true,
+            "coverage": {
+              "display": "UnitedHealthcare"
+            }
+          }
+        ],
+        "item": [
+          {
+            "sequence": 1,
+            "productOrService": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "185347001",
+                  "display": "Encounter for problem (procedure)"
+                }
+              ],
+              "text": "Encounter for problem (procedure)"
+            },
+            "encounter": [
+              {
+                "reference": "urn:uuid:00141336-6c14-5001-ac17-fd03532683a1"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Claim"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:0d3b91b0-5f12-596d-823f-9adab67e037c",
+      "resource": {
+        "resourceType": "ExplanationOfBenefit",
+        "id": "0d3b91b0-5f12-596d-823f-9adab67e037c",
+        "contained": [
+          {
+            "resourceType": "ServiceRequest",
+            "id": "referral",
+            "status": "completed",
+            "intent": "order",
+            "subject": {
+              "reference": "urn:uuid:d840c23b-1a73-4045-9e92-49cf10be1e58"
+            },
+            "requester": {
+              "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|3456789012"
+            },
+            "performer": [
+              {
+                "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|3456789012"
+              }
+            ]
+          },
+          {
+            "resourceType": "Coverage",
+            "id": "coverage",
+            "status": "active",
+            "type": {
+              "text": "UnitedHealthcare"
+            },
+            "beneficiary": {
+              "reference": "urn:uuid:d840c23b-1a73-4045-9e92-49cf10be1e58"
+            },
+            "payor": [
+              {
+                "display": "UnitedHealthcare"
+              }
+            ]
+          }
+        ],
+        "identifier": [
+          {
+            "system": "https://bluebutton.cms.gov/resources/variables/clm_id",
+            "value": "c78f4e05-83ba-511d-a9c2-4768da6eb2c6"
+          },
+          {
+            "system": "https://bluebutton.cms.gov/resources/identifier/claim-group",
+            "value": "99999999999"
+          }
+        ],
+        "status": "active",
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+              "code": "pharmacy"
+            }
+          ]
+        },
+        "use": "claim",
+        "patient": {
+          "reference": "urn:uuid:d840c23b-1a73-4045-9e92-49cf10be1e58"
+        },
+        "billablePeriod": {
+          "start": "2026-01-22T09:00:00-06:00",
+          "end": "2026-01-22T09:30:00-06:00"
+        },
+        "created": "2026-01-22T09:00:00-06:00",
+        "insurer": {
+          "display": "UnitedHealthcare"
+        },
+        "provider": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|3456789012"
+        },
+        "referral": {
+          "reference": "#referral"
+        },
+        "facility": {
+          "reference": "Location?identifier=https://github.com/synthetichealth/synthea|8e583f21-89d1-5dcf-8f6b-3c1d54410704",
+          "display": "Greenwood Family Practice"
+        },
+        "claim": {
+          "reference": "urn:uuid:c78f4e05-83ba-511d-a9c2-4768da6eb2c6"
+        },
+        "outcome": "complete",
+        "careTeam": [
+          {
+            "sequence": 1,
+            "provider": {
+              "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|3456789012"
+            },
+            "role": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/claimcareteamrole",
+                  "code": "primary",
+                  "display": "Primary provider"
+                }
+              ]
+            }
+          }
+        ],
+        "insurance": [
+          {
+            "focal": true,
+            "coverage": {
+              "reference": "#coverage",
+              "display": "UnitedHealthcare"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "ExplanationOfBenefit"
+      }
+    }
+  ]
+}

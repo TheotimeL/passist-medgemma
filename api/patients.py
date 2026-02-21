@@ -15,6 +15,23 @@ from patient_data import load_patient_from_fhir
 
 router = APIRouter()
 
+# Pre-determined eligibility for demo patients (from clinical notes analysis)
+# Key: UUID prefix (first 8 chars) → eligibility info
+PATIENT_ELIGIBILITY: dict[str, dict] = {
+    "520e6e72": {"eligible": True, "reason": "Failed methotrexate, active RA (DAS28 5.4)"},
+    "affb0758": {"eligible": False, "reason": "No DMARD trial yet, step therapy not met"},
+    "2d701350": {"eligible": True, "reason": "Failed methotrexate + leflunomide, active RA"},
+    "5c9df1d3": {"eligible": True, "reason": "Failed methotrexate + hydroxychloroquine, active RA"},
+    "92181936": {"eligible": True, "reason": "Failed methotrexate + prior Enbrel, active RA"},
+    "aa20b461": {"eligible": False, "reason": "On methotrexate (not failed), dose increase planned"},
+    "1a691f1f": {"eligible": False, "reason": "On methotrexate with reasonable control, no failure"},
+    "8b8f1e13": {"eligible": False, "reason": "RA in remission since 2020, off all medications"},
+    "129412a7": {"eligible": True, "reason": "Failed leflunomide + hydroxychloroquine, active RA"},
+    "17d5d247": {"eligible": True, "reason": "Failed methotrexate + sulfasalazine, active RA"},
+    "d840c23b": {"eligible": False, "reason": "Low disease activity, no DMARD failures"},
+    "f7581664": {"eligible": True, "reason": "Failed methotrexate + leflunomide + prior etanercept"},
+}
+
 
 def _find_fhir_bundle(uuid: str) -> str | None:
     """Search for a FHIR bundle matching this UUID.
@@ -98,12 +115,16 @@ def list_patients():
     for uuid, info in patients.items():
         if _find_fhir_bundle(uuid) is None:
             continue
+        prefix = uuid[:8]
+        elig = PATIENT_ELIGIBILITY.get(prefix, {})
         result.append(
             PatientSummary(
                 uuid=uuid,
                 name=info["name"],
                 files=info["files"],
                 has_fhir=True,
+                eligible=elig.get("eligible"),
+                eligibility_reason=elig.get("reason", ""),
             )
         )
     return sorted(result, key=lambda p: p.name)

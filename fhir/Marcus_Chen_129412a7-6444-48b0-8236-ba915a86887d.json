@@ -1,0 +1,651 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "129412a7-6444-48b0-8236-ba915a86887d",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "https://github.com/synthetichealth/synthea",
+            "value": "129412a7-6444-48b0-8236-ba915a86887d"
+          },
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                  "code": "MR",
+                  "display": "Medical Record Number"
+                }
+              ],
+              "text": "Medical Record Number"
+            },
+            "system": "http://hospital.smarthealthit.org",
+            "value": "129412a7-6444-48b0-8236-ba915a86887d"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Chen",
+            "given": [
+              "Marcus"
+            ],
+            "prefix": [
+              "Mr."
+            ]
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "555-847-2193",
+            "use": "home"
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1958-11-03",
+        "address": [
+          {
+            "line": [
+              "2847 Oak Valley Drive"
+            ],
+            "city": "San Jose",
+            "state": "CA",
+            "postalCode": "95132",
+            "country": "US"
+          }
+        ],
+        "communication": [
+          {
+            "language": {
+              "coding": [
+                {
+                  "system": "urn:ietf:bcp:47",
+                  "code": "en-US",
+                  "display": "English (United States)"
+                }
+              ],
+              "text": "English (United States)"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Patient"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:45a82b33-adbb-53f2-9a60-6ad7841236cc",
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "45a82b33-adbb-53f2-9a60-6ad7841236cc",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-encounter"
+          ]
+        },
+        "identifier": [
+          {
+            "use": "official",
+            "system": "https://github.com/synthetichealth/synthea",
+            "value": "45a82b33-adbb-53f2-9a60-6ad7841236cc"
+          }
+        ],
+        "status": "finished",
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "AMB"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "185347001",
+                "display": "Encounter for problem (procedure)"
+              }
+            ],
+            "text": "Encounter for problem (procedure)"
+          }
+        ],
+        "subject": {
+          "reference": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d",
+          "display": "Mr. Marcus Chen"
+        },
+        "participant": [
+          {
+            "type": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                    "code": "PPRF",
+                    "display": "primary performer"
+                  }
+                ],
+                "text": "primary performer"
+              }
+            ],
+            "period": {
+              "start": "2026-02-03T09:00:00-06:00",
+              "end": "2026-02-03T09:30:00-06:00"
+            },
+            "individual": {
+              "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1234567890",
+              "display": "Dr. James Okafor"
+            }
+          }
+        ],
+        "period": {
+          "start": "2026-02-03T09:00:00-06:00",
+          "end": "2026-02-03T09:30:00-06:00"
+        },
+        "reasonCode": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "69896004",
+                "display": "Rheumatoid arthritis (disorder)"
+              }
+            ]
+          }
+        ],
+        "serviceProvider": {
+          "reference": "Organization?identifier=https://github.com/synthetichealth/synthea|6b842d1c-eafb-50c8-a1db-6972c7d4116a",
+          "display": "Bayshore Community Health Center"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Encounter"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:0d8a4af0-ae45-516e-9c2d-7ea341272bdd",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "0d8a4af0-ae45-516e-9c2d-7ea341272bdd",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-condition-encounter-diagnosis"
+          ]
+        },
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "active"
+            }
+          ]
+        },
+        "verificationStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+              "code": "confirmed"
+            }
+          ]
+        },
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+                "code": "encounter-diagnosis",
+                "display": "Encounter Diagnosis"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "69896004",
+              "display": "Rheumatoid arthritis (disorder)"
+            }
+          ],
+          "text": "Rheumatoid arthritis (disorder)"
+        },
+        "subject": {
+          "reference": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d"
+        },
+        "encounter": {
+          "reference": "urn:uuid:45a82b33-adbb-53f2-9a60-6ad7841236cc"
+        },
+        "onsetDateTime": "2020-08-15",
+        "recordedDate": "2020-08-15"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Condition"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:0b512668-5a17-526c-842b-05df09fd97ab",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "0b512668-5a17-526c-842b-05df09fd97ab",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/medicationrequest-category",
+                "code": "community",
+                "display": "Community"
+              }
+            ],
+            "text": "Community"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "312615",
+              "display": "Prednisone 5 MG Oral Tablet"
+            }
+          ],
+          "text": "Prednisone 5 MG Oral Tablet"
+        },
+        "subject": {
+          "reference": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d"
+        },
+        "encounter": {
+          "reference": "urn:uuid:45a82b33-adbb-53f2-9a60-6ad7841236cc"
+        },
+        "authoredOn": "2025-06-10T09:00:00-06:00",
+        "requester": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1234567890",
+          "display": "Dr. James Okafor"
+        },
+        "reasonReference": [
+          {
+            "reference": "urn:uuid:0d8a4af0-ae45-516e-9c2d-7ea341272bdd",
+            "display": "Rheumatoid arthritis (disorder)"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:c956d74d-90ef-5908-90c1-e50f623bed9a",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "c956d74d-90ef-5908-90c1-e50f623bed9a",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/medicationrequest-category",
+                "code": "community",
+                "display": "Community"
+              }
+            ],
+            "text": "Community"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "205323",
+              "display": "Celecoxib 200 MG Oral Capsule"
+            }
+          ],
+          "text": "Celecoxib 200 MG Oral Capsule"
+        },
+        "subject": {
+          "reference": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d"
+        },
+        "encounter": {
+          "reference": "urn:uuid:45a82b33-adbb-53f2-9a60-6ad7841236cc"
+        },
+        "authoredOn": "2025-06-10T09:00:00-06:00",
+        "requester": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1234567890",
+          "display": "Dr. James Okafor"
+        },
+        "reasonReference": [
+          {
+            "reference": "urn:uuid:0d8a4af0-ae45-516e-9c2d-7ea341272bdd",
+            "display": "Rheumatoid arthritis (disorder)"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:9aff36de-3b93-518c-b766-ce5502f31985",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "9aff36de-3b93-518c-b766-ce5502f31985",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+          ]
+        },
+        "status": "stopped",
+        "intent": "order",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/medicationrequest-category",
+                "code": "community",
+                "display": "Community"
+              }
+            ],
+            "text": "Community"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "199389",
+              "display": "Leflunomide 20 MG Oral Tablet"
+            }
+          ],
+          "text": "Leflunomide 20 MG Oral Tablet"
+        },
+        "subject": {
+          "reference": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d"
+        },
+        "encounter": {
+          "reference": "urn:uuid:45a82b33-adbb-53f2-9a60-6ad7841236cc"
+        },
+        "authoredOn": "2021-09-01T09:00:00-06:00",
+        "requester": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1234567890",
+          "display": "Dr. James Okafor"
+        },
+        "reasonReference": [
+          {
+            "reference": "urn:uuid:0d8a4af0-ae45-516e-9c2d-7ea341272bdd",
+            "display": "Rheumatoid arthritis (disorder)"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:c4ccc7bf-575d-596e-9a08-38d87cdd242a",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "c4ccc7bf-575d-596e-9a08-38d87cdd242a",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+          ]
+        },
+        "status": "stopped",
+        "intent": "order",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/medicationrequest-category",
+                "code": "community",
+                "display": "Community"
+              }
+            ],
+            "text": "Community"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "979092",
+              "display": "Hydroxychloroquine 200 MG Oral Tablet"
+            }
+          ],
+          "text": "Hydroxychloroquine 200 MG Oral Tablet"
+        },
+        "subject": {
+          "reference": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d"
+        },
+        "encounter": {
+          "reference": "urn:uuid:45a82b33-adbb-53f2-9a60-6ad7841236cc"
+        },
+        "authoredOn": "2022-03-01T09:00:00-06:00",
+        "requester": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1234567890",
+          "display": "Dr. James Okafor"
+        },
+        "reasonReference": [
+          {
+            "reference": "urn:uuid:0d8a4af0-ae45-516e-9c2d-7ea341272bdd",
+            "display": "Rheumatoid arthritis (disorder)"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:6da84aa0-bcb8-5c6b-8e3a-b4929736908c",
+      "resource": {
+        "resourceType": "Claim",
+        "id": "6da84aa0-bcb8-5c6b-8e3a-b4929736908c",
+        "status": "active",
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+              "code": "pharmacy"
+            }
+          ]
+        },
+        "use": "claim",
+        "patient": {
+          "reference": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d"
+        },
+        "billablePeriod": {
+          "start": "2026-02-03T09:00:00-06:00",
+          "end": "2026-02-03T09:30:00-06:00"
+        },
+        "created": "2026-02-03T09:00:00-06:00",
+        "provider": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1234567890",
+          "display": "Dr. James Okafor"
+        },
+        "priority": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/processpriority",
+              "code": "normal"
+            }
+          ]
+        },
+        "insurance": [
+          {
+            "sequence": 1,
+            "focal": true,
+            "coverage": {
+              "display": "UnitedHealthcare"
+            }
+          }
+        ],
+        "item": [
+          {
+            "sequence": 1,
+            "productOrService": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "185347001",
+                  "display": "Encounter for problem (procedure)"
+                }
+              ],
+              "text": "Encounter for problem (procedure)"
+            },
+            "encounter": [
+              {
+                "reference": "urn:uuid:45a82b33-adbb-53f2-9a60-6ad7841236cc"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Claim"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:9e2d4095-f89d-5a13-87cb-25e76330e447",
+      "resource": {
+        "resourceType": "ExplanationOfBenefit",
+        "id": "9e2d4095-f89d-5a13-87cb-25e76330e447",
+        "contained": [
+          {
+            "resourceType": "ServiceRequest",
+            "id": "referral",
+            "status": "completed",
+            "intent": "order",
+            "subject": {
+              "reference": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d"
+            },
+            "requester": {
+              "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1234567890"
+            },
+            "performer": [
+              {
+                "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1234567890"
+              }
+            ]
+          },
+          {
+            "resourceType": "Coverage",
+            "id": "coverage",
+            "status": "active",
+            "type": {
+              "text": "UnitedHealthcare"
+            },
+            "beneficiary": {
+              "reference": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d"
+            },
+            "payor": [
+              {
+                "display": "UnitedHealthcare"
+              }
+            ]
+          }
+        ],
+        "identifier": [
+          {
+            "system": "https://bluebutton.cms.gov/resources/variables/clm_id",
+            "value": "6da84aa0-bcb8-5c6b-8e3a-b4929736908c"
+          },
+          {
+            "system": "https://bluebutton.cms.gov/resources/identifier/claim-group",
+            "value": "99999999999"
+          }
+        ],
+        "status": "active",
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+              "code": "pharmacy"
+            }
+          ]
+        },
+        "use": "claim",
+        "patient": {
+          "reference": "urn:uuid:129412a7-6444-48b0-8236-ba915a86887d"
+        },
+        "billablePeriod": {
+          "start": "2026-02-03T09:00:00-06:00",
+          "end": "2026-02-03T09:30:00-06:00"
+        },
+        "created": "2026-02-03T09:00:00-06:00",
+        "insurer": {
+          "display": "UnitedHealthcare"
+        },
+        "provider": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1234567890"
+        },
+        "referral": {
+          "reference": "#referral"
+        },
+        "facility": {
+          "reference": "Location?identifier=https://github.com/synthetichealth/synthea|2d70b653-65cd-51fa-a7f5-855f33cd8ea8",
+          "display": "Bayshore Community Health Center"
+        },
+        "claim": {
+          "reference": "urn:uuid:6da84aa0-bcb8-5c6b-8e3a-b4929736908c"
+        },
+        "outcome": "complete",
+        "careTeam": [
+          {
+            "sequence": 1,
+            "provider": {
+              "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1234567890"
+            },
+            "role": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/claimcareteamrole",
+                  "code": "primary",
+                  "display": "Primary provider"
+                }
+              ]
+            }
+          }
+        ],
+        "insurance": [
+          {
+            "focal": true,
+            "coverage": {
+              "reference": "#coverage",
+              "display": "UnitedHealthcare"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "ExplanationOfBenefit"
+      }
+    }
+  ]
+}
