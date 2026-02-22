@@ -25,11 +25,10 @@
                   </svg>
                 </div>
                 <h1 class="text-h3 font-weight-bold hero-title">
-                  Prior Authorization
+                  PAssist
                 </h1>
                 <p class="text-body-1 mt-3 hero-subtitle">
-                  AI-assisted form filling powered by
-                  <span class="font-weight-medium" style="color: #4285F4">MedGemma</span>
+                  Evidence-Linked Assistant for Prior Authorization
                 </p>
               </div>
 

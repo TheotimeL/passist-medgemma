@@ -254,7 +254,7 @@ export const useExtractionStore = defineStore('extraction', () => {
   /** Start SSE extraction stream. */
   function startLiveExtraction(uuid: string) {
     isExtracting.value = true
-    progress.value = 'Starting MedGemma extraction...'
+    progress.value = 'Starting clinical extraction...'
 
     eventSource = new EventSource(`/api/patients/${uuid}/extract`)
 

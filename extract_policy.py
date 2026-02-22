@@ -476,6 +476,8 @@ def clinically_enrich_tree(tree_path: str, output_path: str | None = None, model
            - For negated criteria: explain that absence of mention = criterion met
         3. "keywords": Array of 3-8 key terms that SHOULD appear in valid evidence for this criterion.
            Use lowercase. Include both brand names and generic names for drugs.
+           Also include standard clinical abbreviations that clinicians commonly use
+           in SOAP notes and progress notes.
         4. "anti_keywords": Array of terms that should make evidence SUSPECT for this criterion.
            For example, for a "rheumatologist" criterion, anti_keywords might include specialties
            that are NOT rheumatology (e.g., "internal medicine", "family medicine", "primary care").

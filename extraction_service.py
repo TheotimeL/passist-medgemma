@@ -200,6 +200,22 @@ def _keyword_in_text(keyword: str, text: str) -> bool:
     return kw_lower in text_lower
 
 
+def _deduplicate_keyword_matches(matched_keywords: list[str]) -> list[str]:
+    """Remove keyword matches where one is a substring of another.
+
+    When 'remission' and 'in remission' both match, they likely matched
+    the same text region. Keep only the longest (most specific) match.
+    """
+    if len(matched_keywords) <= 1:
+        return matched_keywords
+    sorted_kws = sorted(matched_keywords, key=len, reverse=True)
+    result = []
+    for kw in sorted_kws:
+        if not any(kw in kept for kept in result):
+            result.append(kw)
+    return result
+
+
 def _evidence_grounding_ratio(evidence: str, note: str) -> float:
     def _norm(t: str) -> str:
         t = t.lower()
@@ -268,6 +284,7 @@ def validate_evidence(parsed: list[dict], all_criteria: list[dict], note_text: s
         pos_kws = criterion_info.get('keywords', [])
         if anti_kws and pos_kws and not is_negated:
             found_anti = [kw for kw in anti_kws if _keyword_in_text(kw, evidence)]
+            found_anti = _deduplicate_keyword_matches(found_anti)
             found_pos = [kw for kw in pos_kws if _keyword_in_text(kw, evidence)]
             if found_anti and len(found_anti) >= len(found_pos):
                 continue
@@ -279,6 +296,7 @@ def validate_evidence(parsed: list[dict], all_criteria: list[dict], note_text: s
 
         if anti_kws and pos_kws and not is_negated:
             found_anti_in_note = [kw for kw in anti_kws if _keyword_in_text(kw, note_text)]
+            found_anti_in_note = _deduplicate_keyword_matches(found_anti_in_note)
             if found_anti_in_note:
                 found_pos_in_evidence = [kw for kw in pos_kws if _keyword_in_text(kw, evidence)]
                 if not found_pos_in_evidence:

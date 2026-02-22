@@ -15,7 +15,7 @@ Reason for Visit: Follow-up for rheumatoid arthritis. Evaluation for biologic th
 SUBJECTIVE:
 Mrs. Thiel is a 77-year-old woman with a longstanding history of moderately to severely active rheumatoid arthritis, first diagnosed in July 2015. She presents today reporting persistent joint pain and stiffness in bilateral hands, wrists, and knees. Morning stiffness lasts approximately 90 minutes daily. She reports difficulty with fine motor tasks such as buttoning shirts and opening jars. Her symptoms have been progressively worsening over the past 6 months despite current therapy with naproxen 500 mg daily.
 
-She was initially started on methotrexate 2.5 mg oral tablet at the time of her diagnosis in July 2015. However, methotrexate was discontinued after 3 months due to persistent nausea, elevated liver enzymes (ALT 78 U/L), and inadequate clinical response. She has been maintained on naproxen 500 mg oral tablet since 2015, which provides only partial symptom relief.
+She was initially started on MTX 2.5 mg oral tablet at the time of her diagnosis in July 2015. However, MTX was discontinued after 3 months due to persistent nausea, elevated liver enzymes (ALT 78 U/L), and inadequate clinical response. She has been maintained on naproxen 500 mg oral tablet since 2015, which provides only partial symptom relief.
 
 She denies any recent infections, fevers, or weight loss. She reports no new skin rashes. Allergies: No known drug allergies.
 
@@ -50,7 +50,7 @@ DAS28-ESR: 5.4 (high disease activity)
 ASSESSMENT:
 1. Rheumatoid arthritis, seropositive, moderately to severely active (DAS28-ESR 5.4)
    - Disease onset July 2015, now 10+ years duration
-   - Failed methotrexate trial (July-October 2015): discontinued due to hepatotoxicity and inadequate response
+   - Failed MTX trial (July-October 2015): discontinued due to hepatotoxicity and inadequate response
    - Radiographic progression with new erosive changes despite NSAID therapy
    - Currently on naproxen 500 mg daily with insufficient disease control
 
