@@ -40,13 +40,13 @@ End-to-end pipeline that extracts clinical evidence from patient notes using a l
 │                              DATA SOURCES (all local)                           │
 │                                                                                 │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────────┐  │
-│  │ FHIR Bundles     │  │ SOAP Notes       │  │ PA Form Templates            │  │
+│  │ FHIR Bundles     │  │ Clinical Notes   │  │ PA Form Templates            │  │
 │  │ (Synthea)        │  │                  │  │                              │  │
 │  │ generations/     │  │ notes/{uuid}/    │  │ BCBS TX form (downloaded)    │  │
 │  │   output_*/fhir/ │  │   metadata.json  │  │ pa_form_*.pdf (local)       │  │
 │  │ fhir/            │  │   *.txt          │  │                              │  │
-│  │   (deploy copy)  │  │ soap_notes/      │  │                              │  │
-│  │                  │  │   (legacy)       │  │                              │  │
+│  │   (deploy copy)  │  │                  │  │                              │  │
+│  │                  │  │                  │  │                              │  │
 │  └────────┬─────────┘  └────────┬─────────┘  └──────────────┬───────────────┘  │
 │           │                     │                            │                  │
 └───────────┼─────────────────────┼────────────────────────────┼──────────────────┘
@@ -60,7 +60,7 @@ End-to-end pipeline that extracts clinical evidence from patient notes using a l
 │  │ → ExtractionService.get_instance().initialize()                          │   │
 │  │   → load MedGemma 27B (mlx-lm) or Gemini backend                       │   │
 │  │   → cache KV prefix (instructions + criteria + few-shot)                │   │
-│  │   → discover patients from notes/ + soap_notes/                          │   │
+│  │   → discover patients from notes/                                        │   │
 │  └──────────────────────────────────────────────────────────────────────────┘   │
 │                                                                                 │
 │  ┌─── API Routers (/api) ───────────────────────────────────────────────────┐   │
@@ -121,7 +121,7 @@ End-to-end pipeline that extracts clinical evidence from patient notes using a l
 │  │                                                 │                        │   │
 │  │                                    ┌────────────┼──────────────┐         │   │
 │  │                                    ▼            ▼              ▼         │   │
-│  │                              Spam filter   N-gram 50%    Keyword/        │   │
+│  │                              Spam filter   N-gram 30%    Keyword/        │   │
 │  │                              (≥3 reuse)    grounding     anti-keyword    │   │
 │  └──────────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────────┘
@@ -200,7 +200,7 @@ End-to-end pipeline that extracts clinical evidence from patient notes using a l
 │  • OR-Aware Review: Only best OR branch counted for review progress             │
 │  • Dual Trees: Original (short, for prompt) + Enriched (keywords, for UI)       │
 │  • No Disease Hardcoding: All clinical logic from policy tree or LLM output     │
-│  • Evidence Validation: 5-stage pipeline (spam, n-gram, keyword, anti-kw, etc.) │
+│  • Evidence Validation: Multi-stage pipeline (spam, n-gram, keyword, anti-kw)   │
 │  • SSE Bridge: sync generator → asyncio.Queue → async SSE stream               │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -216,18 +216,18 @@ Browser EventSource                    FastAPI                     ExtractionSer
       │                                   │                     extract(uuid)
       │                                   │                        │
       │   ◄── event: status ──────────────│◄── queue.put("status") │
-      │   {"message": "Note 1/2..."}      │                        │
+      │   {"message": "Note 1/N..."}      │                        │
       │                                   │            _run_inference()
       │                                   │            _parse_json_response()
       │                                   │            validate_evidence()
       │   ◄── event: run ────────────────│◄── queue.put("run") ───│
       │   {"run":1, "criteria":[...]}     │                        │
-      │                                   │                        │
+      │                                   │         ... (repeat for each note) ...
       │   ◄── event: status ──────────────│◄── queue.put("status") │
-      │   {"message": "Note 2/2..."}      │                        │
+      │   {"message": "Note N/N..."}      │                        │
       │                                   │            _run_inference()
       │   ◄── event: run ────────────────│◄── queue.put("run") ───│
-      │   {"run":2, "criteria":[...]}     │                        │
+      │   {"run":N, "criteria":[...]}     │                        │
       │                                   │            merge + get_status()
       │   ◄── event: policy ─────────────│◄── queue.put("policy") │
       │   {"overall":null, "met_count":5} │                        │
@@ -261,6 +261,7 @@ The offline pipeline that converts a raw insurance policy PDF into decision tree
 | `api/patients.py` | Patient listing, FHIR data, SOAP notes, justification endpoints |
 | `api/extraction.py` | SSE live extraction + pre-computed results fallback |
 | `api/form.py` | PDF generation endpoint |
+| `api/pas_bundle.py` | Da Vinci PAS FHIR Bundle generation |
 | `scripts/extract_policy.py` | Policy PDF → decision tree pipeline (offline, PyMuPDF + LangExtract + Gemini) |
 | `scripts/benchmark_models.py` | Model benchmarking (MedGemma vs Meditron vs LLaMA) |
 
@@ -290,9 +291,8 @@ The offline pipeline that converts a raw insurance policy PDF into decision tree
 | Source | Location |
 |---|---|
 | Policy PDF (input) | `UHC_Commercial_Medical_Policy_Adalimumab.pdf` |
-| FHIR bundles (Synthea) | `generations/output_{region}/fhir/*.json` |
-| SOAP notes | `soap_notes/*.txt` |
-| Clinical notes | `clinical_notes/*.txt` |
+| FHIR bundles (Synthea) | `generations/output_{region}/fhir/*.json`, `fhir/` |
+| Clinical notes | `notes/{uuid}/*.txt` (per-patient directories with metadata.json) |
 | Extraction outputs | `extraction_vanesa.json`, `extraction_analisa.json`, etc. |
 | PA PDF templates | `pa_form_*.pdf` |
 
@@ -360,12 +360,12 @@ cd frontend && npm run dev
 | `POST` | `/api/form/generate-pdf` | Generate filled PDF from field values |
 
 ### SSE Event Stream (`/api/patients/{uuid}/extract`)
-Uses asyncio.Queue to bridge sync generator → async SSE for progressive updates:
+Uses asyncio.Queue to bridge sync generator → async SSE for progressive updates. One run event per note file (variable count):
 ```
-event: status    → {"message": "Extraction run 1/2..."}
-event: run       → {"run": 1, "criteria": [...partial results...], "time_s": 11.2}
-event: status    → {"message": "Extraction run 2/2..."}
-event: run       → {"run": 2, "criteria": [...merged results...], "time_s": 10.8}
+event: status    → {"message": "Extracting from Note Title (1/N)..."}
+event: run       → {"run": 1, "note": "filename.txt", "criteria": [...partial results...], "time_s": 11.2}
+  ... (repeat for each note file) ...
+event: run       → {"run": N, "note": "filename.txt", "criteria": [...merged results...], "time_s": 10.8}
 event: policy    → {"overall": null, "met_count": 5, "total_count": 7, ...}
 event: complete  → {"met_criteria": [...], "eligible": false, "inference_time_s": 22.0}
 ```
@@ -374,7 +374,7 @@ event: complete  → {"met_criteria": [...], "eligible": false, "inference_time_
 
 - **Model**: `mlx-community/medgemma-27b-text-it-bf16` (local MLX)
 - **Prompt caching**: Static prefix (instructions + criteria + few-shot example) cached as KV, only patient note changes per inference
-- **Two-run merge**: Each patient gets 2 inference runs, results merged (keeps longer evidence on collision)
+- **Per-note extraction**: One inference run per note file, results merged progressively (keeps longer evidence on collision). Run count depends on number of notes the patient has.
 - **Chain-of-thought**: Model reasons through each criterion before outputting JSON
 - **Enriched JSON fields** per criterion:
   - `criterion_id`, `met`, `evidence` (required)
@@ -386,7 +386,7 @@ event: complete  → {"met_criteria": [...], "eligible": false, "inference_time_
 1. `met=true` filtering (only keep met criteria)
 2. Empty/NOTHING rejection
 3. Spam detection (same evidence reused for 3+ criteria)
-4. N-gram grounding (50% of evidence 4-grams must appear in note)
+4. N-gram grounding (30% of evidence 4-grams must appear in note)
 5. Anti-keyword check (anti_keywords >= positive keywords → reject)
 6. Note-grounding (at least one positive keyword must exist in the note)
 7. Source-text entity grounding (evidence must mention specific entities from criterion)
@@ -398,7 +398,7 @@ event: complete  → {"met_criteria": [...], "eligible": false, "inference_time_
 - `is_prior_therapy` from LLM decides what goes in drug history (not criterion ID patterns)
 - Prescriber specialty: prefers LLM-extracted, falls back to tree keyword inference
 - Requested drug/HCPCS: inferred dynamically from policy tree (`_infer_requested_drug`)
-- Supports both UHC and BCBS TX form layouts (dual field name conventions)
+- Uses BCBS TX form template (the only implemented template in `FORM_TEMPLATES`)
 
 ### Key Functions
 - `load_patient_from_fhir(bundle_path)` → structured patient dict
@@ -407,9 +407,10 @@ event: complete  → {"met_criteria": [...], "eligible": false, "inference_time_
 
 ## Supported Forms
 
-| Form | Fields | Clinical Justification Field |
+Only the BCBS TX form template is implemented. UHC is the insurer (policy source), not a separate form template.
+
+| Form Template | Fields | Clinical Justification Field |
 |---|---|---|
-| UHC TX | `Patient Name`, `Paitent Gender - Male` (sic), etc. | `SECTION VI  CLINICAL DOCUMENTATION...` |
 | BCBS TX | `Patient's Name`, `Patient's Gender - Male`, etc. | `Section IX ― Justification...` (U+2015) |
 
 ## Known Issues & Decisions

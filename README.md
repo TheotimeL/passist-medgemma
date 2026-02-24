@@ -57,7 +57,7 @@ FHIR Bundles (Synthea)  ─┐
 Clinical Notes (SOAP)   ─┘         │
                                    ├─ MedGemma 27B (MLX, local)
 Policy Decision Tree ──────────────┤   └─ KV cache reuse for fast inference
-                                   ├─ Evidence validation (5-stage pipeline)
+                                   ├─ Evidence validation (multi-stage pipeline)
 PA Form Template (PDF) ────────────┤   └─ Spam, n-gram grounding, keyword checks
                                    └─ PDF generation (pypdf AcroForm)
 ```
@@ -75,15 +75,18 @@ PA Form Template (PDF) ────────────┤   └─ Spam, n-
 
 ```
 ├── server.py                  # FastAPI entry point, model loading
-├── extraction_service.py      # MedGemma extraction singleton (SSE streaming)
-├── patient_data.py            # FHIR parser, clinical justification formatter
-├── policy_tree.py             # Policy decision tree (AND/OR evaluation)
-├── pdf_form.py                # PDF AcroForm filling (pypdf)
 ├── config.py                  # Paths, constants
+├── services/
+│   ├── extraction_service.py  # MedGemma extraction singleton (SSE streaming)
+│   ├── patient_data.py        # FHIR parser, clinical justification formatter
+│   ├── policy_tree.py         # Policy decision tree (AND/OR evaluation)
+│   ├── pdf_form.py            # PDF AcroForm filling (pypdf)
+│   └── drug_field_parser.py   # Drug field parsing with MedGemma 4B
 ├── api/
 │   ├── patients.py            # Patient listing, FHIR data, notes
 │   ├── extraction.py          # SSE extraction + pre-computed fallback
-│   └── form.py                # PDF generation, field mapping, policy endpoints
+│   ├── form.py                # PDF generation, field mapping, policy endpoints
+│   └── pas_bundle.py          # Da Vinci PAS FHIR Bundle generation
 ├── frontend/src/
 │   ├── pages/
 │   │   ├── index.vue          # Landing — patient/insurer/drug selection
@@ -109,10 +112,10 @@ PA Form Template (PDF) ────────────┤   └─ Spam, n-
 - **No external API calls** — all processing runs locally (MedGemma on Metal GPU)
 - **No disease-specific hardcoding** — all clinical logic from policy tree or LLM
 - **KV cache reuse** — static prompt prefix cached in GPU memory; only patient note changes per inference (~50% latency reduction)
-- **Two-run merge** — each patient gets 2 inference runs, results merged for better recall
+- **Per-note extraction** — one inference run per note file, results merged progressively (run count depends on number of notes)
 - **OR-aware evaluation** — policy tree supports AND/OR gates; only best OR branch counts
 - **Override priority** — doctor overrides > negated (auto-met) > AI results
-- **5-stage evidence validation** — spam detection, n-gram grounding, keyword/anti-keyword filtering
+- **Multi-stage evidence validation** — spam detection, n-gram grounding (30%), keyword/anti-keyword filtering, source-text entity grounding
 
 ## Tech Stack
 
