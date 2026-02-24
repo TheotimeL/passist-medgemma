@@ -1,0 +1,29 @@
+Clinic Note — 02/23/2026
+Pt: Israel Altenwerth | DOB: 1966-11-20 | M | MRN: 24AB737E
+Provider: Dr. David Nakamura (Rheumatology)
+Facility: Summit Arthritis Center
+
+S:
+59yo M w/ seropositive IA dx 2018-08-11. c/o persistent jt pain b/l hands/wrists, AM stiffness ~48min.
+Prev tx w/ several conventional agents (see med rec). Currently on NSAID only.
+Denies infxn/fever/wt loss/rash.
+
+Med Rec:
+  MTX → d/c (lymphopenia and recurrent infections)
+  naproxen 500 BID — active
+  folate 1mg qd — active
+
+O:
+VS: 140/85, p78, afebrile
+MSK: TJC 8, SJC 7. MCP synovitis b/l.
+ESR 29 / CRP 3.5 / RF 162 / CCP 217
+DAS28 5.5
+Screening: QFT neg, HBsAg neg, anti-HCV neg
+
+A/P:
+1) RA, active (DAS28 5.5)
+   → initiate ADA 40mg SQ q2wk, PA submitted
+   → f/u 12wk
+
+— Dr. David Nakamura, Rheumatology
+  Summit Arthritis Center

@@ -1,0 +1,54 @@
+SOAP NOTE — Internal Medicine Follow-Up
+
+Patient: Jacquelyne Son Rodriguez
+DOB: 04/15/1962
+Age: 63 years old
+Gender: Female
+MRN: C438A021
+Date of Visit: 01/04/2026
+Provider: Dr. Azzie Feil, MD, Internal Medicine
+Facility: MEMORIAL HOSPITAL OF CONVERSE COUNTY
+
+SUBJECTIVE:
+Mrs. Rodriguez is a 63-year-old woman presenting for follow-up of inflammatory arthropathy diagnosed 08/18/2017. She continues to have active joint symptoms with morning stiffness lasting 65 minutes. Reports the prior DMARD was stopped some months ago.
+
+Allergies: No known drug allergies.
+
+MEDICATION RECONCILIATION:
+- Methotrexate: STOPPED (GI intolerance)
+- Naproxen 500 mg PRN: current
+
+OBJECTIVE:
+Vitals: BP 138/89 mmHg, HR 71 bpm, Temp 98.3F, Weight 159 lbs
+General: Alert, oriented woman in mild distress due to joint pain.
+
+Musculoskeletal Exam:
+- Tender joint count: 11/28
+- Swollen joint count: 6/28
+- Bilateral MCP joints: tenderness and swelling
+- Wrists: bilateral synovitis
+- Knees: small effusions bilaterally
+
+Labs (01/03/2025):
+- ESR: 43 mm/hr
+- CRP: 2.2 mg/dL
+- RF: 91 IU/mL (positive)
+- Anti-CCP: 280 U/mL
+- CBC: WBC 8.5, Hgb 15.2, Plt 318
+- CMP: Creatinine 1.1, ALT 35, AST 18
+
+Composite Disease Activity: DAS28-ESR 5.1
+
+ASSESSMENT:
+1. Rheumatoid arthritis, seropositive, active. DAS28 5.1.
+   Inadequate disease control on prior conventional therapy.
+
+PLAN:
+1. Consider specialty referral for biologic evaluation.
+2. Continue current symptom management.
+
+Electronically signed,
+Dr. Azzie Feil, MD
+Internal Medicine
+MEMORIAL HOSPITAL OF CONVERSE COUNTY
+01/04/2026

@@ -1,0 +1,29 @@
+Clinic Note — 02/09/2026
+Pt: Estell Kub | DOB: 1950-09-08 | F | MRN: DB32901B
+Provider: Dr. Karen Johansson (Rheumatology)
+Facility: Valley Rheumatology Specialists
+
+S:
+75yo F w/ seropositive IA dx 1979-02-11. c/o persistent jt pain b/l hands/wrists, AM stiffness ~113min.
+Prev tx w/ several conventional agents (see med rec). Currently on NSAID only.
+Denies infxn/fever/wt loss/rash.
+
+Med Rec:
+  MTX → d/c (pancytopenia requiring hospitalization)
+  naproxen 500 BID — active
+  folate 1mg qd — active
+
+O:
+VS: 128/70, p77, afebrile
+MSK: TJC 8, SJC 8. MCP synovitis b/l.
+ESR 40 / CRP 1.7 / RF 135 / CCP 265
+DAS28 5.6
+Screening: QFT neg, HBsAg neg, anti-HCV neg
+
+A/P:
+1) RA, active (DAS28 5.6)
+   → initiate ADA 40mg SQ q2wk, PA submitted
+   → f/u 12wk
+
+— Dr. Karen Johansson, Rheumatology
+  Valley Rheumatology Specialists

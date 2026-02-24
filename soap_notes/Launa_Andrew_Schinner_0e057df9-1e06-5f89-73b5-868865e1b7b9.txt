@@ -1,0 +1,56 @@
+SOAP NOTE — Rheumatology Clinic Visit
+
+Patient: Launa Andrew Schinner
+DOB: 06/07/1965
+Age: 60 years old
+Gender: Female
+MRN: 0E057DF9
+Date of Visit: 02/12/2026
+Provider: Dr. Sarah Chen, MD, Rheumatology
+Facility: Wyoming Rheumatology Associates
+Primary Care: Dr. Winfred Collins, SUMMIT MEDICAL CENTER
+
+SUBJECTIVE:
+Mrs. Schinner is a 60-year-old woman with inflammatory arthritis diagnosed in 02/06/2024. She has been on a DMARD since diagnosis and reports some improvement but continues to have joint stiffness for 43 minutes each morning. She is tolerating the current regimen without significant side effects.
+
+Allergies: No known drug allergies.
+
+MEDICATION RECONCILIATION:
+- Methotrexate 15 mg oral weekly: current, tolerating
+- Naproxen 500 mg as needed: current
+- Folic acid 1 mg daily: current
+
+OBJECTIVE:
+Vitals: BP 136/71 mmHg, HR 69 bpm, Temp 98.5F, Weight 186 lbs
+General: Alert, oriented woman in mild distress due to joint pain.
+
+Musculoskeletal Exam:
+- Tender joint count: 8/28
+- Swollen joint count: 7/28
+- Bilateral MCP joints: tenderness and swelling
+- Wrists: bilateral synovitis
+- Knees: small effusions bilaterally
+
+Labs (01/06/2026):
+- ESR: 28 mm/hr
+- CRP: 1.7 mg/dL
+- RF: 127 IU/mL (positive)
+- Anti-CCP: 168 U/mL
+- CBC: WBC 7.4, Hgb 13.5, Plt 223
+- CMP: Creatinine 0.9, ALT 28, AST 24
+
+Composite Disease Activity: DAS28-ESR 4.5
+
+ASSESSMENT:
+1. Rheumatoid arthritis, seropositive, active. DAS28 4.5.
+   Currently on conventional DMARD with partial response.
+
+PLAN:
+1. Continue current DMARD.
+2. Reassess disease activity in 3 months.
+
+Electronically signed,
+Dr. Sarah Chen, MD
+Rheumatology
+Wyoming Rheumatology Associates
+02/12/2026

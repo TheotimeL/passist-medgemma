@@ -1,0 +1,34 @@
+02/16/2026 - Rheumatology note
+pt: Lashonda Virginia Roob, 40yo F, DOB 1985-11-16
+provider: Dr. Karen Johansson @ Valley Rheumatology Specialists
+mrn: A7CB65D3
+
+SUBJECTIVE
+Pt w/ inflammatory arthritis dx'd 2023-07-01. Here for f/u, still symptomatic.
+Pain b/l hands wrists, R knee sometimes. AM stiffness ~72min.
+Has tried multiple agents in the past — see chart. Currently just on an NSAID.
+
+Reviewed med list w/ pt:
+  Trexall — tried, stopped (elevated LFTs requiring discontinuation); naproxen 500 bid — current
+
+no fever, no infxn, NKDA.
+
+OBJECTIVE
+VS: 120/88, p65, afebrile, 139#
+MSK: 13 tender, 9 swollen. b/l MCPs + wrists. R knee effusion.
+
+labs from 12/26:
+  sed rate 40, CRP 2.5, RF 179 (+), anti-CCP 350
+  cbc ok, cmp ok, lfts wnl
+  infectious w/u neg (tb/hep)
+
+DAS28 = 4.8
+
+A/P
+1) RA, active. DAS28 4.8
+   → starting Humira 40mg q2wk. PA submitted.
+   → cont NSAID prn. f/u 12wk
+
+—Dr. Karen Johansson
+ Rheumatology
+ Valley Rheumatology Specialists

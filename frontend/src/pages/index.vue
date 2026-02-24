@@ -155,7 +155,7 @@ onMounted(() => {
 function startReview() {
   if (selectedPatient.value) {
     navigating.value = true
-    router.push(`/workspace/${selectedPatient.value}`)
+    router.push(`/workspace/${selectedPatient.value}?drug=${encodeURIComponent(selectedDrug.value)}`)
   }
 }
 </script>

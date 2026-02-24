@@ -1,0 +1,19 @@
+Progress Note
+Date: 02/21/2026
+Patient: Gabriel Mohr   DOB: May 5, 1970   MRN: 95EB2215
+Attending: Dr. Robert Khoury, Rheumatology
+Site: Wind River Rheumatology Group
+
+Gabriel Mohr is a 55-year-old man with seropositive inflammatory polyarthritis since Dec 13, 2013, presenting for re-evaluation following several medication changes. His joint symptoms have persisted despite multiple treatment attempts over the past years.
+
+He was initially placed on methotrexate at the time of diagnosis. This was eventually stopped — the chart notes LEF: hypertension as the reason for discontinuation.
+A subsequent course of leflunomide was also not continued long-term (LEF: hypertension).
+
+On examination today, he has tenderness in 11 joints and swelling in 7. Morning stiffness persists for 114 minutes. Inflammatory markers are elevated — ESR 32, CRP 2.1. His DAS28-ESR calculates to 5.7.
+
+Serologies show RF at 197 and anti-CCP at 214. Pre-treatment screening (TB quantiferon, hepatitis panel) is negative. CBC and metabolic panel are unremarkable.
+
+Given the clinical picture, I am recommending initiation of a TNF inhibitor — specifically Humira (adalimumab) 40 mg subcutaneous every other week. PA documentation has been submitted. Patient was counseled on self-injection technique and will return in 12 weeks.
+
+— Dr. Robert Khoury, MD
+  Rheumatology, Wind River Rheumatology Group

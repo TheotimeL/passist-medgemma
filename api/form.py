@@ -196,6 +196,33 @@ async def parse_drug_fields(request: ParseDrugFieldsRequest):
     return {"entries": result, "parse_success": has_drug_fields}
 
 
+class ParsePrescriberFieldsRequest(BaseModel):
+    entries: list[dict]
+
+
+@router.post("/form/parse-prescriber-fields")
+async def parse_prescriber_fields(request: ParsePrescriberFieldsRequest):
+    """Extract prescriber_name and prescriber_specialty from evidence using MedGemma 4B.
+
+    Called by the frontend after extraction completes, before drug field parsing.
+    """
+    import asyncio
+    from extraction_service import ExtractionService
+    from drug_field_parser import DrugFieldParser
+
+    logger.info("parse-prescriber-fields: Received %d entries", len(request.entries))
+    svc = ExtractionService.get_instance()
+    parser = DrugFieldParser.get_instance()
+
+    async with svc._gpu_lock:
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, parser.parse_prescriber, request.entries)
+
+    has_prescriber = any(e.get("prescriber_name") for e in result)
+    logger.info("parse-prescriber-fields: Returning %d entries (has_prescriber=%s)", len(result), has_prescriber)
+    return {"entries": result, "parse_success": has_prescriber}
+
+
 class JustificationRequest(BaseModel):
     met_criteria: list[dict] = []
     field_overrides: dict[str, str] = {}

@@ -1,0 +1,68 @@
+============================================================
+  CLINICAL NOTE — RHEUMATOLOGY CONSULTATION
+============================================================
+
+PATIENT INFORMATION
+  Name:           Rashad Mills
+  Date of Birth:  June 15, 1942
+  Age:            83
+  Sex:            Male
+  Race/Ethnicity: White / Non-Hispanic
+  MRN:            39420291
+  Date of Visit:  02/19/2026
+  Provider:       Dr. Michael Rivera, MD — Rheumatology
+  Location:       Mountain West Arthritis Center
+  Referring PCP:  Dr. Terri Ankunding
+
+CHIEF COMPLAINT
+  "Follow-up for rheumatoid arthritis. Ongoing joint symptoms."
+
+HISTORY OF PRESENT ILLNESS
+  Rashad Mills is a 83-year-old white male with a
+  diagnosis of seropositive rheumatoid arthritis established in January 8, 2000.
+
+  The patient has been on methotrexate 15 mg weekly since diagnosis with partial
+  improvement. He continues to experience moderate joint symptoms with
+  morning stiffness lasting 71 minutes. He is tolerating
+  methotrexate without hepatic or hematologic adverse effects.
+
+  ALLERGIES: No known drug allergies.
+  SOCIAL HISTORY: Married. Non-smoker.
+
+PHYSICAL EXAMINATION
+  Vital Signs:
+    Blood Pressure: 128/73 mmHg
+    Heart Rate: 69 bpm
+    Temperature: 98.4°F
+    Weight: 172 lbs
+
+  General: 83-year-old male in mild distress.
+
+  Musculoskeletal Examination:
+    Tender Joint Count (28-joint): 6
+    Swollen Joint Count (28-joint): 5
+    Hands: Bilateral MCP tenderness and synovitis
+    Wrists: Bilateral dorsal synovitis with reduced extension
+
+LABORATORY DATA
+    ESR: 26 mm/hr (elevated)
+    CRP: 2.0 mg/dL (elevated)
+    RF: Positive, 101 IU/mL
+    Anti-CCP: Positive, 231 U/mL
+    CBC: Within normal limits
+    CMP: Within normal limits
+
+DISEASE ACTIVITY SCORE
+    DAS28-ESR: 5.0
+
+ASSESSMENT AND PLAN
+  1. RHEUMATOID ARTHRITIS — Active disease
+     DAS28-ESR: 5.0
+
+     PLAN: Continue methotrexate. Reassess disease activity in 3 months.
+
+============================================================
+Electronically signed by Dr. Michael Rivera, MD
+Rheumatology
+Mountain West Arthritis Center
+Date: 02/19/2026

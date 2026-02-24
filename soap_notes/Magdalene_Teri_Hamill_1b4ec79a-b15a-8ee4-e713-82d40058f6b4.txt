@@ -1,0 +1,20 @@
+Progress Note
+Date: 02/04/2026
+Patient: Magdalene Teri Hamill   DOB: Oct 7, 1982   MRN: 1B4EC79A
+Attending: Dr. Andrea Moretti, Rheumatology
+Site: Yellowstone Rheumatology Associates
+
+Magdalene Teri Hamill is a 43-year-old woman with seropositive inflammatory polyarthritis since 11/18/2009, presenting for re-evaluation following several medication changes. Her joint symptoms have persisted despite multiple treatment attempts over the past years.
+
+She was initially placed on methotrexate at the time of diagnosis. This was eventually stopped — the chart notes cytopenias as the reason for discontinuation.
+
+She was subsequently started on Enbrel (etanercept) and remained on it for 4 years. While there was some initial benefit, she ultimately developed secondary failure with rising disease activity.
+
+On examination today, she has tenderness in 12 joints and swelling in 4. Morning stiffness persists for 76 minutes. Inflammatory markers are elevated — ESR 37, CRP 3.3. Her DAS28-ESR calculates to 4.9.
+
+Serologies show RF at 90 and anti-CCP at 121. Pre-treatment screening (TB quantiferon, hepatitis panel) is negative. CBC and metabolic panel are unremarkable.
+
+Given the clinical picture, I am recommending initiation of a TNF inhibitor — specifically Humira (adalimumab) 40 mg subcutaneous every other week. PA documentation has been submitted. Patient was counseled on self-injection technique and will return in 12 weeks.
+
+— Dr. Andrea Moretti, MD
+  Rheumatology, Yellowstone Rheumatology Associates

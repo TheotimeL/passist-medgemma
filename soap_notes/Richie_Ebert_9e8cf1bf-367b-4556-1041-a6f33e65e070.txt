@@ -1,0 +1,30 @@
+01/24/2026 - Rheumatology note
+pt: Richie Ebert, 53yo M, DOB 1972-03-23
+provider: Dr. Priya Patel @ High Plains Rheumatology Clinic
+mrn: 9E8CF1BF
+
+[Imported from 11/16/2025]
+PMH: HTN, GERD, RA
+Allergies: NKDA
+[End imported]
+
+SUBJECTIVE
+RA pt, on DMARD, some improvement. Still stiff 64min AM. Tolerating.
+
+OBJECTIVE
+VS: 124/78, p68, afebrile, 156#
+MSK: 5 tender, 7 swollen. b/l MCPs + wrists. R knee effusion.
+
+labs from this AM:
+  sed rate 27, CRP 1.3, RF 112 (+), anti-CCP 114
+  cbc ok, cmp ok
+
+DAS28 = 4.9
+
+A/P
+1) RA, active. DAS28 4.9
+   → cont current tx, recheck 3mo
+
+—Dr. Priya Patel
+ Rheumatology
+ High Plains Rheumatology Clinic

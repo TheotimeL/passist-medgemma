@@ -20,35 +20,45 @@
               },
               "negated": false,
               "id": "initial.diagnosi.1",
-              "search_description": "The patient has a confirmed diagnosis of rheumatoid arthritis (RA) that is described as moderately to severely active. Look for diagnostic statements, assessments of disease activity, or characterizations of the disease as uncontrolled, progressive, or refractory. Evidence can typically be found in the Assessment and Plan sections, Problem List, or History of Present Illness.",
+              "search_description": "Patient has a confirmed diagnosis of moderately to severely active rheumatoid arthritis. Evidence: documented diagnosis with severity level (moderately, severely, or moderately-to-severely active).",
               "keywords": [
                 "rheumatoid arthritis",
                 "ra",
+                "chronic polyarthritis",
+                "inflammatory arthritis",
+                "autoimmune arthritis",
+                "seropositive ra",
+                "seronegative ra",
+                "icd-10 m05",
+                "icd-10 m06",
                 "moderately active",
                 "severely active",
+                "moderate to severe ra",
                 "high disease activity",
-                "active disease",
-                "uncontrolled ra",
-                "progressive ra"
+                "das28 > 3.2",
+                "das28 > 5.1",
+                "cdai > 10",
+                "sdai > 11",
+                "swollen joints",
+                "tender joints"
               ],
               "anti_keywords": [
-                "mild rheumatoid arthritis",
                 "mild disease activity",
+                "mildly active",
                 "low disease activity",
                 "minimal disease activity",
-                "low activity score",
-                "near remission",
-                "approaching remission",
                 "well controlled",
                 "adequately controlled",
                 "stable on current therapy",
                 "in remission",
-                "remission",
-                "resolved",
-                "inactive disease",
+                "disease in remission",
                 "no active disease",
+                "inactive disease",
+                "resolved symptoms",
                 "drug-free remission",
-                "sustained remission"
+                "sustained remission",
+                "near remission",
+                "approaching remission"
               ]
             }
           ],
@@ -68,61 +78,69 @@
               },
               "negated": false,
               "id": "initial.step.a",
-              "search_description": "The patient must have previously taken and subsequently failed at least one non-biologic disease-modifying anti-rheumatic drug (DMARD) from the following list: methotrexate, leflunomide, sulfasalazine, or hydroxychloroquine. 'Failure' means the drug was discontinued due to an inadequate response (ineffectiveness), significant adverse effects, toxicity, or was contraindicated. There should be documentation of the drug being prescribed and taken for at least 3 months, or discontinued earlier due to intolerance/contraindication. Evidence is typically found in medication history, past medical history, or the assessment and plan, detailing the drug, reason for discontinuation, and duration. This criterion is NOT met if the drug was discontinued due to disease remission or if the patient is currently taking it successfully.",
+              "search_description": "Patient failed at least one non-biologic disease modifying anti-rheumatic drug (DMARD): methotrexate, leflunomide, sulfasalazine, or hydroxychloroquine. Failure is defined as inadequate response to a 3-month trial at maximally indicated doses, or due to contraindication or clinically significant adverse effects.",
+              "evidence_requirements": [
+                {
+                  "source_text": "(document drug, date, and duration of trial)b",
+                  "char_interval": {
+                    "start_pos": 523,
+                    "end_pos": 568
+                  }
+                }
+              ],
               "keywords": [
                 "methotrexate",
-                "leflunomide",
-                "sulfasalazine",
-                "hydroxychloroquine",
                 "mtx",
+                "otrexup",
+                "rasuvo",
+                "zemaquip",
+                "leflunomide",
                 "arava",
+                "sulfasalazine",
+                "azulfidine",
+                "salazopyrin",
+                "hydroxychloroquine",
+                "hcq",
                 "plaquenil",
-                "failed"
+                "failed",
+                "inadequate response",
+                "discontinued due to",
+                "stopped due to",
+                "intolerant to",
+                "toxicity",
+                "adverse event",
+                "side effects",
+                "contraindication"
               ],
               "anti_keywords": [
-                "remission",
                 "in remission",
-                "resolved",
                 "disease controlled",
-                "successful treatment",
-                "discontinued due to remission",
+                "resolved symptoms",
+                "inactive disease",
+                "no active disease",
+                "drug-free remission",
+                "sustained remission",
                 "currently on methotrexate",
                 "currently taking leflunomide",
                 "currently on sulfasalazine",
                 "currently taking hydroxychloroquine",
-                "currently on mtx",
-                "currently on arava",
-                "currently on plaquenil",
-                "stable on current therapy",
                 "start methotrexate",
+                "initiate methotrexate",
+                "begin methotrexate",
+                "start leflunomide",
                 "initiate leflunomide",
+                "begin leflunomide",
                 "start sulfasalazine",
+                "initiate sulfasalazine",
+                "begin sulfasalazine",
+                "start hydroxychloroquine",
                 "initiate hydroxychloroquine",
-                "start mtx",
-                "initiate arava",
-                "start plaquenil",
-                "plan to start",
-                "will start",
+                "begin hydroxychloroquine",
                 "first-line dmard",
                 "first-line therapy",
                 "must be trialed",
                 "never been prescribed",
                 "never treated with"
-              ]
-            },
-            {
-              "name": "(a) History of failure to a 3 month trial of one non-biologic disease modifying anti-rheumatic drug (DMARD) [e.g., methotrexate, leflunomide, sulfasalazine, hydroxychloroquine] at the maximally indicated doses, unless contraindicated or clinically significant adverse effects are experienced",
-              "type": "AND",
-              "children": [],
-              "id": "initial.step.a_2",
-              "evidence_requirements": [
-                {
-                  "source_text": "(document drug, date, and duration of trial)",
-                  "char_interval": {
-                    "start_pos": 523,
-                    "end_pos": 567
-                  }
-                }
               ]
             },
             {
@@ -135,50 +153,65 @@
               },
               "negated": false,
               "id": "initial.step.b",
-              "search_description": "The patient must have a documented history of prior treatment with at least one systemic targeted immunomodulator (biologic or JAK inhibitor) from the following list: Enbrel (etanercept), Cimzia (certolizumab), Simponi (golimumab), Orencia (abatacept), Xeljanz (tofacitinib), Olumiant (baricitinib), or Rinvoq (upadacitinib). This includes drugs they may no longer be taking. Look for mentions in past medical history, medication history, or treatment summaries, including dates and duration of therapy.",
+              "search_description": "Patient was previously treated with at least one systemic targeted immunomodulator FDA-approved for rheumatoid arthritis: Enbrel (etanercept), Cimzia (certolizumab), Simponi (golimumab), Orencia (abatacept), Xeljanz (tofacitinib), Olumiant (baricitinib), or Rinvoq (upadacitinib).",
               "keywords": [
-                "etanercept",
                 "enbrel",
-                "certolizumab",
+                "etanercept",
                 "cimzia",
-                "golimumab",
+                "certolizumab",
                 "simponi",
-                "abatacept",
+                "golimumab",
                 "orencia",
-                "tofacitinib",
+                "abatacept",
                 "xeljanz",
-                "baricitinib",
+                "tofacitinib",
                 "olumiant",
+                "baricitinib",
+                "rinvoq",
                 "upadacitinib",
-                "rinvoq"
+                "previously treated with",
+                "history of use",
+                "exposed to",
+                "prior therapy with",
+                "received [drug]",
+                "on [drug] from"
               ],
               "anti_keywords": [
-                "start etanercept",
-                "initiate enbrel",
+                "currently on enbrel",
+                "currently on etanercept",
+                "currently on cimzia",
+                "currently on certolizumab",
+                "currently on simponi",
+                "currently on golimumab",
+                "currently on orencia",
+                "currently on abatacept",
+                "currently on xeljanz",
+                "currently on tofacitinib",
+                "currently on olumiant",
+                "currently on baricitinib",
+                "currently on rinvoq",
+                "currently on upadacitinib",
+                "start enbrel",
+                "initiate etanercept",
                 "plan to start cimzia",
-                "will start simponi",
-                "begin orencia",
-                "pending xeljanz",
-                "considering olumiant",
-                "never taken rinvoq",
-                "never received",
-                "pending initiation",
-                "plan to initiate"
-              ]
-            },
-            {
-              "name": "(b) Patient has been previously treated with a systemic targeted immunomodulator FDA-approved for the treatment of rheumatoid arthritis [e.g., Enbrel (etanercept), Cimzia (certolizumab), Simponi (golimumab), Orencia (abatacept), Xeljanz (tofacitinib), Olumiant (baricitinib), Rinvoq (upadacitinib)]",
-              "type": "AND",
-              "children": [],
-              "id": "initial.step.b_2",
-              "evidence_requirements": [
-                {
-                  "source_text": "as documented by claims history or submission of medical records (Document drug, date, and duration of therapy)",
-                  "char_interval": {
-                    "start_pos": 712,
-                    "end_pos": 823
-                  }
-                }
+                "begin golimumab",
+                "pending orencia authorization",
+                "will start xeljanz",
+                "never been treated with",
+                "prescribed enbrel",
+                "prescribed etanercept",
+                "prescribed cimzia",
+                "prescribed certolizumab",
+                "prescribed simponi",
+                "prescribed golimumab",
+                "prescribed orencia",
+                "prescribed abatacept",
+                "prescribed xeljanz",
+                "prescribed tofacitinib",
+                "prescribed olumiant",
+                "prescribed baricitinib",
+                "prescribed rinvoq",
+                "prescribed upadacitinib"
               ]
             },
             {
@@ -188,41 +221,14 @@
                 {
                   "name": "i. Patient is currently on adalimumab therapy as d",
                   "type": "LEAF",
-                  "source_text": "i. Patient is currently on adalimumab therapy as documented by claims history or submission of medical records (Document date and duration of therapy):",
+                  "source_text": "i. Patient is currently on adalimumab therapy as documented by claims history or submission of medical records",
                   "char_interval": {
                     "start_pos": 1022,
-                    "end_pos": 1173
+                    "end_pos": 1132
                   },
                   "negated": false,
                   "id": "initial.step.current.i",
-                  "search_description": "The patient is currently prescribed and actively taking adalimumab therapy. Look for adalimumab (or brand name Humira) in current medication lists, active prescription records, or recent dispensing history, along with documentation of its ongoing use and dates.",
-                  "keywords": [
-                    "adalimumab",
-                    "humira",
-                    "currently on",
-                    "taking",
-                    "prescribed",
-                    "active medication"
-                  ],
-                  "anti_keywords": [
-                    "start adalimumab",
-                    "initiate humira",
-                    "begin adalimumab",
-                    "plan to initiate",
-                    "will start",
-                    "pending initiation",
-                    "pending authorization",
-                    "considering starting",
-                    "discontinued adalimumab",
-                    "failed humira",
-                    "stopped adalimumab"
-                  ]
-                },
-                {
-                  "name": "i. Patient is currently on adalimumab therapy",
-                  "type": "AND",
-                  "children": [],
-                  "id": "initial.step.current.i_2",
+                  "search_description": "Patient is currently on adalimumab therapy as an active, ongoing therapy prior to this visit.",
                   "evidence_requirements": [
                     {
                       "source_text": "as documented by claims history or submission of medical records (Document date and duration of therapy)",
@@ -231,6 +237,31 @@
                         "end_pos": 1172
                       }
                     }
+                  ],
+                  "keywords": [
+                    "adalimumab",
+                    "humira",
+                    "currently on adalimumab",
+                    "currently taking adalimumab",
+                    "on active therapy",
+                    "continuing adalimumab",
+                    "active medication list",
+                    "ongoing adalimumab therapy",
+                    "adalimumab maintenance therapy"
+                  ],
+                  "anti_keywords": [
+                    "start adalimumab",
+                    "initiate adalimumab",
+                    "begin adalimumab",
+                    "plan to initiate adalimumab",
+                    "will start adalimumab",
+                    "pending adalimumab authorization",
+                    "prescribed adalimumab",
+                    "prescribed humira",
+                    "discontinued adalimumab",
+                    "stopped adalimumab",
+                    "history of adalimumab",
+                    "previously on adalimumab"
                   ]
                 },
                 {
@@ -243,20 +274,28 @@
                   },
                   "negated": true,
                   "id": "initial.step.current.ii",
-                  "search_description": "The patient has NOT received free adalimumab samples or manufacturer assistance. This criterion is met if there is absolutely NO mention in the clinical notes of the patient receiving adalimumab samples, free adalimumab supply, or any manufacturer-sponsored financial assistance programs for adalimumab. Absence of such mention indicates the criterion is met.",
+                  "search_description": "Patient has NOT received a manufacturer supplied sample at no cost in the prescriber's office, or any form of assistance from a manufacturer sponsored program (e.g., sample card which can be redeemed at a pharmacy for a free supply of medication) as a means to establish as a current user of adalimumab (met when absent from documentation).",
                   "keywords": [
-                    "adalimumab",
-                    "humira",
-                    "current user"
+                    "paid by insurance",
+                    "covered by plan",
+                    "commercial prescription",
+                    "pharmacy fill",
+                    "out-of-pocket payment",
+                    "purchased from pharmacy",
+                    "not a sample",
+                    "full prescription",
+                    "not from manufacturer program"
                   ],
                   "anti_keywords": [
                     "manufacturer sample",
                     "free sample",
-                    "patient assistance program",
-                    "copay assistance program",
-                    "manufacturer card",
                     "sample card",
-                    "no cost supply"
+                    "manufacturer program",
+                    "patient assistance program provided",
+                    "bridge program enrollment",
+                    "free supply of medication",
+                    "no cost medication",
+                    "given sample"
                   ]
                 }
               ],
@@ -273,7 +312,16 @@
           "char_interval": {
             "start_pos": 204,
             "end_pos": 229
-          }
+          },
+          "evidence_requirements": [
+            {
+              "source_text": "as documented by claims history or submission of medical records (Document drug, date, and duration of therapy)",
+              "char_interval": {
+                "start_pos": 712,
+                "end_pos": 823
+              }
+            }
+          ]
         },
         {
           "name": "Combination Therapy",
@@ -289,30 +337,36 @@
               },
               "negated": true,
               "id": "initial.combinat.3",
-              "search_description": "The patient is NOT receiving adalimumab in combination with another systemic targeted immunomodulator for the same indication (rheumatoid arthritis). The other immunomodulators include: Enbrel (etanercept), Cimzia (certolizumab), Simponi (golimumab), Orencia (abatacept), Xeljanz (tofacitinib), Olumiant (baricitinib), or Rinvoq (upadacitinib). This criterion is met if there is NO mention of concurrent use of adalimumab with any of these other specific drugs for RA. If adalimumab is being used as monotherapy or with a non-biologic DMARD, this criterion is met.",
+              "search_description": "Patient is NOT receiving adalimumab in combination with another systemic targeted immunomodulator: Enbrel (etanercept), Cimzia (certolizumab), Simponi (golimumab), Orencia (abatacept), Xeljanz (tofacitinib), Olumiant (baricitinib), or Rinvoq (upadacitinib) for treatment of the same indication (met when absent from documentation).",
               "keywords": [
-                "adalimumab",
-                "humira",
-                "monotherapy"
+                "adalimumab monotherapy",
+                "humira monotherapy",
+                "adalimumab only",
+                "humira only",
+                "on adalimumab alone",
+                "no other biologic",
+                "no other targeted immunomodulator",
+                "adalimumab without other biologics"
               ],
               "anti_keywords": [
                 "adalimumab and etanercept",
-                "adalimumab and enbrel",
-                "adalimumab and certolizumab",
-                "adalimumab and cimzia",
-                "adalimumab and golimumab",
-                "adalimumab and simponi",
-                "adalimumab and abatacept",
+                "humira and enbrel",
+                "adalimumab plus cimzia",
+                "humira plus certolizumab",
+                "adalimumab with simponi",
+                "humira with golimumab",
                 "adalimumab and orencia",
-                "adalimumab and tofacitinib",
+                "humira and abatacept",
                 "adalimumab and xeljanz",
-                "adalimumab and baricitinib",
+                "humira and tofacitinib",
                 "adalimumab and olumiant",
-                "adalimumab and upadacitinib",
+                "humira and baricitinib",
                 "adalimumab and rinvoq",
-                "concurrent biologic therapy",
+                "humira and upadacitinib",
+                "combination therapy with biologics",
                 "dual biologic therapy",
-                "combination biologic"
+                "adalimumab in combination with",
+                "adalimumab with another biologic"
               ]
             }
           ],
@@ -332,26 +386,37 @@
               },
               "negated": false,
               "id": "initial.prescrib.4",
-              "search_description": "The treatment for rheumatoid arthritis is prescribed by, or based on a consultation with, a rheumatologist. Look for evidence in the provider's signature, clinic name, referral notes, or consultation reports indicating the involvement of a rheumatologist or a rheumatology practice.",
+              "search_description": "Prescribed by or in consultation with a rheumatologist. Evidence: prescriber identified as a rheumatologist (name, title, specialty) and adalimumab in the treatment plan.",
               "keywords": [
                 "rheumatologist",
                 "rheumatology",
-                "rheum md",
-                "rheum specialist",
+                "md rheumatology",
+                "do rheumatology",
+                "arthritis specialist",
+                "joint specialist",
                 "consulted rheumatology",
-                "seen by rheumatology"
+                "rheumatology consult",
+                "advised by rheumatologist",
+                "co-managed by rheumatology",
+                "rheumatology team"
               ],
               "anti_keywords": [
                 "family medicine",
                 "internal medicine",
-                "primary care physician",
                 "general practitioner",
-                "orthopedic surgeon",
-                "neurologist",
-                "dermatologist",
-                "gastroenterologist",
+                "primary care physician",
+                "pcp",
+                "physician assistant",
                 "nurse practitioner",
-                "physician assistant"
+                "dermatology specialist",
+                "gastroenterology specialist",
+                "cardiology specialist",
+                "neurology specialist",
+                "orthopedic surgeon",
+                "endocrinology specialist",
+                "nephrology specialist",
+                "oncology specialist",
+                "pulmonology specialist"
               ]
             }
           ],

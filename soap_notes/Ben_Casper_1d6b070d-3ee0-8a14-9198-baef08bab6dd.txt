@@ -1,0 +1,53 @@
+SOAP NOTE — Internal Medicine Follow-Up
+
+Patient: Ben Casper
+DOB: 06/15/1968
+Age: 57 years old
+Gender: Male
+MRN: 1D6B070D
+Date of Visit: 01/10/2026
+Provider: Dr. Clifton Lakin, MD, Internal Medicine
+Facility: FAMILY FIRST HEALTH PC
+
+SUBJECTIVE:
+Mr. Casper is a 57-year-old man presenting for routine follow-up. History of inflammatory arthritis diagnosed 12/26/2012. Reports some ongoing joint discomfort but is managing well overall.
+
+Allergies: No known drug allergies.
+
+MEDICATION RECONCILIATION:
+- Methotrexate 15 mg weekly: current
+- Naproxen 500 mg PRN: current
+
+OBJECTIVE:
+Vitals: BP 142/90 mmHg, HR 67 bpm, Temp 98.5F, Weight 141 lbs
+General: Alert, oriented male in no acute distress.
+
+Musculoskeletal Exam:
+- Tender joint count: 6/28
+- Swollen joint count: 2/28
+- Bilateral MCP joints: tenderness and mild swelling
+- Wrists: mild tenderness bilaterally
+- Knees: right knee mild crepitus
+
+Labs (12/02/2026):
+- ESR: 29 mm/hr
+- CRP: 1.2 mg/dL
+- RF: 112 IU/mL (positive)
+- Anti-CCP: 75 U/mL
+- CBC: WBC 7.9, Hgb 12.7, Plt 295
+- CMP: Creatinine 0.9, ALT 22, AST 30
+
+Composite Disease Activity: DAS28-ESR 3.5
+
+ASSESSMENT:
+1. Rheumatoid arthritis, seropositive, active. DAS28 3.5.
+
+PLAN:
+1. Continue current therapy.
+2. Follow-up 6 months.
+
+Electronically signed,
+Dr. Clifton Lakin, MD
+Internal Medicine
+FAMILY FIRST HEALTH PC
+01/10/2026

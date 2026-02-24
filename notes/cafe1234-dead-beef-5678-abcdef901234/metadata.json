@@ -1,0 +1,11 @@
+{
+  "uuid": "cafe1234-dead-beef-5678-abcdef901234",
+  "patient_name": "Gloria Jean Hutchinson",
+  "notes": [
+    {"filename": "note_1_ed.txt", "type": "ED", "date": "2025-11-14"},
+    {"filename": "note_2_cardiology.txt", "type": "Cardiology Consult", "date": "2025-11-15"},
+    {"filename": "note_3_discharge.txt", "type": "Discharge Summary", "date": "2025-11-19"},
+    {"filename": "note_4_pcp.txt", "type": "PCP Follow-up", "date": "2025-12-02"},
+    {"filename": "note_5_rheumatology.txt", "type": "Rheumatology Consult", "date": "2025-12-18"}
+  ]
+}

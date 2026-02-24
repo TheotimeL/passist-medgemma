@@ -120,7 +120,7 @@
             v-else
             ref="reviewQueueRef"
             @field-accepted="onFieldAccepted"
-            @view-source="onViewSource"
+            @view-source="(ev: string, sn?: string, snippets?: string[]) => onViewSource(ev, sn, snippets)"
           />
         </div>
 
@@ -131,6 +131,7 @@
             :notes="patientStore.notes"
             :selected-index="patientStore.selectedNoteIndex"
             :highlight-text="highlightEvidence"
+            :highlight-texts="highlightSnippets"
             @update:selected-index="patientStore.selectedNoteIndex = $event"
           />
           <div v-else class="right-placeholder">
@@ -256,7 +257,7 @@
 
         <!-- Policy Mode -->
         <div v-show="rightMode === 'policy'" class="right-body policy-body">
-          <PolicyTree @view-source="(ev: string, sn?: string) => onPolicyViewSource(ev, sn)" />
+          <PolicyTree @view-source="(ev: string, sn?: string, snippets?: string[]) => onPolicyViewSource(ev, sn, snippets)" />
         </div>
 
         <!-- Justification Mode — split: criteria reference + editor -->
@@ -311,6 +312,7 @@
             :notes="patientStore.notes"
             :selected-index="patientStore.selectedNoteIndex"
             :highlight-text="highlightEvidence"
+            :highlight-texts="highlightSnippets"
             @update:selected-index="patientStore.selectedNoteIndex = $event"
           />
           <div v-else class="right-placeholder">
@@ -441,6 +443,7 @@ const isDragging = ref(false)
 const fhirLoading = ref(true)
 const fhirLoadingStatus = ref('Connecting to EHR...')
 const highlightEvidence = ref<string | null>(null)
+const highlightSnippets = ref<string[] | null>(null)
 const justificationVisited = ref(false) // Track if justification tab was visited
 const showMissingFieldsDialog = ref(false)
 const showAttestationDialog = ref(false)
@@ -493,25 +496,33 @@ watch(() => extractionStore.error, (err) => {
   }
 })
 
-// Watch extraction results for progressive population
+// Watch extraction results for progressive population.
+// Only populate form fields while extraction is running (SSE run events).
+// After extraction completes, we wait for drug field parsing before populating
+// to avoid the "load → empty → reload" flash.
 watch(() => extractionStore.results, (newResults) => {
-  if (newResults.length > 0) {
+  if (newResults.length > 0 && !extractionStore.complete) {
     formStore.addExtractionResults(newResults)
   }
 }, { deep: true })
 
-// Watch extraction completion — parse drug fields, then justification + PDF
+// Watch extraction completion — parse drug fields, then populate form, justification + PDF
 watch(() => extractionStore.complete, async (done) => {
   if (done && extractionStore.policyStatus) {
     const ps = extractionStore.policyStatus
     successMessage.value = `Extraction complete — review ${ps.met_count} criteria to continue`
     showSuccess.value = true
 
-    // Parse drug fields from evidence using MedGemma 4B (fast post-processing)
+    // Parse prescriber fields first, then drug fields (both use MedGemma 4B)
+    await extractionStore.parsePrescriberFields()
     await extractionStore.parseDrugFields()
 
+    // Now that drug fields are populated, push everything to the form store in one shot.
+    // This avoids the "load → empty → reload" flash from intermediate results without drug fields.
+    formStore.addExtractionResults(extractionStore.results)
+
     // Fetch clinical justification after drug fields are populated
-    formStore.fetchJustification(uuid.value, extractionStore.results, formStore.justificationOverrides)
+    formStore.fetchJustification(uuid.value, extractionStore.effectiveResults, formStore.justificationOverrides)
     // Auto-generate first PDF preview once extraction is done
     if (!pdfPreviewData.value && formStore.totalFilledCount > 0) {
       generatePreview()
@@ -530,7 +541,16 @@ watch(() => formStore.justificationOverrides, (overrides) => {
   if (!formStore.justificationText || !extractionStore.complete) return
   if (justificationDebounce) clearTimeout(justificationDebounce)
   justificationDebounce = setTimeout(() => {
-    formStore.fetchJustification(uuid.value, extractionStore.results, overrides)
+    formStore.fetchJustification(uuid.value, extractionStore.effectiveResults, overrides)
+  }, 800)
+}, { deep: true })
+
+// Watch policy overrides — re-fetch justification to reflect resolved/rejected criteria
+watch(() => extractionStore.overrides, () => {
+  if (!formStore.justificationText || !extractionStore.complete) return
+  if (justificationDebounce) clearTimeout(justificationDebounce)
+  justificationDebounce = setTimeout(() => {
+    formStore.fetchJustification(uuid.value, extractionStore.effectiveResults, formStore.justificationOverrides)
   }, 800)
 }, { deep: true })
 
@@ -559,7 +579,8 @@ onMounted(async () => {
   await new Promise(resolve => setTimeout(resolve, 1500))
   fhirLoading.value = false
   if (patientStore.fhirData) {
-    formStore.buildFromFhir(patientStore.fhirData)
+    const drugFromRoute = (route.query.drug as string) || ''
+    formStore.buildFromFhir(patientStore.fhirData, drugFromRoute)
     formStore.addManualFields()
     // Auto-generate PDF preview with FHIR fields so PDF shows demographics immediately
     generatePreview()
@@ -567,7 +588,7 @@ onMounted(async () => {
   await extractionStore.fetchExtraction(uuid.value)
   // If extraction already completed (e.g. fast SSE), trigger justification fetch now
   if (extractionStore.complete && extractionStore.policyStatus && !formStore.justificationText) {
-    formStore.fetchJustification(uuid.value, extractionStore.results, formStore.justificationOverrides)
+    formStore.fetchJustification(uuid.value, extractionStore.effectiveResults, formStore.justificationOverrides)
   }
 })
 
@@ -598,7 +619,7 @@ onUnmounted(() => {
   document.removeEventListener('mouseup', stopDrag)
 })
 
-function navigateToNote(evidence: string, sourceNote?: string) {
+function navigateToNote(evidence: string, sourceNote?: string, snippets?: string[]) {
   if (sourceNote) {
     patientStore.selectNoteByFilename(sourceNote)
   } else if (evidence && patientStore.notes.length > 1) {
@@ -611,17 +632,18 @@ function navigateToNote(evidence: string, sourceNote?: string) {
     }
   }
   highlightEvidence.value = evidence
+  highlightSnippets.value = snippets && snippets.length > 1 ? snippets : null
 }
 
 // ReviewQueue (left panel) → open notes in right panel
-function onViewSource(evidence: string, sourceNote?: string) {
-  navigateToNote(evidence, sourceNote)
+function onViewSource(evidence: string, sourceNote?: string, snippets?: string[]) {
+  navigateToNote(evidence, sourceNote, snippets)
   rightMode.value = 'notes'
 }
 
 // PolicyTree (right panel) → open notes in left panel
-function onPolicyViewSource(evidence: string, sourceNote?: string) {
-  navigateToNote(evidence, sourceNote)
+function onPolicyViewSource(evidence: string, sourceNote?: string, snippets?: string[]) {
+  navigateToNote(evidence, sourceNote, snippets)
   leftMode.value = 'notes'
 }
 

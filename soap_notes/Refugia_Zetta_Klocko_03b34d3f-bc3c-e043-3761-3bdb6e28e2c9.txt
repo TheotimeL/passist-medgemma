@@ -1,0 +1,68 @@
+============================================================
+  CLINICAL NOTE — INTERNAL MEDICINE CONSULTATION
+============================================================
+
+PATIENT INFORMATION
+  Name:           Refugia Zetta Klocko
+  Date of Birth:  September 18, 1941
+  Age:            84
+  Sex:            Female
+  Race/Ethnicity: White / Non-Hispanic
+  MRN:            03B34D3F
+  Date of Visit:  02/19/2026
+  Provider:       Dr. Lady Kovacek, MD — Internal Medicine
+  Location:       OPENLOOP HEALTHCARE PARTNERS PC
+
+CHIEF COMPLAINT
+  "Follow-up for rheumatoid arthritis. Ongoing joint symptoms."
+
+HISTORY OF PRESENT ILLNESS
+  Refugia Zetta Klocko is a 84-year-old white female with a
+  diagnosis of seropositive rheumatoid arthritis established in January 29, 1996.
+
+  Previously treated with methotrexate, discontinued for inadequate response.
+  Ongoing active disease with morning stiffness 47 minutes,
+  bilateral hand and wrist pain.
+
+  ALLERGIES: No known drug allergies.
+  SOCIAL HISTORY: Married. Non-smoker.
+
+PHYSICAL EXAMINATION
+  Vital Signs:
+    Blood Pressure: 140/78 mmHg
+    Heart Rate: 77 bpm
+    Temperature: 98.5°F
+    Weight: 180 lbs
+
+  General: 84-year-old female in mild distress.
+
+  Musculoskeletal Examination:
+    Tender Joint Count (28-joint): 6
+    Swollen Joint Count (28-joint): 7
+    Hands: Bilateral MCP tenderness and synovitis
+    Wrists: Bilateral dorsal synovitis with reduced extension
+    Knees: Bilateral small effusions
+
+LABORATORY DATA
+    ESR: 35 mm/hr (elevated)
+    CRP: 2.6 mg/dL (elevated)
+    RF: Positive, 73 IU/mL
+    Anti-CCP: Positive, 143 U/mL
+    CBC: Within normal limits
+    CMP: Within normal limits
+
+DISEASE ACTIVITY SCORE
+    DAS28-ESR: 5.4
+
+ASSESSMENT AND PLAN
+  1. RHEUMATOID ARTHRITIS — Active disease
+     DAS28-ESR: 5.4
+     Has not responded adequately to conventional therapy (see treatment history above).
+
+     PLAN: Rheumatology referral recommended. Continue symptom management.
+
+============================================================
+Electronically signed by Dr. Lady Kovacek, MD
+Internal Medicine
+OPENLOOP HEALTHCARE PARTNERS PC
+Date: 02/19/2026

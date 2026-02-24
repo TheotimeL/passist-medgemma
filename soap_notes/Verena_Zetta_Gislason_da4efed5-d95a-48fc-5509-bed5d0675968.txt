@@ -1,0 +1,65 @@
+============================================================
+  CLINICAL NOTE — INTERNAL MEDICINE CONSULTATION
+============================================================
+
+PATIENT INFORMATION
+  Name:           Verena Zetta Gislason
+  Date of Birth:  May 17, 1982
+  Age:            43
+  Sex:            Female
+  Race/Ethnicity: White / Non-Hispanic
+  MRN:            DA4EFED5
+  Date of Visit:  02/17/2026
+  Provider:       Dr. Brittney Schmitt, MD — Internal Medicine
+  Location:       WESTERN WYOMING MEDICAL CLINICS LLC
+
+CHIEF COMPLAINT
+  "Routine follow-up for rheumatoid arthritis."
+
+HISTORY OF PRESENT ILLNESS
+  Verena Zetta Gislason is a 43-year-old white female with a
+  diagnosis of seropositive rheumatoid arthritis established in February 22, 2017.
+
+  She reports mild intermittent joint symptoms, well-controlled on current therapy.
+  Morning stiffness lasts about 31 minutes.
+
+  ALLERGIES: No known drug allergies.
+  SOCIAL HISTORY: Married. Non-smoker.
+
+PHYSICAL EXAMINATION
+  Vital Signs:
+    Blood Pressure: 131/88 mmHg
+    Heart Rate: 69 bpm
+    Temperature: 98.3°F
+    Weight: 142 lbs
+
+  General: 43-year-old female in no acute distress.
+
+  Musculoskeletal Examination:
+    Tender Joint Count (28-joint): 4
+    Swollen Joint Count (28-joint): 2
+    Hands: Mild MCP tenderness
+    Wrists: Mild tenderness
+
+LABORATORY DATA
+    ESR: 19 mm/hr (normal)
+    CRP: 1.4 mg/dL (elevated)
+    RF: Positive, 48 IU/mL
+    Anti-CCP: Positive, 112 U/mL
+    CBC: Within normal limits
+    CMP: Within normal limits
+
+DISEASE ACTIVITY SCORE
+    DAS28-ESR: 3.8
+
+ASSESSMENT AND PLAN
+  1. RHEUMATOID ARTHRITIS — Active disease
+     DAS28-ESR: 3.8
+
+     PLAN: Continue current regimen. Follow-up in 6 months.
+
+============================================================
+Electronically signed by Dr. Brittney Schmitt, MD
+Internal Medicine
+WESTERN WYOMING MEDICAL CLINICS LLC
+Date: 02/17/2026

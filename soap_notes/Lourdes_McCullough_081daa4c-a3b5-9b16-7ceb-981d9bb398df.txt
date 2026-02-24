@@ -1,0 +1,18 @@
+Progress Note
+Date: 02/09/2026
+Patient: Lourdes McCullough   DOB: March 2, 1984   MRN: 081DAA4C
+Attending: Dr. Andrea Moretti, Rheumatology
+Site: Yellowstone Rheumatology Associates
+
+Lourdes McCullough is a 41-year-old woman with seropositive inflammatory polyarthritis since 2022-09-25, presenting for re-evaluation following several medication changes. Her joint symptoms have persisted despite multiple treatment attempts over the past years.
+
+She was initially placed on methotrexate at the time of diagnosis. This was eventually stopped — the chart notes inadequate response after 6 months at max dose as the reason for discontinuation.
+
+On examination today, she has tenderness in 12 joints and swelling in 7. Morning stiffness persists for 68 minutes. Inflammatory markers are elevated — ESR 34, CRP 3.3. Her DAS28-ESR calculates to 5.8.
+
+Serologies show RF at 199 and anti-CCP at 294. Pre-treatment screening (TB quantiferon, hepatitis panel) is negative. CBC and metabolic panel are unremarkable.
+
+Given the clinical picture, I am recommending initiation of a TNF inhibitor — specifically Humira (adalimumab) 40 mg subcutaneous every other week. PA documentation has been submitted. Patient was counseled on self-injection technique and will return in 12 weeks.
+
+— Dr. Andrea Moretti, MD
+  Rheumatology, Yellowstone Rheumatology Associates

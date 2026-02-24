@@ -1,0 +1,10 @@
+Progress Note
+Date: 02/26/2026
+Patient: Pete Halvorson   DOB: 9 Mar 1989   MRN: D493060F
+Attending: Dr. Olin Padberg, Internal Medicine
+Site: NORTHVIEW MEDICAL CLINIC LLC
+
+Pete Halvorson, 36yo M, presents for follow-up. History of RA, now in sustained clinical remission. DAS28 2.5. No joint symptoms. Exam is entirely normal. ESR 6, CRP 0.1. No RA medications at this time. Will continue annual monitoring.
+
+— Dr. Olin Padberg, MD
+  Internal Medicine, NORTHVIEW MEDICAL CLINIC LLC

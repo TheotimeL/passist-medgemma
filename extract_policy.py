@@ -87,7 +87,7 @@ GENERIC_EXAMPLE_EXTRACTIONS = [
         attributes={
             "logic_path": json.dumps([f"{_EXAMPLE_AUTH} (AND)", "Diagnosis"]),
             "type": "Mandatory",
-            "search_description": "Patient has a confirmed diagnosis of moderate to severe [condition] (look for diagnosis, disease status, severity level)",
+            "search_description": "Patient has a confirmed diagnosis of moderate to severe [condition]. Evidence: documented diagnosis with severity level (moderate, severe, or moderate-to-severe).",
         },
     ),
     lx.data.Extraction(
@@ -104,7 +104,7 @@ GENERIC_EXAMPLE_EXTRACTIONS = [
         attributes={
             "logic_path": json.dumps([f"{_EXAMPLE_AUTH} (AND)", "Step Therapy (OR)"]),
             "type": "Criterion",
-            "search_description": "Patient has failed at least one conventional therapy from: Drug A, Drug B, Drug C. Look for any of these drugs in medication history as PRESCRIBED or STARTED, with evidence of inadequate response, side effects, or discontinuation. A recommendation to 'consider' a drug does NOT count — the patient must have actually taken it and it must have failed.",
+            "search_description": "Patient failed at least one conventional therapy: Drug A, Drug B, or Drug C. Evidence includes documented inadequate response, adverse effects, intolerance, or discontinuation.",
         },
     ),
     lx.data.Extraction(
@@ -113,7 +113,7 @@ GENERIC_EXAMPLE_EXTRACTIONS = [
         attributes={
             "logic_path": json.dumps([f"{_EXAMPLE_AUTH} (AND)", "Step Therapy (OR)"]),
             "type": "Criterion",
-            "search_description": "Patient was previously treated with at least one targeted therapy from: Medication X, Medication Y, Medication Z. Look for any of these in past medications, treatment history, or claims records with dates and duration of therapy.",
+            "search_description": "Patient was previously treated with at least one targeted therapy: Medication X, Medication Y, or Medication Z. Evidence: documented prior use with dates and duration of therapy.",
         },
     ),
     lx.data.Extraction(
@@ -138,7 +138,7 @@ GENERIC_EXAMPLE_EXTRACTIONS = [
         attributes={
             "logic_path": json.dumps([f"{_EXAMPLE_AUTH} (AND)", "Step Therapy (OR)", "Current User (AND)"]),
             "type": "SubRequirement",
-            "search_description": "Patient is currently taking or prescribed the requested medication (look for active prescriptions, current medications list, or recent dispensing records)",
+            "search_description": "Patient is currently receiving the requested medication as an active, ongoing therapy prior to this visit. Evidence: drug listed as current/active medication or documented continuation.",
         },
     ),
     lx.data.Extraction(
@@ -147,7 +147,7 @@ GENERIC_EXAMPLE_EXTRACTIONS = [
         attributes={
             "logic_path": json.dumps([f"{_EXAMPLE_AUTH} (AND)", "Step Therapy (OR)", "Current User (AND)"]),
             "type": "SubRequirement",
-            "search_description": "Patient has NOT received free drug samples or manufacturer assistance (met if there is NO mention of free samples or manufacturer programs)",
+            "search_description": "Patient has NOT received a manufacturer-supplied sample at no cost (met when absent from documentation).",
         },
     ),
     lx.data.Extraction(
@@ -157,7 +157,7 @@ GENERIC_EXAMPLE_EXTRACTIONS = [
             "logic_path": json.dumps([f"{_EXAMPLE_AUTH} (AND)", "Combination Therapy"]),
             "type": "Mandatory",
             "negated": "true",
-            "search_description": "Patient is NOT taking another targeted therapy at the same time (met if there is NO mention of concurrent targeted therapy use)",
+            "search_description": "Patient is NOT receiving the requested medication in combination with another targeted therapy: Medication X, Medication Y, or Medication Z (met when absent from documentation).",
         },
     ),
     lx.data.Extraction(
@@ -166,7 +166,7 @@ GENERIC_EXAMPLE_EXTRACTIONS = [
         attributes={
             "logic_path": json.dumps([f"{_EXAMPLE_AUTH} (AND)", "Prescriber"]),
             "type": "Mandatory",
-            "search_description": "A relevant specialist is involved in prescribing (look for specialist name, title, department, or consultation notes in signatures or headers)",
+            "search_description": "Prescribed by or in consultation with a relevant specialist. Evidence: prescriber identified as the required specialist (name, title, specialty) and drug in the treatment plan.",
         },
     ),
 ]
@@ -243,18 +243,16 @@ def extract_criteria(clean_text, disease_name, drug_name, auth_type, model_id):
           For EvidenceRequirement, include the specific criterion text as the last path segment
           when the requirement applies to a specific criterion rather than the whole group.
         - search_description (REQUIRED for Criterion and Drug only, NOT for LogicGate or EvidenceRequirement):
-          A plain-English sentence describing what to look for in a clinical document to determine
-          if this criterion is met. This should be written for a clinical note reviewer who needs
-          to find evidence. Include:
-          * What specifically to search for (drug names, diagnosis terms, specialist titles, etc.)
-          * Where in the document it might appear (medication list, active problems, signatures, etc.)
-          * For negated criteria: explain that it is met when there is NO mention
-          * For drug criteria with a drug list: include ALL drug names in the search_description so
-            the reviewer knows which drugs to check for. The patient must have ACTUALLY TAKEN at least
-            one of the listed drugs, not just been recommended to take it.
-          * Use simple, direct language. Example: "Patient has failed at least one of: Drug A, Drug B.
-            Look for any of these in medication history as PRESCRIBED or STARTED, with evidence of
-            inadequate response, side effects, or discontinuation."
+          A concise declarative statement of the clinical fact that must be documented. Include:
+          * The specific clinical state or fact to verify
+          * Key entities: all listed drug names, specialist types, diagnosis terms
+          * For drug failure: list qualifying drugs + what constitutes failure (inadequate response,
+            adverse effects, intolerance, contraindication, discontinuation)
+          * For negated criteria: state what must be absent, ending with "(met when absent from documentation)"
+          * For prescriber criteria: specify both the required specialty and the drug/treatment
+          Do NOT include procedural instructions ("Look for...", "Extract...", "Do NOT count...").
+          Do NOT specify where in the document to look.
+          Do NOT include anti-patterns or exclusions.
 
         RULES:
         1. extraction_text MUST be a single string copied verbatim from the source text. NEVER return a list or array.
@@ -334,10 +332,19 @@ def reconstruct_tree(extractions, disease_name):
 
         item_type = item_attrs.get("type", "Criterion")
 
+        # For EvidenceRequirements, the last path segment references a criterion,
+        # not a new tree node. Split it off so we don't create an empty gate.
+        if item_type == "EvidenceRequirement" and len(path) >= 2:
+            gate_path = path[:-1]
+            criterion_ref = _clean_segment_name(path[-1])
+        else:
+            gate_path = path
+            criterion_ref = None
+
         current_node_list = tree_root["children"]
         parent_node = None
 
-        for segment in path:
+        for segment in gate_path:
             clean_name = _clean_segment_name(segment)
             node_type = _get_node_type(segment)
             found_node = next((n for n in current_node_list if n.get("name") == clean_name), None)
@@ -357,9 +364,21 @@ def reconstruct_tree(extractions, disease_name):
             parent_node["source_text"] = item.extraction_text
             parent_node["char_interval"] = _get_char_interval(item)
         elif item_type == "EvidenceRequirement":
-            if "evidence_requirements" not in parent_node:
-                parent_node["evidence_requirements"] = []
-            parent_node["evidence_requirements"].append({
+            # Find the LEAF child that this evidence requirement belongs to
+            target = parent_node
+            if criterion_ref:
+                ref_lower = criterion_ref.lower()
+                match = next(
+                    (c for c in parent_node.get("children", [])
+                     if c.get("type") == "LEAF"
+                     and c.get("source_text", "").lower().startswith(ref_lower)),
+                    None,
+                )
+                if match:
+                    target = match
+            if "evidence_requirements" not in target:
+                target["evidence_requirements"] = []
+            target["evidence_requirements"].append({
                 "source_text": item.extraction_text,
                 "char_interval": _get_char_interval(item),
             })
@@ -461,24 +480,21 @@ def clinically_enrich_tree(tree_path: str, output_path: str | None = None, model
         You are a clinical informatics expert. Your task is to create "Evidence Signatures"
         for insurance prior authorization criteria.
 
-        For each criterion below, generate a clinically-translated search description that a
-        medical AI model can use to find evidence in clinical notes (SOAP notes, progress notes, etc).
+        For each criterion below, generate keywords and anti-keywords that the validation pipeline
+        can use to verify evidence extracted from clinical notes (SOAP notes, progress notes, etc).
 
         For each criterion, output a JSON object with:
         1. "id": The criterion ID (copy exactly)
-        2. "search_description": A detailed plain-English description of what to look for in a
-           clinical note. Include:
-           - Clinical synonyms and equivalent phrasings a clinician might use
-           - Where in the note this evidence typically appears (medications list, assessment, plan, etc)
-           - For drug criteria: what constitutes "failure" (discontinuation, adverse effects,
-             inadequate response) vs what does NOT count (currently taking, plan to start)
-           - For specialist criteria: which specialties qualify and which do NOT
-           - For negated criteria: explain that absence of mention = criterion met
-        3. "keywords": Array of 3-8 key terms that SHOULD appear in valid evidence for this criterion.
+        2. "keywords": Array of 3-12 key terms that SHOULD appear in valid evidence for this criterion.
            Use lowercase. Include both brand names and generic names for drugs.
            Also include standard clinical abbreviations that clinicians commonly use
            in SOAP notes and progress notes.
-        4. "anti_keywords": Array of terms that should make evidence SUSPECT for this criterion.
+           For DIAGNOSIS criteria: MUST include all common clinical synonyms, ICD-10 descriptive
+           names, and alternative diagnostic phrasings a clinician might use in a SOAP note.
+           Clinicians often use ICD-10 category descriptive names instead of the common disease
+           name — include these variant terms so keyword matching catches all valid documentation
+           of the same diagnosis. The goal is to catch ALL ways a clinician might document the diagnosis.
+        3. "anti_keywords": Array of terms that should make evidence SUSPECT for this criterion.
            For example, for a "rheumatologist" criterion, anti_keywords might include specialties
            that are NOT rheumatology (e.g., "internal medicine", "family medicine", "primary care").
            For drug failure criteria, anti_keywords might include phrases suggesting the drug
@@ -531,6 +547,11 @@ def clinically_enrich_tree(tree_path: str, output_path: str | None = None, model
           Anti_keywords MUST include initiation language indicating the drug is being newly prescribed:
           "initiate [drug]", "start [drug]", "begin [drug]" for the specific drug,
           plus general terms: "plan to initiate", "will start", "pending initiation", "pending authorization".
+          ALSO: The keyword list for "currently on therapy" criteria MUST NOT include bare "prescribed" —
+          in clinical notes, "prescribed [drug]" almost always means a NEW prescription being written,
+          NOT that the patient is already on the drug. Only include terms like "currently taking",
+          "on [drug] therapy", "active medication", "continuing [drug]" for ongoing use.
+          Anti_keywords MUST include "prescribed [drug]" patterns for the specific drug(s).
         - Keep keywords focused on the SPECIFIC criterion, not generic clinical terms.
         - Anti_keywords should flag common false positive patterns.
         - CRITICAL: All anti_keywords MUST be multi-word phrases (at least 2 words). NEVER use
@@ -576,7 +597,6 @@ def clinically_enrich_tree(tree_path: str, output_path: str | None = None, model
         cid = node.get("id", "")
         if cid in enrichment_map:
             e = enrichment_map[cid]
-            node["search_description"] = e.get("search_description", node.get("search_description", ""))
             if e.get("keywords"):
                 node["keywords"] = e["keywords"]
             if e.get("anti_keywords"):

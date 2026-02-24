@@ -1,0 +1,65 @@
+SOAP NOTE — Rheumatology Clinic Visit
+
+Patient: Asuncion Domitila Morar
+DOB: 10/09/1967
+Age: 58 years old
+Gender: Female
+MRN: E2CE8653
+Date of Visit: 02/03/2026
+Provider: Dr. Lisa Yamamoto, MD, Rheumatology
+Facility: Casper Rheumatology Specialists
+Primary Care: Dr. Gustavo Bravo, LIFE LINE COMMUNITY HEALTHCARE
+
+SUBJECTIVE:
+Mrs. Morar is a 58-year-old woman with a long-standing history of seropositive inflammatory arthritis, first noted in 03/25/2017. She describes worsening bilateral hand and wrist pain over the past several months despite several treatment changes. Morning stiffness persists for approximately 60 minutes. She is having difficulty with buttons and jar lids.
+
+PMH also includes osteoporosis screening pending.
+
+She denies fevers, recent infections, or weight loss. No new skin rashes.
+
+Allergies: No known drug allergies.
+
+MEDICATION RECONCILIATION:
+- Methotrexate 25 mg weekly: started 2020, STOPPED (MTX: hepatotoxicity)
+- Sulfasalazine 20 mg daily: started 2019, STOPPED (SSZ: allergic reaction)
+- Naproxen sodium 500 mg BID: current
+- Folic acid 1 mg daily: current
+
+OBJECTIVE:
+Vitals: BP 138/78 mmHg, HR 81 bpm, Temp 98.5F, Weight 179 lbs
+General: Alert, oriented woman in mild distress due to joint pain.
+
+Musculoskeletal Exam:
+- Tender joint count: 10/28
+- Swollen joint count: 5/28
+- Bilateral MCP joints: tenderness and swelling
+- Wrists: bilateral synovitis
+
+Labs (01/11/2025):
+- ESR: 31 mm/hr
+- CRP: 2.5 mg/dL
+- RF: 176 IU/mL (positive)
+- Anti-CCP: 266 U/mL
+- CBC: WBC 8.0, Hgb 11.8, Plt 315
+- CMP: Creatinine 0.8, ALT 29, AST 26
+- HBsAg: Negative
+- Anti-HCV: Negative
+- QuantiFERON-TB Gold: Negative
+
+Composite Disease Activity: DAS28-ESR 5.3
+
+ASSESSMENT:
+1. Rheumatoid arthritis, seropositive, active. DAS28 5.3.
+   Inadequate disease control on prior conventional therapy.
+
+PLAN:
+1. Start Humira 40 mg SQ q14d. PA submitted.
+2. Continue naproxen sodium for breakthrough pain.
+3. Pre-biologic labs satisfactory.
+4. Injection training scheduled. Return 12 weeks.
+
+Electronically signed,
+Dr. Lisa Yamamoto, MD
+Rheumatology
+Casper Rheumatology Specialists
+02/03/2026

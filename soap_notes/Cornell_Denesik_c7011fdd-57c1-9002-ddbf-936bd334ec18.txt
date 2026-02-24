@@ -1,0 +1,18 @@
+Progress Note
+Date: 01/27/2026
+Patient: Cornell Denesik   DOB: 07/31/1962   MRN: C7011FDD
+Attending: Dr. James O'Brien, Rheumatology
+Site: Cheyenne Arthritis & Rheumatism Center
+
+Cornell Denesik is a 63-year-old man with seropositive inflammatory polyarthritis since 23 Oct 2018, presenting for re-evaluation following several medication changes. His joint symptoms have persisted despite multiple treatment attempts over the past years.
+
+Treatment with leflunomide was also not continued long-term (diarrhea and alopecia).
+
+On examination today, he has tenderness in 8 joints and swelling in 9. Morning stiffness persists for 50 minutes. Inflammatory markers are elevated — ESR 30, CRP 1.6. His DAS28-ESR calculates to 4.7.
+
+Serologies show RF at 118 and anti-CCP at 228. Pre-treatment screening (TB quantiferon, hepatitis panel) is negative. CBC and metabolic panel are unremarkable.
+
+Given the clinical picture, I am recommending initiation of a TNF inhibitor — specifically Humira (adalimumab) 40 mg subcutaneous every other week. PA documentation has been submitted. Patient was counseled on self-injection technique and will return in 12 weeks.
+
+— Dr. James O'Brien, MD
+  Rheumatology, Cheyenne Arthritis & Rheumatism Center

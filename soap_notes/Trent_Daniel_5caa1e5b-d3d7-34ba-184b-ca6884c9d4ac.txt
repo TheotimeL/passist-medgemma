@@ -1,0 +1,30 @@
+Clinic Note — 02/26/2026
+Pt: Trent Daniel | DOB: 1968-12-28 | M | MRN: 5CAA1E5B
+Provider: Dr. James O'Brien (Rheumatology)
+Facility: Cheyenne Arthritis & Rheumatism Center
+
+S:
+57yo M w/ seropositive IA dx 1998-08-26. c/o persistent jt pain b/l hands/wrists, AM stiffness ~83min.
+Prev tx w/ several conventional agents (see med rec). Currently on NSAID only.
+Denies infxn/fever/wt loss/rash.
+
+Med Rec:
+  MTX → d/c (MTX: fatigue and hair loss)
+  Plaquenil → d/c (HCQ: GI intol)
+  naproxen 500 BID — active
+  folate 1mg qd — active
+
+O:
+VS: 120/77, p67, afebrile
+MSK: TJC 6, SJC 5. MCP synovitis b/l.
+ESR 28 / CRP 3.2 / RF 89 / CCP 216
+DAS28 5.1
+Screening: QFT neg, HBsAg neg, anti-HCV neg
+
+A/P:
+1) RA, active (DAS28 5.1)
+   → initiate ADA 40mg SQ q2wk, PA submitted
+   → f/u 12wk
+
+— Dr. James O'Brien, Rheumatology
+  Cheyenne Arthritis & Rheumatism Center

@@ -1,0 +1,101 @@
+DISCHARGE SUMMARY
+Cheyenne Regional Medical Center
+
+Patient: Hutchinson, Gloria Jean    DOB: 05/11/1958    MRN: CAFE1234
+Admission: 11/14/2025    Discharge: 11/19/2025 (5 days)
+Attending: Dr. S. Okonkwo (Cardiology) / Dr. M. Williams (Hospitalist)
+PCP: Dr. James Wilson, Family Medicine, Cheyenne Family Practice
+
+DISCHARGE DIAGNOSES:
+1. NSTEMI s/p LAD DES placement (11/15/2025)
+2. CHF exacerbation (EF 30-35%)
+3. Acute kidney injury, resolved (Cr peak 1.8 → 1.5 at d/c)
+4. Atrial fibrillation with RVR, rate-controlled
+5. T2DM, poorly controlled (A1c 8.1)
+6. COPD — stable
+7. Chronic pain syndrome
+8. Seropositive rheumatoid arthritis — MEDICATIONS HELD (see below)
+9. Major depressive disorder — stable on sertraline
+10. GERD
+11. Osteoporosis
+
+HOSPITAL COURSE SUMMARY:
+Mrs. Hutchinson is a 67-year-old woman with complex multi-morbidity who presented
+with NSTEMI. Cath revealed 70% LAD lesion treated with DES. Post-PCI course was
+uncomplicated. CHF managed with IV diuresis, transitioned to PO. AKI resolved.
+
+HELD MEDICATIONS — IMPORTANT:
+The following medications were held during this admission and should be addressed
+at outpatient follow-up:
+
+a) Methotrexate 15 mg weekly — HELD on admission (acute illness, AKI, LFT
+   elevation). ALT 48 on admission, peaked 67 during hospitalization, trending
+   to 45 at discharge. Etiology uncertain: cardiac transaminitis vs. MTX
+   hepatotoxicity vs. multifactorial. Patient reports she has been on this
+   medication "for years" for her joints. She cannot recall if she had liver
+   problems before this hospitalization. PHARMACY NOTE: Last fill 10/28/2025.
+   Prior fills consistent — patient has been on MTX since at least 2022 per
+   refill history.
+   → DO NOT RESTART without rheumatology evaluation and serial LFTs.
+
+b) Prednisone 5 mg daily — HELD (hyperglycemia management during ACS). Can
+   likely restart at outpatient discretion. Consider adrenal insufficiency if
+   held >2 weeks — patient has been on chronic low-dose prednisone per her
+   rheumatologist.
+
+c) Naproxen 500 mg BID — DISCONTINUED. Do NOT restart. Contraindicated given
+   AKI + NSTEMI + CHF + CKD3. Alternative analgesic strategies needed for her
+   joint pain. Patient was counseled but is upset ("that's the only thing that
+   helps my hands").
+
+DISCHARGE MEDICATIONS:
+1. Metoprolol succinate 100 mg daily (↑ from 50)
+2. Furosemide 60 mg daily (↑ from 40)
+3. Apixaban 5 mg BID
+4. ASA 81 mg daily (NEW — DAPT)
+5. Clopidogrel 75 mg daily (NEW — DAPT x 12 months)
+6. Atorvastatin 80 mg daily
+7. Empagliflozin 10 mg daily
+8. Metformin 1000 mg BID (restarted — Cr 1.5, eGFR 38 → borderline, monitor)
+9. Insulin glargine 28 units qHS (↑ from 22)
+10. Tiotropium 18 mcg daily
+11. Albuterol PRN
+12. Sertraline 100 mg daily
+13. Gabapentin 300 mg TID
+14. Omeprazole 40 mg daily
+15. Calcium/Vitamin D
+16. Folic acid 1 mg daily
+17. Acetaminophen 650 mg q6h PRN (replaces naproxen)
+
+NOT ON DISCHARGE LIST:
+- Methotrexate — HELD, rheumatology to restart
+- Prednisone — HELD, rheumatology to restart
+- Naproxen — DISCONTINUED permanently
+- Lisinopril — HELD (hypotension post-MI, restart at PCP f/u if BP allows)
+- Amlodipine — HELD (same)
+
+FOLLOW-UP:
+1. Cardiology (Dr. Okonkwo): 2 weeks — post-MI, DAPT management
+2. PCP (Dr. Wilson): 1 week — BP meds, diabetes, renal function
+3. Endocrinology: NEW referral — diabetes optimization
+4. Rheumatology: URGENT — restart of RA meds, MTX liver safety, pain management
+   without NSAIDs. Patient's rheumatologist is reportedly at "some clinic in Casper"
+   — medical records request sent. If unable to get timely appointment, PCP may
+   refer to local rheumatology.
+5. Cardiac rehab: enrollment initiated
+6. Pulmonology: routine f/u COPD
+
+PATIENT EDUCATION:
+- DAPT compliance critical — do NOT stop clopidogrel without cardiology approval
+- Daily weights, 2L fluid restriction
+- Low sodium diet
+- Diabetes dietary counseling provided
+- Fall risk precautions (osteoporosis, deconditioning)
+- Patient instructed NOT to take any NSAID including OTC ibuprofen or naproxen
+- Patient upset about joint pain management — discussed with daughter, will
+  address with rheumatology urgently
+
+Electronically signed,
+Marcus Williams, MD — Hospitalist Medicine
+Cheyenne Regional Medical Center
+11/19/2025

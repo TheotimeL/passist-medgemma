@@ -1,0 +1,30 @@
+Clinic Note — 02/17/2026
+Pt: Kirk Bogisich | DOB: 1993-11-03 | M | MRN: C106918A
+Provider: Dr. David Nakamura (Rheumatology)
+Facility: Summit Arthritis Center
+
+S:
+32yo M w/ seropositive IA dx 2022-04-27. c/o persistent jt pain b/l hands/wrists, AM stiffness ~117min.
+Prev tx w/ several conventional agents (see med rec). Currently on NSAID only.
+Denies infxn/fever/wt loss/rash.
+
+Med Rec:
+  MTX → d/c (MTX: cytopenias)
+  LEF → d/c (LEF: inad resp)
+  naproxen 500 BID — active
+  folate 1mg qd — active
+
+O:
+VS: 118/87, p65, afebrile
+MSK: TJC 5, SJC 7. MCP synovitis b/l.
+ESR 28 / CRP 1.7 / RF 119 / CCP 338
+DAS28 5.1
+Screening: QFT neg, HBsAg neg, anti-HCV neg
+
+A/P:
+1) RA, active (DAS28 5.1)
+   → initiate ADA 40mg SQ q2wk, PA submitted
+   → f/u 12wk
+
+— Dr. David Nakamura, Rheumatology
+  Summit Arthritis Center

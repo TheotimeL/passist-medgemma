@@ -1,0 +1,30 @@
+02/19/2026 - Rheumatology note
+pt: Stuart Harvey, 55yo M, DOB 1970-08-30
+provider: Dr. David Nakamura @ Summit Arthritis Center
+mrn: 871CE1CB
+
+[Imported from 10/21/2025]
+PMH: HTN, GERD, RA
+Allergies: NKDA
+[End imported]
+
+SUBJECTIVE
+RA, mild sx. Stiffness ~15min AM. Managing.
+
+OBJECTIVE
+VS: 145/87, p65, afebrile, 199#
+MSK: 1 tender, 1 swollen. mostly MCPs. 
+
+labs from 12/08:
+  sed rate 18, CRP 0.5, RF 63 (+), anti-CCP 56
+  cbc ok, cmp ok, lfts wnl
+
+DAS28 = 3.0
+
+A/P
+1) RA stable (DAS28 3.0)
+   → cont plan. f/u 6mo
+
+—Dr. David Nakamura
+ Rheumatology
+ Summit Arthritis Center

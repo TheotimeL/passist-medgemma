@@ -9,28 +9,62 @@ logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, HTTPException
 
+from pathlib import Path
+
 from api.schemas import PatientSummary, PatientFhir, NotesResponse, NoteFile
 from config import NOTES_ROOT, NOTES_ROOT_NEW, FHIR_ROOT, FHIR_BUNDLED, UUID_PATTERN
 from patient_data import load_patient_from_fhir
 
 router = APIRouter()
 
-# Pre-determined eligibility for demo patients (from clinical notes analysis)
-# Key: UUID prefix (first 8 chars) → eligibility info
-PATIENT_ELIGIBILITY: dict[str, dict] = {
-    "520e6e72": {"eligible": True, "reason": "Failed methotrexate, active RA (DAS28 5.4)"},
-    "affb0758": {"eligible": False, "reason": "No DMARD trial yet, step therapy not met"},
-    "2d701350": {"eligible": True, "reason": "Failed methotrexate + leflunomide, active RA"},
-    "5c9df1d3": {"eligible": True, "reason": "Failed methotrexate + hydroxychloroquine, active RA"},
-    "92181936": {"eligible": True, "reason": "Failed methotrexate + prior Enbrel, active RA"},
-    "aa20b461": {"eligible": False, "reason": "On methotrexate (not failed), dose increase planned"},
-    "1a691f1f": {"eligible": False, "reason": "On methotrexate with reasonable control, no failure"},
-    "8b8f1e13": {"eligible": False, "reason": "RA in remission since 2020, off all medications"},
-    "129412a7": {"eligible": True, "reason": "Failed leflunomide + hydroxychloroquine, active RA"},
-    "17d5d247": {"eligible": True, "reason": "Failed methotrexate + sulfasalazine, active RA"},
-    "d840c23b": {"eligible": False, "reason": "Low disease activity, no DMARD failures"},
-    "f7581664": {"eligible": True, "reason": "Failed methotrexate + leflunomide + prior etanercept"},
-}
+
+def _load_eligibility_from_ground_truth() -> dict[str, dict]:
+    """Derive patient eligibility from benchmark_ground_truth.json via policy tree evaluation."""
+    gt_path = Path(__file__).resolve().parent.parent / "benchmark_ground_truth.json"
+    if not gt_path.exists():
+        return {}
+
+    try:
+        from policy_tree import load_tree, get_status, CriterionResult
+        from config import TREE_PATH
+
+        gt = json.loads(gt_path.read_text(encoding="utf-8"))
+        tree = load_tree(TREE_PATH)
+        eligibility: dict[str, dict] = {}
+
+        for uuid, patient_data in gt.get("patients", {}).items():
+            criteria = patient_data.get("criteria", {})
+            results: dict[str, CriterionResult] = {}
+            not_met_reasons = []
+            for cid, info in criteria.items():
+                results[cid] = CriterionResult(
+                    criterion_id=cid,
+                    met=info.get("met", False),
+                    evidence=info.get("reason", ""),
+                )
+                if not info.get("met"):
+                    not_met_reasons.append(info.get("reason", cid))
+
+            status = get_status(tree, results)
+            met_reasons = [
+                info.get("reason", "") for cid, info in criteria.items() if info.get("met")
+            ]
+            # Build a concise reason string from met criteria (for eligible) or blockers (for not eligible)
+            if status.overall is True:
+                reason = ", ".join(r for r in met_reasons[:3] if r)
+            else:
+                reason = ", ".join(r for r in not_met_reasons[:2] if r)
+
+            prefix = uuid[:8]
+            eligibility[prefix] = {"eligible": status.overall, "reason": reason}
+
+        return eligibility
+    except Exception as e:
+        logger.warning("Failed to load ground truth eligibility: %s", e)
+        return {}
+
+
+PATIENT_ELIGIBILITY: dict[str, dict] = _load_eligibility_from_ground_truth()
 
 
 def _find_fhir_bundle(uuid: str) -> str | None:

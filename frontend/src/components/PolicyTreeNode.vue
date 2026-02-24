@@ -21,7 +21,7 @@
           :overrides="overrides"
           :depth="depth + 1"
           :parent-or-satisfied="parentOrSatisfied || (node.type === 'OR' && evaluateGate() === true)"
-          @view-source="(ev: string, sn?: string) => emit('viewSource', ev, sn)"
+          @view-source="(ev: string, sn?: string, snippets?: string[]) => emit('viewSource', ev, sn, snippets)"
         />
       </div>
     </template>
@@ -111,13 +111,17 @@
             <div class="evidence-label">
               <v-icon size="11" color="primary" class="mr-1">mdi-text-search</v-icon>
               <span>Evidence Found</span>
+              <span v-if="effectiveSnippets.length > 1" class="evidence-snippet-count">{{ effectiveSnippets.length }} snippets</span>
               <span class="evidence-source-badge" :class="isOverridden ? '' : 'evidence-ai'">
                 {{ isOverridden ? 'Doctor Override' : 'AI Extracted' }}
               </span>
             </div>
-            <p class="evidence-text">{{ effectiveEvidence }}</p>
+            <template v-if="effectiveSnippets.length > 1">
+              <p v-for="(snippet, idx) in effectiveSnippets" :key="idx" class="evidence-text evidence-snippet">{{ snippet }}</p>
+            </template>
+            <p v-else class="evidence-text">{{ effectiveEvidence }}</p>
             <div class="evidence-actions">
-              <button class="action-link" @click="emit('viewSource', effectiveEvidence, originalAiResult?.source_note)">
+              <button class="action-link" @click="emitViewSource">
                 <v-icon size="12" class="mr-1">mdi-text-search</v-icon>
                 View in Notes
               </button>
@@ -231,7 +235,7 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  viewSource: [evidence: string, sourceNote?: string]
+  viewSource: [evidence: string, sourceNote?: string, snippets?: string[]]
 }>()
 
 const collapsed = ref(false)
@@ -257,6 +261,18 @@ const effectiveEvidence = computed(() => {
   return result.value?.evidence || ''
 })
 
+const effectiveSnippets = computed(() => {
+  if (override.value?.evidence) return [override.value.evidence]
+  const r = originalAiResult.value
+  if (r?.evidence_snippets && r.evidence_snippets.length > 0) return r.evidence_snippets
+  return effectiveEvidence.value ? [effectiveEvidence.value] : []
+})
+
+function emitViewSource() {
+  const snippets = effectiveSnippets.value
+  emit('viewSource', effectiveEvidence.value, originalAiResult.value?.source_note, snippets.length > 1 ? snippets : undefined)
+}
+
 const isOverridden = computed(() => !!override.value)
 const reviewState = computed(() => extractionStore.criterionReviews[props.node.id || ''] as 'accepted' | 'rejected' | undefined)
 const showResolve = ref(false)
@@ -269,7 +285,8 @@ function viewSourceFirst() {
   sourceViewed.value = true
   expanded.value = true
   if (effectiveEvidence.value) {
-    emit('viewSource', effectiveEvidence.value, originalAiResult.value?.source_note)
+    const snippets = effectiveSnippets.value
+    emit('viewSource', effectiveEvidence.value, originalAiResult.value?.source_note, snippets.length > 1 ? snippets : undefined)
   }
 }
 
@@ -771,6 +788,20 @@ const isDimmed = computed(() => {
   padding: 1px 5px;
   border-radius: 3px;
   margin-left: auto;
+}
+.evidence-snippet-count {
+  font-size: 9px;
+  font-weight: 500;
+  color: #5F6368;
+  background: #E8EAED;
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.evidence-snippet {
+  margin-bottom: 2px;
+}
+.evidence-snippet:last-of-type {
+  margin-bottom: 6px;
 }
 .evidence-ai {
   color: #7B1FA2;

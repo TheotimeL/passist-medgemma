@@ -1,0 +1,30 @@
+02/14/2026 - Family Medicine note
+pt: Chi Hansen, 68yo M, DOB 1957-04-13
+provider: Dr. Damaris Funk @ WILLOW CREEK FAMILY MEDICINE, P.C.
+mrn: B46C5A06
+
+[Imported from 10/10/2025]
+PMH: HTN, GERD, RA
+Allergies: NKDA
+[End imported]
+
+SUBJECTIVE
+RA, prev DMARD d/c (inadequate response). Still symptomatic, stiff 35min AM.
+
+OBJECTIVE
+VS: 136/85, p68, afebrile, 177#
+MSK: 8 tender, 5 swollen. b/l MCPs + wrists. 
+
+labs from this AM:
+  sed rate 37, CRP 2.8, RF 81 (+), anti-CCP 177
+  cbc ok, cmp ok, lfts wnl
+
+DAS28 = 4.8
+
+A/P
+1) RA, active. DAS28 4.8
+   → ref to rheum. cont supportive
+
+—Dr. Damaris Funk
+ Family Medicine
+ WILLOW CREEK FAMILY MEDICINE, P.C.

@@ -1,0 +1,14 @@
+Progress Note
+Date: 01/09/2026
+Patient: Sammie Hilll   DOB: Nov 13, 1974   MRN: 6121C5C8
+Attending: Dr. James O'Brien, Rheumatology
+Site: Cheyenne Arthritis & Rheumatism Center
+
+Sammie Hilll is a 51-year-old man with RA diagnosed 13 Jan 2023. He has been on methotrexate 15 mg weekly with partial improvement. Disease remains moderately active with DAS28 of 5.2. He tolerates methotrexate without side effects.
+
+Exam shows 4 tender joints, 7 swollen joints. ESR 38, CRP 1.7. RF 125, anti-CCP 116.
+
+Will continue current therapy and reassess in 3 months. If disease activity persists or worsens, will consider escalation to biologic therapy.
+
+— Dr. James O'Brien, MD
+  Rheumatology, Cheyenne Arthritis & Rheumatism Center

@@ -1,0 +1,85 @@
+============================================================
+  CLINICAL NOTE — RHEUMATOLOGY CONSULTATION
+============================================================
+
+PATIENT INFORMATION
+  Name:           Nathaniel McDermott
+  Date of Birth:  October 22, 1944
+  Age:            81
+  Sex:            Male
+  Race/Ethnicity: White / Non-Hispanic
+  MRN:            8C018069
+  Date of Visit:  01/26/2026
+  Provider:       Dr. Michael Rivera, MD — Rheumatology
+  Location:       Mountain West Arthritis Center
+  Referring PCP:  Dr. Damaris Funk
+
+CHIEF COMPLAINT
+  "Mr. McDermott is here for evaluation of worsening rheumatoid arthritis
+   despite previous treatment attempts. Referred for biologic therapy consideration."
+
+HISTORY OF PRESENT ILLNESS
+  Nathaniel McDermott is a 81-year-old white male with a
+  diagnosis of seropositive rheumatoid arthritis established in July 6, 2015.
+
+  TREATMENT HISTORY:
+  The patient has undergone the following disease-modifying therapy:
+
+    Sulfasalazine (SSZ)
+       - Dose: 1000 mg twice daily
+       - Discontinued: GI intolerance — severe nausea and diarrhea
+
+  CURRENT SYMPTOMS:
+    - Bilateral hand and wrist pain: 5/10
+    - Morning stiffness: 98 minutes
+    - Difficulty with fine motor tasks (buttons, jars, writing)
+    - Bilateral knee stiffness
+    - Fatigue: 7/10
+    - No fevers, infections, or constitutional symptoms
+
+  ALLERGIES: No known drug allergies.
+  SOCIAL HISTORY: Divorced. Non-smoker.
+
+PHYSICAL EXAMINATION
+  Vital Signs:
+    Blood Pressure: 139/81 mmHg
+    Heart Rate: 66 bpm
+    Temperature: 98.6°F
+    Weight: 202 lbs
+
+  General: 81-year-old male in mild distress.
+
+  Musculoskeletal Examination:
+    Tender Joint Count (28-joint): 13
+    Swollen Joint Count (28-joint): 3
+    Hands: Mild MCP tenderness
+    Wrists: Mild tenderness
+
+LABORATORY DATA
+    ESR: 39 mm/hr (elevated)
+    CRP: 3.6 mg/dL (elevated)
+    RF: Positive, 127 IU/mL
+    Anti-CCP: Positive, 102 U/mL
+    CBC: Within normal limits
+    CMP: Within normal limits
+    Hepatitis B/C: Negative
+    QuantiFERON-TB Gold: Negative
+
+DISEASE ACTIVITY SCORE
+    DAS28-ESR: 4.9
+
+ASSESSMENT AND PLAN
+  1. RHEUMATOID ARTHRITIS — Active disease
+     DAS28-ESR: 4.9
+     Has not responded adequately to conventional therapy (see treatment history above).
+
+     PLAN: Recommend initiation of anti-TNF therapy. PA documentation submitted.
+     Pre-biologic infectious screening satisfactory.
+     Patient counseled on injection technique and infection monitoring.
+     Follow-up in 12 weeks.
+
+============================================================
+Electronically signed by Dr. Michael Rivera, MD
+Rheumatology
+Mountain West Arthritis Center
+Date: 01/26/2026

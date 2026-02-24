@@ -1,0 +1,31 @@
+Clinic Note — 01/10/2026
+Pt: Ernesto Amaya | DOB: 1975-03-13 | M | MRN: 2C88A607
+Provider: Dr. David Nakamura (Rheumatology)
+Facility: Summit Arthritis Center
+
+S:
+50yo M w/ seropositive IA dx 2021-01-15. c/o persistent jt pain b/l hands/wrists, AM stiffness ~64min.
+Prev tx w/ several conventional agents (see med rec). Currently on NSAID only.
+h/o prior TNFi tx x18 months.
+Denies infxn/fever/wt loss/rash.
+
+Med Rec:
+  MTX → d/c (GI intol)
+  CZP → d/c (primary non-response)
+  naproxen 500 BID — active
+  folate 1mg qd — active
+
+O:
+VS: 135/85, p78, afebrile
+MSK: TJC 7, SJC 4. MCP synovitis b/l.
+ESR 40 / CRP 2.6 / RF 94 / CCP 192
+DAS28 5.3
+Screening: QFT neg, HBsAg neg, anti-HCV neg
+
+A/P:
+1) RA, active (DAS28 5.3)
+   → initiate ADA 40mg SQ q2wk, PA submitted
+   → f/u 12wk
+
+— Dr. David Nakamura, Rheumatology
+  Summit Arthritis Center

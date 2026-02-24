@@ -1,0 +1,34 @@
+02/09/2026 - Rheumatology note
+pt: Octavio Reinger, 51yo M, DOB 1974-06-01
+provider: Dr. Robert Khoury @ Wind River Rheumatology Group
+mrn: 44814255
+
+SUBJECTIVE
+Pt w/ inflammatory arthritis dx'd 2012-01-27. Here for f/u, still symptomatic.
+Pain b/l hands wrists, R knee sometimes. AM stiffness ~75min.
+Has tried multiple agents in the past — see chart. Currently just on an NSAID.
+
+Reviewed med list w/ pt:
+  Rheumatrex — tried, stopped (MTX: nausea); Azulfidine — tried, stopped (SSZ: rash); Remicade x3 years — d/c, anti-drug antibodies; naproxen 500 bid — current; omeprazole 20mg — current
+
+no fever, no infxn, NKDA.
+
+OBJECTIVE
+VS: 118/72, p71, afebrile, 206#
+MSK: 10 tender, 5 swollen. b/l MCPs + wrists. 
+
+labs from 12/25:
+  sed rate 47, CRP 3.1, RF 96 (+), anti-CCP 268
+  cbc ok, cmp ok, lfts wnl
+  infectious w/u neg (tb/hep)
+
+DAS28 = 5.5
+
+A/P
+1) RA, active. DAS28 5.5
+   → starting Humira 40mg q2wk. PA submitted.
+   → cont NSAID prn. f/u 12wk
+
+—Dr. Robert Khoury
+ Rheumatology
+ Wind River Rheumatology Group

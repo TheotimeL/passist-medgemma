@@ -377,7 +377,7 @@
               </div>
             </div>
             <div v-if="group.evidence && groupPending(group) > 0" class="drug-group-footer">
-              <button class="action-link" @click="emit('viewSource', group.evidence!, group.sourceNote)">
+              <button class="action-link" @click="emit('viewSource', group.evidence!, group.sourceNote, group.evidenceSnippets)">
                 <v-icon size="12" class="mr-1">mdi-text-search</v-icon>
                 View in Notes
               </button>
@@ -621,7 +621,7 @@ import { useExtractionStore } from '@/stores/extraction'
 
 const emit = defineEmits<{
   fieldAccepted: [fieldId: string]
-  viewSource: [evidence: string, sourceNote?: string]
+  viewSource: [evidence: string, sourceNote?: string, snippets?: string[]]
 }>()
 
 const formStore = useFormStore()
@@ -646,14 +646,14 @@ const viewedAiFields = ref<Set<string>>(new Set())
 function viewAiSource(field: FormField) {
   viewedAiFields.value = new Set([...viewedAiFields.value, field.fieldId])
   if (field.evidence) {
-    emit('viewSource', field.evidence, field.sourceNote)
+    emit('viewSource', field.evidence, field.sourceNote, field.evidenceSnippets)
   }
 }
 
 function viewAiGroupSource(group: DrugGroup) {
   viewedAiFields.value = new Set([...viewedAiFields.value, group.key])
   if (group.evidence) {
-    emit('viewSource', group.evidence, group.sourceNote)
+    emit('viewSource', group.evidence, group.sourceNote, group.evidenceSnippets)
   }
 }
 
@@ -724,6 +724,7 @@ interface DrugGroup {
   drugName: string
   fields: FormField[]
   evidence?: string
+  evidenceSnippets?: string[]
   sourceNote?: string
 }
 
@@ -737,12 +738,14 @@ function fieldGroups(sectionId: string): DrugGroup[] {
 
     if (fields.length > 0) {
       const nameField = fields.find(f => f.label.toLowerCase().includes('drug') && !f.label.toLowerCase().includes('duration'))
+      const evField = fields.find(f => f.evidence)
       groups.push({
         key: 'drug_request',
         drugName: nameField?.value || 'Drug Request',
         fields,
-        evidence: fields.find(f => f.evidence)?.evidence,
-        sourceNote: fields.find(f => f.sourceNote)?.sourceNote,
+        evidence: evField?.evidence,
+        evidenceSnippets: evField?.evidenceSnippets,
+        sourceNote: evField?.sourceNote,
       })
     }
 
@@ -771,6 +774,7 @@ function fieldGroups(sectionId: string): DrugGroup[] {
       drugName: nameField?.value || key.replace(/^prior_drug_/, '').replace(/_/g, ' '),
       fields: groupFields,
       evidence: evidenceField?.evidence,
+      evidenceSnippets: evidenceField?.evidenceSnippets,
       sourceNote: evidenceField?.sourceNote,
     }
   })
@@ -1005,8 +1009,8 @@ function visibleFields(section: string): FormField[] {
 /** Drug sections stay locked (not accessible) until extraction + drug parsing have completed */
 function isDrugSectionLocked(sectionId: string): boolean {
   if (sectionId !== 'step_therapy' && sectionId !== 'drug_request') return false
-  // Stay locked while 4B model is parsing drug fields
-  if (extractionStore.drugFieldsParsing) return true
+  // Stay locked while drug parsing is pending or in progress
+  if (extractionStore.drugFieldsPending || extractionStore.drugFieldsParsing) return true
   // Unlocked once extraction is complete
   if (extractionStore.complete) return false
   // Unlocked once AI-sourced fields exist in this section
@@ -1019,6 +1023,7 @@ function isDrugSectionLocked(sectionId: string): boolean {
 /** Loading message for locked drug sections */
 function drugSectionLoadingText(sectionId: string): string {
   if (extractionStore.drugFieldsParsing) return 'Parsing drug details...'
+  if (extractionStore.drugFieldsPending) return 'Preparing drug analysis...'
   return 'Waiting for AI'
 }
 
@@ -1139,7 +1144,7 @@ function toggleEvidence(field: FormField) {
   } else {
     expandedEvidence.value = field.fieldId
     if (field.evidence) {
-      emit('viewSource', field.evidence, field.sourceNote)
+      emit('viewSource', field.evidence, field.sourceNote, field.evidenceSnippets)
     }
   }
 }
@@ -1150,7 +1155,7 @@ function startEdit(field: FormField) {
   // Protect this section from auto-collapse while the doctor is working in it
   userExpandedSections.value.add(field.section)
   if (field.evidence) {
-    emit('viewSource', field.evidence, field.sourceNote)
+    emit('viewSource', field.evidence, field.sourceNote, field.evidenceSnippets)
   }
 }
 

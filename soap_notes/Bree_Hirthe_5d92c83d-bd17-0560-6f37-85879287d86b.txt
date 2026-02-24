@@ -1,0 +1,52 @@
+SOAP NOTE — Rheumatology Clinic Visit
+
+Patient: Bree Hirthe
+DOB: 04/04/1974
+Age: 51 years old
+Gender: Female
+MRN: 5D92C83D
+Date of Visit: 02/28/2026
+Provider: Dr. Victor Reyes, MD, Rheumatology
+Facility: Rocky Mountain Rheumatology
+Primary Care: Dr. Jacques Quigley, CHEYENNE HEALTH & WELLNESS CENTER
+
+SUBJECTIVE:
+Mrs. Hirthe is a 51-year-old woman with RA. She reports mild intermittent joint stiffness in the hands, lasting about 7 minutes in the morning. Overall functioning well on current therapy.
+
+Allergies: No known drug allergies.
+
+MEDICATION RECONCILIATION:
+- Hydroxychloroquine 200 mg BID: current
+- Naproxen 500 mg PRN: current
+
+OBJECTIVE:
+Vitals: BP 147/84 mmHg, HR 64 bpm, Temp 98.3F, Weight 172 lbs
+General: Healthy-appearing woman in no acute distress.
+
+Musculoskeletal Exam:
+- Tender joint count: 3/28
+- Swollen joint count: 2/28
+- Knees: right knee mild crepitus
+
+Labs (12/03/2026):
+- ESR: 13 mm/hr
+- CRP: 0.6 mg/dL
+- RF: 35 IU/mL (positive)
+- Anti-CCP: 109 U/mL
+- CBC: WBC 7.8, Hgb 12.6, Plt 301
+- CMP: Creatinine 1.0, ALT 25, AST 26
+
+Composite Disease Activity: DAS28-ESR 2.8
+
+ASSESSMENT:
+1. Rheumatoid arthritis — DAS28 2.8.
+
+PLAN:
+1. Continue current therapy.
+2. Follow-up 6 months.
+
+Electronically signed,
+Dr. Victor Reyes, MD
+Rheumatology
+Rocky Mountain Rheumatology
+02/28/2026

@@ -1,0 +1,78 @@
+CARDIOLOGY CONSULTATION — CCU DAY 2
+Date: 11/15/2025
+Attending: Dr. Samuel Okonkwo, MD, FACC — Interventional Cardiology
+Fellow: Dr. Lisa Chang, PGY-5
+
+Patient: Gloria Jean Hutchinson
+DOB: 05/11/1958    MRN: CAFE1234
+
+REASON FOR CONSULTATION: NSTEMI management, known CAD, CHF
+
+INTERVAL HISTORY:
+Pt is HD 2 following NSTEMI admission. Troponins peaked at 4.2 ng/mL and trending
+down (2.1 this AM). Chest pain resolved on heparin + NTG drip (weaned off at 0400).
+Currently on 1L NC, SpO2 95-97%. BNP improved 890→650 after 80mg IV lasix total.
+Creatinine peaked 1.8, now 1.6 (approaching baseline). UOP adequate.
+
+She is scheduled for cardiac catheterization this afternoon.
+
+Reviewed ED note. Complex patient with multiple comorbidities. Of note, her chronic
+immunosuppressive therapy was held on admission — this is appropriate during the
+acute coronary event. Her rheumatologic condition is reportedly managed by an
+outside rheumatologist (name not in our system — patient says "Dr. something-Indian,
+at the arthritis clinic in Casper"). Will defer to their team for restart decisions.
+
+HOME MEDICATION REVIEW (cardiology-relevant):
+- Metoprolol: uptitrated to 100 mg daily (goal HR <80)
+- Furosemide: increased to 60 mg daily (volume overloaded)
+- Apixaban: resumed 5 mg BID (heparin bridged during ACS, now transitioning back)
+- Atorvastatin: continue 80 mg
+- ASA 81 mg daily ADDED (dual antiplatelet if stent placed)
+- Clopidogrel: will add post-cath if PCI performed
+- Lisinopril: held — hypotension on NTG drip, will reassess
+- Amlodipine: held — same reason
+- Empagliflozin: continue (cardioprotective + renal benefit)
+- Metformin: HELD — AKI + contrast exposure
+- Insulin glargine: increased to 28 units (stress hyperglycemia)
+
+NON-CARDIAC MEDS — deferred to primary team:
+- Tiotropium, albuterol — pulm to manage
+- Sertraline, gabapentin — continue per psych
+- Omeprazole — continue
+- The joint medications (some kind of weekly chemo drug? and steroids) — HELD
+  per ED. Her ALT bumped to 48 on admission and peaked at 67 on HD1.
+  Unclear if this is purely cardiac injury vs drug-related vs baseline.
+  NOT restarting any immunosuppressants during this admission.
+  Rheumatology to sort this out as outpatient.
+
+CARDIAC CATHETERIZATION RESULTS (11/15/2025 14:30):
+- Access: R radial
+- LM: 20% diffuse disease
+- LAD: 70% mid stenosis → DES placed (3.0 x 18mm Synergy)
+- LCx: 40% proximal, non-flow-limiting
+- RCA: Prior stent (2019) patent, 30% in-stent restenosis
+- LV gram: EF ~30-35%, anterior hypokinesis, inferior hypokinesis
+
+POST-PCI ORDERS:
+- ASA 81 mg daily indefinitely
+- Clopidogrel 75 mg daily x 12 months (DAPT)
+- Continue heparin x 4 hrs post-sheath, then d/c
+- NB: Patient is on apixaban for AFib — will need TRIPLE therapy discussion
+  at discharge (apixaban + ASA + clopidogrel short-term, then drop ASA)
+- Strict I&O, daily weights
+- Cardiac rehab referral
+
+ASSESSMENT/PLAN:
+1. NSTEMI → s/p LAD DES — standard post-PCI care, DAPT
+2. CHF (EF 30-35%) — uptitrate GDMT as tolerated, SGLT2i continue
+3. AFib — resume apixaban, rate control with metoprolol
+4. AKI — resolving, avoid nephrotoxins (NO NSAIDS)
+5. T2DM — endocrine consult for inpatient management
+6. Immunosuppressive therapy (rheumatologic) — HELD.
+   Elevated LFTs in setting of acute MI — likely multifactorial
+   (cardiac injury + possible drug hepatotoxicity from the weekly medication?).
+   DO NOT RESTART during this admission. Outpatient rheumatology to address.
+
+Samuel Okonkwo, MD, FACC
+Interventional Cardiology
+Cheyenne Regional Medical Center

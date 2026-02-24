@@ -12,6 +12,7 @@ export interface FormField {
   status: 'suggested' | 'accepted' | 'rejected' | 'edited'
   criterionId?: string
   evidence?: string
+  evidenceSnippets?: string[]
   sourceNote?: string
   section: string
   required?: boolean
@@ -54,6 +55,7 @@ export const useFormStore = defineStore('form', () => {
     criterionId?: string,
     evidence?: string,
     sourceNote?: string,
+    evidenceSnippets?: string[],
   ) {
     fields.value[fieldId] = {
       fieldId,
@@ -65,12 +67,13 @@ export const useFormStore = defineStore('form', () => {
       section,
       criterionId,
       evidence,
+      evidenceSnippets,
       sourceNote,
       required: MANDATORY_FIELDS.has(fieldId),
     }
   }
 
-  function buildFromFhir(fhir: PatientFhir) {
+  function buildFromFhir(fhir: PatientFhir, drugName?: string) {
     // --- Section I: Submission ---
     _addField('insurer', 'Insurer', fhir.insurer, 'fhir', 'demographics')
     const today = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
@@ -86,9 +89,7 @@ export const useFormStore = defineStore('form', () => {
     _addField('patient_address', 'Address', fhir.address, 'fhir', 'demographics')
 
     // --- Section IV: Prescriber Information ---
-    // FHIR encounter provider = the prescriber. LLM may refine in addExtractionResults().
-    _addField('prescriber_name', 'Prescriber Name', fhir.provider_name, 'fhir', 'provider')
-    _addField('prescriber_npi', 'Prescriber NPI', fhir.provider_npi, 'fhir', 'provider')
+    // Prescriber fields are AI-only (populated via addExtractionResults or manual entry)
 
     // --- Section VII: Diagnosis ---
     _addField('condition_display', 'Diagnosis', fhir.condition_display, 'fhir', 'diagnosis')
@@ -116,7 +117,7 @@ export const useFormStore = defineStore('form', () => {
     }
 
     // --- Section V: Drug Request (always present so doctor can fill manually) ---
-    _addField('requested_drug', 'Requested Drug', '', 'manual', 'drug_request')
+    _addField('requested_drug', 'Requested Drug', drugName || '', 'manual', 'drug_request')
     _addField('requested_dose', 'Strength', '', 'manual', 'drug_request')
   }
 
@@ -131,23 +132,25 @@ export const useFormStore = defineStore('form', () => {
       criterionId?: string,
       evidence?: string,
       sourceNote?: string,
+      evidenceSnippets?: string[],
     ) {
       const existing = fields.value[fieldId]
       if (existing && existing.status !== 'suggested') return // Doctor already reviewed — don't overwrite
-      _addField(fieldId, label, value, source, section, criterionId, evidence, sourceNote)
+      _addField(fieldId, label, value, source, section, criterionId, evidence, sourceNote, evidenceSnippets)
     }
 
     for (const ext of results) {
       const cid = ext.criterion_id
       const sn = ext.source_note
+      const snippets = ext.evidence_snippets
 
       // Prescriber info — LLM refines the FHIR-populated prescriber fields.
       // Only overwrite if the field hasn't been reviewed yet by the doctor.
       if (ext.prescriber_name) {
-        _addFieldIfUnreviewed('prescriber_name', 'Prescriber Name', ext.prescriber_name, 'llm', 'provider', cid, ext.prescriber_name, sn)
+        _addFieldIfUnreviewed('prescriber_name', 'Prescriber Name', ext.prescriber_name, 'llm', 'provider', cid, ext.prescriber_name, sn, snippets)
       }
       if (ext.prescriber_specialty) {
-        _addFieldIfUnreviewed('prescriber_specialty', 'Prescriber Specialty', ext.prescriber_specialty, 'llm', 'provider', cid, ext.prescriber_specialty, sn)
+        _addFieldIfUnreviewed('prescriber_specialty', 'Prescriber Specialty', ext.prescriber_specialty, 'llm', 'provider', cid, ext.prescriber_specialty, sn, snippets)
       }
 
       // Normalize is_prior_therapy (4B model may return string "true"/"false")
@@ -157,15 +160,15 @@ export const useFormStore = defineStore('form', () => {
       // Drug request (current therapy, not prior)
       if (isCurrentDrug && ext.drug_name) {
         const drugEvidence = ext.drug_source_text || ext.evidence
-        _addFieldIfUnreviewed('requested_drug', 'Requested Drug', ext.drug_name, 'llm', 'drug_request', cid, drugEvidence, sn)
+        _addFieldIfUnreviewed('requested_drug', 'Requested Drug', ext.drug_name, 'llm', 'drug_request', cid, drugEvidence, sn, snippets)
         // Use drug_strength (from 4B parser) — don't fall back to compound drug_dose
         if (ext.drug_strength) {
-          _addFieldIfUnreviewed('requested_dose', 'Strength', ext.drug_strength, 'llm', 'drug_request', cid, drugEvidence, sn)
+          _addFieldIfUnreviewed('requested_dose', 'Strength', ext.drug_strength, 'llm', 'drug_request', cid, drugEvidence, sn, snippets)
         }
         // Ensure companion fields exist; use AI values when available
         const _ensureDrugField = (id: string, label: string, aiValue?: string) => {
           if (aiValue) {
-            _addFieldIfUnreviewed(id, label, aiValue, 'llm', 'drug_request', cid, drugEvidence, sn)
+            _addFieldIfUnreviewed(id, label, aiValue, 'llm', 'drug_request', cid, drugEvidence, sn, snippets)
           } else if (!fields.value[id]) {
             _addField(id, label, '', 'manual', 'drug_request')
           }
@@ -188,17 +191,18 @@ export const useFormStore = defineStore('form', () => {
           // First time creating this row
           const priorStrength = ext.drug_strength || ''
           const priorFrequency = ext.drug_frequency || ''
-          _addFieldIfUnreviewed(`${rowKey}_name`, `Prior Drug`, ext.drug_name, 'llm', 'step_therapy', cid, drugEvidence, sn)
-          _addFieldIfUnreviewed(`${rowKey}_strength`, `Strength`, priorStrength, priorStrength ? 'llm' : 'manual', 'step_therapy', cid, drugEvidence, sn)
-          _addFieldIfUnreviewed(`${rowKey}_frequency`, `Frequency`, priorFrequency, priorFrequency ? 'llm' : 'manual', 'step_therapy', cid, drugEvidence, sn)
-          _addFieldIfUnreviewed(`${rowKey}_dates`, `Dates`, ext.drug_dates || '', ext.drug_dates ? 'llm' : 'manual', 'step_therapy', cid, drugEvidence, sn)
-          _addFieldIfUnreviewed(`${rowKey}_reason`, `Failure Reason`, ext.failure_reason || '', ext.failure_reason ? 'llm' : 'manual', 'step_therapy', cid, drugEvidence, sn)
+          _addFieldIfUnreviewed(`${rowKey}_name`, `Prior Drug`, ext.drug_name, 'llm', 'step_therapy', cid, drugEvidence, sn, snippets)
+          _addFieldIfUnreviewed(`${rowKey}_strength`, `Strength`, priorStrength, priorStrength ? 'llm' : 'manual', 'step_therapy', cid, drugEvidence, sn, snippets)
+          _addFieldIfUnreviewed(`${rowKey}_frequency`, `Frequency`, priorFrequency, priorFrequency ? 'llm' : 'manual', 'step_therapy', cid, drugEvidence, sn, snippets)
+          _addFieldIfUnreviewed(`${rowKey}_dates`, `Dates`, ext.drug_dates || '', ext.drug_dates ? 'llm' : 'manual', 'step_therapy', cid, drugEvidence, sn, snippets)
+          _addFieldIfUnreviewed(`${rowKey}_reason`, `Failure Reason`, ext.failure_reason || '', ext.failure_reason ? 'llm' : 'manual', 'step_therapy', cid, drugEvidence, sn, snippets)
         } else if (existingName.status === 'suggested') {
           // Row exists — upgrade evidence if this criterion has a more precise drug_source_text
           if (ext.drug_source_text && existingName.evidence !== drugEvidence) {
             for (const f of Object.values(fields.value)) {
               if (f.fieldId.startsWith(rowKey) && f.status === 'suggested') {
                 f.evidence = drugEvidence
+                f.evidenceSnippets = snippets
                 f.sourceNote = sn
               }
             }
@@ -206,7 +210,7 @@ export const useFormStore = defineStore('form', () => {
           const _fillIfEmpty = (id: string, label: string, value: string, source: FormField['source']) => {
             const existing = fields.value[id]
             if (existing && (existing.status !== 'suggested' || existing.value)) return
-            _addField(id, label, value, source, 'step_therapy', cid, drugEvidence, sn)
+            _addField(id, label, value, source, 'step_therapy', cid, drugEvidence, sn, snippets)
           }
           if (ext.drug_strength) _fillIfEmpty(`${rowKey}_strength`, 'Strength', ext.drug_strength, 'llm')
           if (ext.drug_frequency) _fillIfEmpty(`${rowKey}_frequency`, 'Frequency', ext.drug_frequency, 'llm')
@@ -220,6 +224,7 @@ export const useFormStore = defineStore('form', () => {
         const existing = fields.value['condition_display']
         if (existing && existing.status === 'suggested') {
           existing.evidence = ext.evidence
+          existing.evidenceSnippets = snippets
           existing.criterionId = cid
           existing.sourceNote = sn
         }
@@ -280,7 +285,11 @@ export const useFormStore = defineStore('form', () => {
     _maybe('insurer_phone', 'Insurer Phone', 'demographics')
     _maybe('insurer_fax', 'Insurer Fax', 'demographics')
 
-    // --- Section IV: Prescriber (extras not from FHIR) ---
+    // --- Section IV: Prescriber ---
+    // prescriber_name and prescriber_npi are NOT from FHIR — the FHIR provider
+    // is the latest encounter GP, not the prescribing specialist.
+    _maybe('prescriber_name', 'Prescriber Name', 'provider')
+    _maybe('prescriber_npi', 'Prescriber NPI', 'provider')
     _maybe('prescriber_specialty', 'Prescriber Specialty', 'provider')
     _maybe('prescriber_address', 'Prescriber Address', 'provider')
     _maybe('prescriber_phone', 'Prescriber Phone', 'provider')

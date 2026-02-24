@@ -43,7 +43,7 @@
           :results-map="effectiveResultsMap"
           :overrides="overrides"
           :depth="0"
-          @view-source="(ev: string, sn?: string) => emit('viewSource', ev, sn)"
+          @view-source="(ev: string, sn?: string, snippets?: string[]) => emit('viewSource', ev, sn, snippets)"
         />
       </template>
       <div v-else class="tree-loading">
@@ -77,7 +77,7 @@ import { useExtractionStore } from '@/stores/extraction'
 import PolicyTreeNode from './PolicyTreeNode.vue'
 
 const emit = defineEmits<{
-  viewSource: [evidence: string, sourceNote?: string]
+  viewSource: [evidence: string, sourceNote?: string, snippets?: string[]]
 }>()
 
 const extractionStore = useExtractionStore()

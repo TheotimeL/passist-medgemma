@@ -5,6 +5,7 @@ export interface ExtractionResult {
   criterion_id: string
   met: boolean
   evidence: string
+  evidence_snippets?: string[]
   drug_name?: string
   drug_dose?: string
   drug_strength?: string
@@ -132,6 +133,7 @@ export const useExtractionStore = defineStore('extraction', () => {
   const complete = ref(false)
   const modelLoaded = ref(false)
   const drugFieldsParsing = ref(false)
+  const drugFieldsPending = ref(false)
   const drugFieldsError = ref<string | null>(null)
   const overrides = ref<Record<string, CriterionOverride>>({})
   /** Doctor review state per criterion: 'accepted' or 'rejected' */
@@ -167,6 +169,22 @@ export const useExtractionStore = defineStore('extraction', () => {
   const allCriteriaReviewed = computed(() => {
     const { required, reviewed } = _reviewStatus.value
     return required > 0 && reviewed >= required
+  })
+
+  /** AI results merged with doctor overrides — reflects the doctor's intent for justification */
+  const effectiveResults = computed<ExtractionResult[]>(() => {
+    const merged = results.value.map(r => {
+      const ov = overrides.value[r.criterion_id]
+      if (ov) return { ...r, met: ov.met, evidence: ov.evidence || r.evidence }
+      return r
+    })
+    // Add override-MET criteria that weren't in AI results
+    for (const [id, ov] of Object.entries(overrides.value)) {
+      if (ov.met && !results.value.find(r => r.criterion_id === id)) {
+        merged.push({ criterion_id: id, met: true, evidence: ov.evidence })
+      }
+    }
+    return merged
   })
 
   /** Effective met count including overrides */
@@ -286,6 +304,7 @@ export const useExtractionStore = defineStore('extraction', () => {
         pending_count: data.total_count - data.met_count,
         criteria: policyStatus.value?.criteria || [],
       }
+      drugFieldsPending.value = true
       complete.value = true
       isExtracting.value = false
       progress.value = `Complete! ${data.met_count}/${data.total_count} criteria met (${data.inference_time_s}s)`
@@ -316,9 +335,46 @@ export const useExtractionStore = defineStore('extraction', () => {
     }
   }
 
+  /** Extract prescriber_name/prescriber_specialty from evidence using MedGemma 4B. */
+  async function parsePrescriberFields() {
+    const entries = results.value.filter(r =>
+      r.criterion_id.includes('prescrib') && r.evidence && r.evidence !== 'No mention found'
+    )
+    if (entries.length === 0) return
+
+    try {
+      const res = await fetch('/api/form/parse-prescriber-fields', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entries: entries.map(r => ({ criterion_id: r.criterion_id, evidence: r.evidence, evidence_snippets: r.evidence_snippets, source_note: r.source_note })) }),
+      })
+      if (res.ok) {
+        const { entries: parsed } = await res.json()
+        const _PRESCRIBER_FIELDS = ['prescriber_name', 'prescriber_specialty'] as const
+        for (const parsedEntry of parsed) {
+          const match = results.value.find(r => r.criterion_id === parsedEntry.criterion_id)
+          if (match) {
+            for (const field of _PRESCRIBER_FIELDS) {
+              const val = parsedEntry[field]
+              if (val !== undefined && val !== null && val !== '') {
+                ;(match as Record<string, unknown>)[field] = val
+              }
+            }
+          }
+        }
+        // Trigger reactivity
+        results.value = [...results.value]
+      }
+    } catch {
+      // Prescriber field parsing failed — fields may need manual entry
+    }
+  }
+
   /** Extract structured drug fields from evidence using MedGemma 4B. */
   async function parseDrugFields() {
-    const entries = results.value.filter(r => r.evidence && r.evidence !== 'No mention found')
+    const entries = results.value.filter(r =>
+      r.evidence && r.evidence !== 'No mention found' && !r.criterion_id.includes('prescrib')
+    )
     if (entries.length === 0) return
 
     drugFieldsParsing.value = true
@@ -327,7 +383,7 @@ export const useExtractionStore = defineStore('extraction', () => {
       const res = await fetch('/api/form/parse-drug-fields', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entries: entries.map(r => ({ criterion_id: r.criterion_id, evidence: r.evidence, source_note: r.source_note })) }),
+        body: JSON.stringify({ entries: entries.map(r => ({ criterion_id: r.criterion_id, evidence: r.evidence, evidence_snippets: r.evidence_snippets, source_note: r.source_note })) }),
       })
       if (res.ok) {
         const { entries: parsed, parse_success } = await res.json()
@@ -350,6 +406,30 @@ export const useExtractionStore = defineStore('extraction', () => {
             }
           }
         }
+        // Append new drug entries from multi-drug parsing that weren't in the original results
+        for (const parsedEntry of parsed) {
+          const alreadyExists = results.value.some(r =>
+            r.criterion_id === parsedEntry.criterion_id &&
+            r.drug_name === parsedEntry.drug_name
+          )
+          if (!alreadyExists && parsedEntry.drug_name) {
+            results.value.push({
+              criterion_id: parsedEntry.criterion_id,
+              met: true,
+              evidence: parsedEntry.evidence || '',
+              evidence_snippets: parsedEntry.evidence_snippets,
+              source_note: parsedEntry.source_note,
+              drug_name: parsedEntry.drug_name,
+              drug_strength: parsedEntry.drug_strength,
+              drug_route: parsedEntry.drug_route,
+              drug_frequency: parsedEntry.drug_frequency,
+              drug_dates: parsedEntry.drug_dates,
+              is_prior_therapy: parsedEntry.is_prior_therapy,
+              failure_reason: parsedEntry.failure_reason,
+              drug_source_text: parsedEntry.source_text,
+            })
+          }
+        }
         // Trigger reactivity — watcher will re-run addExtractionResults
         results.value = [...results.value]
       }
@@ -357,6 +437,7 @@ export const useExtractionStore = defineStore('extraction', () => {
       // Drug field parsing failed — fields may need manual entry
     } finally {
       drugFieldsParsing.value = false
+      drugFieldsPending.value = false
     }
   }
 
@@ -375,6 +456,7 @@ export const useExtractionStore = defineStore('extraction', () => {
     error.value = null
     complete.value = false
     drugFieldsParsing.value = false
+    drugFieldsPending.value = false
     drugFieldsError.value = null
     overrides.value = {}
     criterionReviews.value = {}
@@ -391,9 +473,11 @@ export const useExtractionStore = defineStore('extraction', () => {
     complete,
     modelLoaded,
     drugFieldsParsing,
+    drugFieldsPending,
     drugFieldsError,
     overrides,
     overrideCount,
+    effectiveResults,
     effectiveMetCount,
     criterionReviews,
     reviewedCriteriaCount,
@@ -410,6 +494,7 @@ export const useExtractionStore = defineStore('extraction', () => {
     fetchExtraction,
     startLiveExtraction,
     cancelExtraction,
+    parsePrescriberFields,
     parseDrugFields,
     setOverride,
     clearOverride,

@@ -31,7 +31,7 @@ from policy_tree import load_tree, get_all_criteria, CriterionResult, get_status
 # Config
 MODEL_ID = "mlx-community/medgemma-27b-text-it-bf16"
 
-# ── Synthetic few-shot example (verbatim from test_extraction_soap.py) ──
+# ── Static few-shot example (fake criteria + note, decoupled from real policy) ──
 EXAMPLE_NOTE = """SOAP NOTE — Specialist Clinic Visit
 
 Patient: Jane Doe
@@ -54,7 +54,7 @@ ASSESSMENT:
 
 PLAN:
 1. Continue current supportive care.
-2. Consider escalation to targeted therapy at next visit.
+2. Start Crendolux 200 mg subcutaneous every 2 weeks.
 
 Electronically signed,
 Dr. Robert Chen, MD
@@ -62,41 +62,90 @@ Department of Specialist Medicine
 Verilex Medical Group
 01/10/2026"""
 
+# Static fake criteria for few-shot example (covers all common PA patterns)
+EXAMPLE_CRITERIA = [
+    {"id": "demo_A", "search_description": "Patient has a confirmed diagnosis of moderately to severely active chronic inflammatory condition"},
+    {"id": "demo_B", "search_description": "Patient failed at least one conventional therapy: Zorbitamol, Plaxivent, or Crendolux. Evidence includes documented inadequate response, adverse effects, intolerance, or discontinuation."},
+    {"id": "demo_C", "search_description": "Patient is currently receiving the requested medication as an active, ongoing therapy prior to this visit. Evidence: drug listed as current/active medication or documented continuation."},
+    {"id": "demo_D", "search_description": "Patient is NOT taking another targeted therapy at the same time (met if there is NO mention of concurrent targeted therapy use)"},
+    {"id": "demo_E", "search_description": "Prescribed by or in consultation with a relevant specialist. Evidence: prescriber identified as the required specialist (name, title, specialty) and drug in the treatment plan."},
+]
 
-# ── Functions preserved verbatim from test_extraction_soap.py ──
+EXAMPLE_OUTPUT = (
+    "demo_A: Looking for confirmed diagnosis with severity level.\n"
+    "  Found: \"Chronic Inflammatory Condition - Active, Confirmed.\" and \"Disease Activity Score: 4.8 (moderate-to-severe)\".\n"
+    "  → MET\n\n"
+    "demo_B: Looking for prior drug failure with drug name, dates, and reason.\n"
+    "  Found: \"Zorbitamol 20 mg weekly: Started June 2018, discontinued October 2018 due to inadequate response\" and \"Plaxivent 1000 mg BID: Started November 2018, discontinued March 2019 (GI intolerance)\".\n"
+    "  → MET\n\n"
+    "demo_C: Looking for evidence patient is currently on the requested drug.\n"
+    "  Found: \"Start Crendolux\" in Plan — this is a NEW prescription, not evidence of current use.\n"
+    "  → NOT MET\n\n"
+    "demo_D: Looking for concurrent targeted therapy use (negated — met if absent).\n"
+    "  No mention of concurrent targeted therapy found.\n"
+    "  → NOT MET\n\n"
+    "demo_E: Looking for prescriber with relevant specialty.\n"
+    "  Found: \"Start Crendolux 200 mg subcutaneous every 2 weeks.\" and \"Dr. Robert Chen, MD, Department of Specialist Medicine, Verilex Medical Group\".\n"
+    "  → MET\n\n"
+    "JSON:\n"
+    + json.dumps([
+        {"criterion_id": "demo_A", "met": True,
+         "evidence": ["Chronic Inflammatory Condition - Active, Confirmed.", "Disease Activity Score: 4.8 (moderate-to-severe)"]},
+        {"criterion_id": "demo_B", "met": True,
+         "evidence": [
+             "Zorbitamol 20 mg weekly: Started June 2018, discontinued October 2018 due to inadequate response",
+             "Plaxivent 1000 mg BID: Started November 2018, discontinued March 2019 (GI intolerance)",
+         ]},
+        {"criterion_id": "demo_E", "met": True,
+         "evidence": ["Start Crendolux 200 mg subcutaneous every 2 weeks.", "Dr. Robert Chen, MD, Department of Specialist Medicine, Verilex Medical Group"]},
+    ])
+)
 
-def _build_example_output(criteria: list[dict]) -> str:
-    reasoning_lines = []
-    results = []
-    matched = set()
 
-    for c in criteria:
-        cid = c['id']
-        desc = (c.get('search_description') or c.get('source_text') or '').lower()
+# ── Shared prompt content (importable by benchmark_models.py) ──────────────────
 
-        if 'diagnosis' not in matched and ('diagnosis' in desc or 'disease activity' in desc):
-            reasoning_lines.append(f"{cid}: Active confirmed, DAS 4.8. MET.")
-            results.append({"criterion_id": cid, "met": True,
-                            "evidence": "Chronic Inflammatory Condition - Active, Confirmed. Disease Activity Score 4.8."})
-            matched.add('diagnosis')
-        elif 'drug_failure' not in matched and ('fail' in desc or 'inadequate response' in desc):
-            reasoning_lines.append(f"{cid}: Zorbitamol discontinued (inadequate response), Plaxivent discontinued (GI intolerance). MET.")
-            results.append({"criterion_id": cid, "met": True,
-                            "evidence": "Zorbitamol 20 mg weekly: Started June 2018, discontinued October 2018 due to inadequate response\nPlaxivent 1000 mg BID: Started November 2018, discontinued March 2019 (GI intolerance)"})
-            matched.add('drug_failure')
-        elif 'prescriber' not in matched and ('specialist' in desc or 'prescrib' in desc):
-            reasoning_lines.append(f"{cid}: Provider: Dr. Robert Chen, MD, Department of Specialist Medicine, Verilex Medical Group. MET.")
-            results.append({"criterion_id": cid, "met": True,
-                            "evidence": "Provider: Dr. Robert Chen, MD, Department of Specialist Medicine, Verilex Medical Group",
-                            "prescriber_name": "Dr. Robert Chen, MD",
-                            "prescriber_specialty": "Specialist Medicine"})
-            matched.add('prescriber')
-        else:
-            reasoning_lines.append(f"{cid}: NOT MET.")
+SYSTEM_INSTRUCTIONS = (
+    "You are an expert clinical consultant reviewing a patient document against insurance policy criteria.\n\n"
+    "TASK: For each criterion below, find evidence in the document. Output met criteria as JSON.\n\n"
+    "OUTPUT FORMAT:\n"
+    "1. Go through EVERY criterion in order. For each one:\n"
+    "   - If MET: write criterion ID + each relevant evidence quote (one per location found) + MET.\n"
+    "   - If NOT MET: write criterion ID + NOT MET.\n"
+    "2. After all criteria are evaluated, write JSON: followed by a JSON array of met criteria only.\n"
+    "3. CRITICAL: The JSON MUST include EVERY criterion you marked as MET. Missing items = error.\n\n"
+    "JSON FIELDS (per criterion):\n"
+    "- criterion_id (required): the criterion ID\n"
+    "- met (required): boolean\n"
+    "- evidence (required): array of exacted text snippets from the document. "
+    "When evidence spans multiple separate locations, include each snippet as a separate array element.\n"
+    "\n"
+    "RULES:\n"
+    "1. Evidence must be EXACT text from the document. Do not paraphrase or add words.\n"
+    "2. Each criterion needs its OWN evidence that specifically mentions what that criterion asks about.\n"
+    "   Drug failure for Drug X requires evidence mentioning Drug X by name.\n"
+    "3. If a criterion is not clearly supported, mark it NOT MET.\n"
+    "4. When evidence for one criterion is found in multiple separate locations, include ALL relevant snippets as separate array elements.\n"
+    "5. 'Start [drug]' or 'Prescribe [drug]' in the Plan section means a NEW prescription, not evidence the patient is already on that drug.\n"
+    "6. Each evidence snippet should be 1-3 sentences copied verbatim from the document.\n"
+    "   Include enough context that a reviewer can understand the finding.\n"
+    "7. When a criterion asks about a drug, include ALL available details from the same\n"
+    "   passage: name, dose, route, frequency, dates, outcome — whatever is present.\n"
+    "   Do not split these into separate snippets; keep related details together.\n"
+    "8. When a criterion asks about a prescriber, include the full provider identification\n"
+    "   (name, credentials, specialty, facility) as a single snippet.\n"
+    "9. Look for clinical synonyms and equivalent phrasings — the document may describe\n"
+    "   the same concept using different terminology than the criterion. Match by meaning,\n"
+    "   not just exact wording. But always QUOTE the document's own words as evidence."
+)
 
-    reasoning = "\n".join(reasoning_lines)
-    json_output = json.dumps(results)
-    return f"{reasoning}\n\nJSON:\n{json_output}"
+TRANSITION_TEXT = (
+    "Now extract evidence from a COMPLETELY DIFFERENT patient document below.\n"
+    "CRITICAL: Use ONLY text from THIS new document.\n"
+    "Do NOT copy any evidence from the example above — it is a different patient.\n"
+    "Use ONLY the criterion IDs from the CRITERIA block below. Do NOT use any IDs from the example above (demo_A, demo_B, etc.)."
+)
+
+ASSISTANT_PREFIX = "I'll evaluate each criterion against this document.\n\n"
 
 
 def _build_criteria_block(criteria: list[dict]) -> str:
@@ -108,43 +157,24 @@ def _build_criteria_block(criteria: list[dict]) -> str:
 
 
 def _build_prompt_prefix(criteria: list[dict]) -> str:
-    criteria_block = _build_criteria_block(criteria)
-    example_output = _build_example_output(criteria)
+    example_criteria_block = _build_criteria_block(EXAMPLE_CRITERIA)
+    real_criteria_block = _build_criteria_block(criteria)
 
     return (
         "<start_of_turn>user\n"
-        "You are an expert clinical consultant reviewing a patient document against insurance policy criteria.\n\n"
-        "TASK: For each criterion below, find evidence in the document. Output met criteria as JSON.\n\n"
-        "OUTPUT FORMAT:\n"
-        "1. Go through EVERY criterion in order. For each one:\n"
-        "   - If MET: write criterion ID + brief evidence quote + MET.\n"
-        "   - If NOT MET: write criterion ID + NOT MET.\n"
-        "2. After all criteria are evaluated, write JSON: followed by a JSON array of met criteria only.\n"
-        "3. CRITICAL: The JSON MUST include EVERY criterion you marked as MET. Missing items = error.\n\n"
-        "JSON FIELDS (per criterion):\n"
-        "- criterion_id (required): the criterion ID\n"
-        "- met (required): boolean\n"
-        "- evidence (required): exact text from the document\n"
-        "- prescriber_name (optional): provider name if this is a prescriber criterion\n"
-        "- prescriber_specialty (optional): provider specialty, e.g. 'Rheumatology'\n\n"
-        "RULES:\n"
-        "1. Evidence must be EXACT text from the document. Do not paraphrase or add words.\n"
-        "2. Each criterion needs its OWN evidence that specifically mentions what that criterion asks about.\n"
-        "   Drug failure for Drug X requires evidence mentioning Drug X by name.\n"
-        "3. For prescriber evidence: extract the provider line or signature block WITH name, department/specialty, and practice.\n"
-        "4. If a criterion is not clearly supported, OMIT it. Most criteria will NOT be met.\n\n"
+        f"{SYSTEM_INSTRUCTIONS}\n\n"
         "CRITERIA:\n"
-        f"{criteria_block}\n\n"
+        f"{example_criteria_block}\n\n"
         "DOCUMENT:\n"
         f"{EXAMPLE_NOTE}\n"
         "<end_of_turn>\n"
         "<start_of_turn>model\n"
-        f"{example_output}\n"
+        f"{EXAMPLE_OUTPUT}\n"
         "<end_of_turn>\n"
         "<start_of_turn>user\n"
-        "Now extract evidence from a COMPLETELY DIFFERENT patient document below.\n"
-        "CRITICAL: Use ONLY text from THIS new document. The previous example is irrelevant.\n"
-        "Do NOT copy any evidence from the example above — it is a different patient.\n\n"
+        f"{TRANSITION_TEXT}\n\n"
+        "CRITERIA:\n"
+        f"{real_criteria_block}\n\n"
         "DOCUMENT:\n"
     )
 
@@ -154,7 +184,7 @@ def _build_prompt_suffix(note_text: str) -> str:
         f"{note_text}\n"
         "<end_of_turn>\n"
         "<start_of_turn>model\n"
-        "REASONING:\n"
+        f"{ASSISTANT_PREFIX}"
     )
 
 
@@ -173,22 +203,41 @@ def _truncate_repetition(text: str) -> str:
     return text
 
 
+def _normalize_evidence(item: dict) -> dict:
+    """Normalize evidence field: array → evidence_snippets + joined evidence string."""
+    ev = item.get("evidence")
+    if isinstance(ev, list):
+        snippets = [s.strip() for s in ev if isinstance(s, str) and s.strip()]
+        item["evidence_snippets"] = snippets
+        item["evidence"] = "\n".join(snippets)
+    elif isinstance(ev, str):
+        item["evidence_snippets"] = [ev.strip()] if ev.strip() else []
+    else:
+        item["evidence_snippets"] = []
+        item["evidence"] = ""
+    return item
+
+
 def _parse_json_response(raw: str) -> list[dict] | None:
     raw = _truncate_repetition(raw)
     raw = raw.strip()
     raw = re.sub(r"^```(?:json)?\s*\n?", "", raw, flags=re.MULTILINE)
     raw = re.sub(r"\n?```\s*$", "", raw, flags=re.MULTILINE)
     raw = raw.strip()
+    parsed = None
     try:
-        return json.loads(raw)
+        parsed = json.loads(raw)
     except json.JSONDecodeError:
         pass
-    match = re.search(r"\[.*\]", raw, re.DOTALL)
-    if match:
-        try:
-            return json.loads(match.group(0))
-        except json.JSONDecodeError:
-            pass
+    if parsed is None:
+        match = re.search(r"\[.*\]", raw, re.DOTALL)
+        if match:
+            try:
+                parsed = json.loads(match.group(0))
+            except json.JSONDecodeError:
+                pass
+    if parsed is not None and isinstance(parsed, list):
+        return [_normalize_evidence(item) for item in parsed if isinstance(item, dict)]
     return None
 
 
@@ -242,13 +291,15 @@ def validate_evidence(parsed: list[dict], all_criteria: list[dict], note_text: s
     criteria_by_id = {c['id']: c for c in all_criteria}
     filtered = []
 
-    evidence_counts: dict[str, int] = {}
+    # Spam detection: count per-snippet reuse across all criteria
+    snippet_counts: dict[str, int] = {}
     for item in parsed:
         if item.get("met") is True:
-            ev = (item.get("evidence") or "").strip().lower()
-            if ev and 'no mention' not in ev:
-                evidence_counts[ev] = evidence_counts.get(ev, 0) + 1
-    spammed = {ev for ev, n in evidence_counts.items() if n >= 3}
+            for snippet in item.get("evidence_snippets", []):
+                sn = snippet.strip().lower()
+                if sn and 'no mention' not in sn:
+                    snippet_counts[sn] = snippet_counts.get(sn, 0) + 1
+    spammed_snippets = {sn for sn, n in snippet_counts.items() if n >= 3}
 
     for item in parsed:
         if not isinstance(item, dict):
@@ -257,6 +308,7 @@ def validate_evidence(parsed: list[dict], all_criteria: list[dict], note_text: s
         cid = item.get("criterion_id", "")
         met = item.get("met")
         evidence = (item.get("evidence") or "").strip()
+        snippets = item.get("evidence_snippets", [])
 
         if met is not True or not evidence:
             continue
@@ -270,11 +322,14 @@ def validate_evidence(parsed: list[dict], all_criteria: list[dict], note_text: s
                 filtered.append(item)
             continue
 
-        if evidence_lower in spammed:
+        # Per-snippet spam: reject only if ALL snippets are spammed
+        if snippets and all(s.strip().lower() in spammed_snippets for s in snippets):
             continue
 
-        grounding = _evidence_grounding_ratio(evidence, note_text)
-        if grounding < 0.5:
+        # N-gram grounding at 30%: catches fully fabricated evidence while allowing
+        # paraphrasing (e.g. abbreviation expansion like MTX→methotrexate).
+        ratio = _evidence_grounding_ratio(evidence, note_text)
+        if ratio < 0.3:
             continue
 
         if len(evidence) < 10:
@@ -286,10 +341,10 @@ def validate_evidence(parsed: list[dict], all_criteria: list[dict], note_text: s
             found_anti = [kw for kw in anti_kws if _keyword_in_text(kw, evidence)]
             found_anti = _deduplicate_keyword_matches(found_anti)
             found_pos = [kw for kw in pos_kws if _keyword_in_text(kw, evidence)]
-            if found_anti and len(found_anti) >= len(found_pos):
+            if found_anti and len(found_anti) > len(found_pos):
                 continue
 
-        if pos_kws and not is_negated:
+        if pos_kws and not is_negated and 'prescrib' not in cid:
             found_in_note = [kw for kw in pos_kws if _keyword_in_text(kw, note_text)]
             if not found_in_note:
                 continue
@@ -317,6 +372,59 @@ def validate_evidence(parsed: list[dict], all_criteria: list[dict], note_text: s
         filtered.append(item)
 
     return filtered
+
+
+def merge_note_results(
+    per_note_results: list[tuple[str, list[dict]]],
+    combined_text: str,
+) -> dict[str, dict]:
+    """Merge extraction results from multiple notes.
+
+    For each criterion, keeps the best result (met=true wins).
+    Unions evidence_snippets across notes (dedup by lowercased content).
+    Attaches source_note from the winning note.
+
+    Args:
+        per_note_results: List of (filename, validated_items) per note.
+        combined_text: Concatenated text of all notes (for validation fallback).
+
+    Returns:
+        Dict mapping criterion_id → best result dict (with source_note).
+    """
+    merged: dict[str, dict] = {}
+    for filename, items in per_note_results:
+        for item in items:
+            cid = item.get("criterion_id", "")
+            item_with_source = {**item, "source_note": filename}
+            if cid not in merged:
+                merged[cid] = item_with_source
+            else:
+                existing = merged[cid]
+                # met=true always wins over met=false
+                if item.get("met") and not existing.get("met"):
+                    # Replace but carry over existing snippets
+                    existing_snippets = existing.get("evidence_snippets", [])
+                    merged[cid] = item_with_source
+                    _union_snippets(merged[cid], existing_snippets)
+                elif item.get("met") == existing.get("met"):
+                    # Union snippets from new item into existing
+                    new_snippets = item.get("evidence_snippets", [])
+                    _union_snippets(existing, new_snippets)
+                    # Rebuild joined evidence from unified snippets
+                    existing["evidence"] = "\n".join(existing.get("evidence_snippets", []))
+    return merged
+
+
+def _union_snippets(target: dict, new_snippets: list[str]) -> None:
+    """Merge new_snippets into target's evidence_snippets, deduping by lowercased content."""
+    existing = target.get("evidence_snippets", [])
+    seen = {s.strip().lower() for s in existing}
+    for snippet in new_snippets:
+        key = snippet.strip().lower()
+        if key and key not in seen:
+            existing.append(snippet)
+            seen.add(key)
+    target["evidence_snippets"] = existing
 
 
 class ExtractionService:
@@ -388,8 +496,8 @@ class ExtractionService:
             import mlx.core as mx
 
             self.model, self.tokenizer = load(str(MODEL_ID))
-            self._sampler = make_sampler(temp=0.05, top_p=0.9)
-            self._logits_processors = make_logits_processors(repetition_penalty=1.2)
+            self._sampler = make_sampler(temp=0.1, top_p=0.9)
+            self._logits_processors = make_logits_processors(repetition_penalty=1.1)
 
             # Cache prompt prefix
             logger.info("ExtractionService: Caching prompt prefix...")
@@ -524,44 +632,24 @@ class ExtractionService:
                 temperature=0.05,
                 top_p=0.9,
                 max_output_tokens=max_tokens,
+                thinking_config=genai.types.ThinkingConfig(thinking_budget=0),
             ),
         )
-        return response.text.strip()
+        result = response.text.strip()
+        if not result:
+            logger.warning(
+                "Gemini returned empty response. Finish reason: %s",
+                response.candidates[0].finish_reason if response.candidates else "NO_CANDIDATES",
+            )
+        return result
 
     def _merge_note_results(
         self,
         per_note_results: list[tuple[str, list[dict]]],
         combined_text: str,
     ) -> dict[str, dict]:
-        """Merge extraction results from multiple notes.
-
-        For each criterion, keeps the best result (met=true wins; longer
-        evidence wins on tie). Attaches source_note from the winning note.
-
-        Args:
-            per_note_results: List of (filename, validated_items) per note.
-            combined_text: Concatenated text of all notes (for validation fallback).
-
-        Returns:
-            Dict mapping criterion_id → best result dict (with source_note).
-        """
-        merged: dict[str, dict] = {}
-        for filename, items in per_note_results:
-            for item in items:
-                cid = item.get("criterion_id", "")
-                item_with_source = {**item, "source_note": filename}
-                if cid not in merged:
-                    merged[cid] = item_with_source
-                else:
-                    existing = merged[cid]
-                    # met=true always wins over met=false
-                    if item.get("met") and not existing.get("met"):
-                        merged[cid] = item_with_source
-                    elif item.get("met") == existing.get("met"):
-                        # Both met or both not met — prefer longer evidence
-                        if len(item.get("evidence", "")) > len(existing.get("evidence", "")):
-                            merged[cid] = item_with_source
-        return merged
+        """Delegate to module-level merge_note_results()."""
+        return merge_note_results(per_note_results, combined_text)
 
     def extract(self, uuid: str) -> Generator[dict, None, None]:
         """Yield SSE events during per-note extraction.

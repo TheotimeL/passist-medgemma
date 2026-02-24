@@ -1,0 +1,39 @@
+01/22/2026 - Rheumatology note
+pt: Nelson O'Keefe, 71yo M, DOB 1955-02-15
+provider: Dr. Robert Khoury @ Wind River Rheumatology Group
+mrn: A0916E70
+
+[Imported from 11/25/2025]
+PMH: HTN, hypothyroidism, RA
+Allergies: NKDA
+[End imported]
+
+SUBJECTIVE
+Pt w/ inflammatory arthritis dx'd 2024-07-10. Here for f/u, still symptomatic.
+Pain b/l hands wrists, R knee sometimes. AM stiffness ~94min.
+Has tried multiple agents in the past — see chart. Currently just on an NSAID.
+
+Reviewed med list w/ pt:
+  Plaquenil — tried, stopped (retinal toxicity on screening); naproxen 500 bid — current; pantoprazole 20mg — current
+
+no fever, no infxn, NKDA.
+
+OBJECTIVE
+VS: 118/74, p71, afebrile, 136#
+MSK: 10 tender, 5 swollen. b/l MCPs + wrists. 
+
+labs from last wk:
+  sed rate 36, CRP 3.5, RF 61 (+), anti-CCP 161
+  cbc ok, cmp ok, lfts wnl
+  infectious w/u neg (tb/hep)
+
+DAS28 = 4.5
+
+A/P
+1) RA, active. DAS28 4.5
+   → starting Humira 40mg q2wk. PA submitted.
+   → cont NSAID prn. f/u 12wk
+
+—Dr. Robert Khoury
+ Rheumatology
+ Wind River Rheumatology Group

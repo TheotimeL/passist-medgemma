@@ -1,0 +1,68 @@
+SOAP NOTE — Rheumatology Clinic Visit
+
+Patient: Hedwig Bartell
+DOB: 10/21/1961
+Age: 64 years old
+Gender: Female
+MRN: BFDDB1D9
+Date of Visit: 01/26/2026
+Provider: Dr. Sarah Chen, MD, Rheumatology
+Facility: Wyoming Rheumatology Associates
+Primary Care: Dr. Johna Klein, FOUNDATIONS OF HOPE, HEALTH, AND WELLNESS, LLC
+
+SUBJECTIVE:
+Mrs. Bartell is a 64-year-old woman with a long-standing history of seropositive inflammatory arthritis, first noted in 09/25/2012. She describes worsening bilateral hand and wrist pain over the past several months despite several treatment changes. Morning stiffness persists for approximately 51 minutes. She is having difficulty with buttons and jar lids.
+
+PMH also includes hypertension, osteoporosis screening pending.
+
+She denies fevers, recent infections, or weight loss. No new skin rashes.
+
+Allergies: No known drug allergies.
+
+MEDICATION RECONCILIATION:
+- Methotrexate 25 mg weekly: started 2019, STOPPED (MTX: rash)
+- Hydroxychloroquine 25 mg daily: started 2021, STOPPED (HCQ: inadequate response after 4 months)
+- Naproxen sodium 500 mg BID: current
+- Folic acid 1 mg daily: current
+- Omeprazole 20 mg daily: current
+- Calcium/Vitamin D supplement: current
+
+OBJECTIVE:
+Vitals: BP 123/79 mmHg, HR 67 bpm, Temp 98.6F, Weight 123 lbs
+General: Alert, oriented woman in mild distress due to joint pain.
+
+Musculoskeletal Exam:
+- Tender joint count: 11/28
+- Swollen joint count: 3/28
+- Bilateral MCP joints: tenderness and mild swelling
+- Wrists: mild tenderness bilaterally
+- Knees: right knee mild crepitus
+
+Labs (01/13/2025):
+- ESR: 32 mm/hr
+- CRP: 2.0 mg/dL
+- RF: 146 IU/mL (positive)
+- Anti-CCP: 132 U/mL
+- CBC: WBC 5.7, Hgb 14.3, Plt 262
+- CMP: Creatinine 0.7, ALT 24, AST 17
+- HBsAg: Negative
+- Anti-HCV: Negative
+- QuantiFERON-TB Gold: Negative
+
+Composite Disease Activity: DAS28-ESR 5.2
+
+ASSESSMENT:
+1. Rheumatoid arthritis, seropositive, active. DAS28 5.2.
+   Inadequate disease control on prior conventional therapy.
+
+PLAN:
+1. Start Humira 40 mg SQ q14d. PA submitted.
+2. Continue naproxen sodium for breakthrough pain.
+3. Pre-biologic labs satisfactory.
+4. Injection training scheduled. Return 12 weeks.
+
+Electronically signed,
+Dr. Sarah Chen, MD
+Rheumatology
+Wyoming Rheumatology Associates
+01/26/2026

@@ -1,0 +1,34 @@
+01/05/2026 - Rheumatology note
+pt: Gabriel Feeney, 42yo M, DOB 1983-04-22
+provider: Dr. Priya Patel @ High Plains Rheumatology Clinic
+mrn: 38441F2B
+
+SUBJECTIVE
+Pt w/ inflammatory arthritis dx'd 2013-01-08. Here for f/u, still symptomatic.
+Pain b/l hands wrists, R knee sometimes. AM stiffness ~108min.
+Has tried multiple agents in the past — see chart. Currently just on an NSAID.
+
+Reviewed med list w/ pt:
+  Rheumatrex — tried, stopped (inadequate response with persistent high disease activity); naproxen 500 bid — current; pantoprazole 20mg — current
+
+no fever, no infxn, NKDA.
+
+OBJECTIVE
+VS: 124/81, p72, afebrile, 163#
+MSK: 8 tender, 4 swollen. b/l MCPs + wrists. 
+
+labs from 01/20:
+  sed rate 34, CRP 3.2, RF 78 (+), anti-CCP 167
+  cbc ok, cmp ok, lfts wnl
+  infectious w/u neg (tb/hep)
+
+DAS28 = 4.6
+
+A/P
+1) RA, active. DAS28 4.6
+   → starting Humira 40mg q2wk. PA submitted.
+   → cont NSAID prn. f/u 12wk
+
+—Dr. Priya Patel
+ Rheumatology
+ High Plains Rheumatology Clinic

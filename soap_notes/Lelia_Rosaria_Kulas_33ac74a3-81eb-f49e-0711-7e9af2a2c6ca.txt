@@ -1,0 +1,53 @@
+SOAP NOTE — Internal Medicine Follow-Up
+
+Patient: Lelia Rosaria Kulas
+DOB: 02/16/1979
+Age: 47 years old
+Gender: Female
+MRN: 33AC74A3
+Date of Visit: 01/26/2026
+Provider: Dr. Carroll Eichmann, MD, Internal Medicine
+Facility: COMMUNITY ACTION OF LARAMIE COUNTY
+
+SUBJECTIVE:
+Mrs. Kulas is a 47-year-old woman with a history of RA diagnosed in 04/03/2023. She reports feeling well overall. No current joint pain or stiffness. She is able to perform all daily activities without limitation.
+
+Her previous DMARD was tapered and stopped last year given sustained clinical improvement.
+
+Allergies: No known drug allergies.
+
+MEDICATION RECONCILIATION:
+- No active RA medications
+- Methotrexate: previously used, tapered off in remission
+
+OBJECTIVE:
+Vitals: BP 130/84 mmHg, HR 74 bpm, Temp 98.3F, Weight 209 lbs
+General: Healthy-appearing woman in no acute distress.
+
+Musculoskeletal Exam:
+- No joint tenderness or swelling
+- Full ROM in all joints
+- No synovitis
+
+Labs (12/19/2026):
+- ESR: 12 mm/hr
+- CRP: 0.4 mg/dL
+- RF: 51 IU/mL (positive)
+- Anti-CCP: 24 U/mL
+- CBC: WBC 6.2, Hgb 14.6, Plt 211
+- CMP: Creatinine 0.8, ALT 30, AST 26
+
+Composite Disease Activity: DAS28-ESR 2.2
+
+ASSESSMENT:
+1. Rheumatoid arthritis — DAS28 2.2.
+
+PLAN:
+1. No active RA treatment indicated.
+2. Annual monitoring.
+
+Electronically signed,
+Dr. Carroll Eichmann, MD
+Internal Medicine
+COMMUNITY ACTION OF LARAMIE COUNTY
+01/26/2026

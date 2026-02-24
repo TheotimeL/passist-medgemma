@@ -1,0 +1,54 @@
+SOAP NOTE — Family Medicine Follow-Up
+
+Patient: Allena Bogan
+DOB: 06/19/1985
+Age: 40 years old
+Gender: Female
+MRN: 9F460BD6
+Date of Visit: 01/08/2026
+Provider: Dr. Winfred Collins, MD, Family Medicine
+Facility: SUMMIT MEDICAL CENTER
+
+SUBJECTIVE:
+Mrs. Bogan is a 40-year-old woman presenting for follow-up of inflammatory arthropathy diagnosed 09/12/2022. She continues to have active joint symptoms with morning stiffness lasting 50 minutes. Reports the prior DMARD was stopped some months ago.
+
+Allergies: No known drug allergies.
+
+MEDICATION RECONCILIATION:
+- Methotrexate: STOPPED (inadequate response)
+- Naproxen 500 mg PRN: current
+
+OBJECTIVE:
+Vitals: BP 135/74 mmHg, HR 76 bpm, Temp 98.3F, Weight 196 lbs
+General: Alert, oriented woman in mild distress due to joint pain.
+
+Musculoskeletal Exam:
+- Tender joint count: 6/28
+- Swollen joint count: 6/28
+- Bilateral MCP joints: tenderness and swelling
+- Wrists: bilateral synovitis
+- Knees: small effusions bilaterally
+
+Labs (12/28/2025):
+- ESR: 42 mm/hr
+- CRP: 2.7 mg/dL
+- RF: 71 IU/mL (positive)
+- Anti-CCP: 272 U/mL
+- CBC: WBC 6.3, Hgb 14.7, Plt 306
+- CMP: Creatinine 0.8, ALT 31, AST 22
+
+Composite Disease Activity: DAS28-ESR 5.0
+
+ASSESSMENT:
+1. Rheumatoid arthritis, seropositive, active. DAS28 5.0.
+   Inadequate disease control on prior conventional therapy.
+
+PLAN:
+1. Consider specialty referral for biologic evaluation.
+2. Continue current symptom management.
+
+Electronically signed,
+Dr. Winfred Collins, MD
+Family Medicine
+SUMMIT MEDICAL CENTER
+01/08/2026

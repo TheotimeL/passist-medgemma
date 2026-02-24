@@ -1,0 +1,86 @@
+============================================================
+  CLINICAL NOTE — RHEUMATOLOGY CONSULTATION
+============================================================
+
+PATIENT INFORMATION
+  Name:           Gilbert Hamill
+  Date of Birth:  May 26, 1975
+  Age:            50
+  Sex:            Male
+  Race/Ethnicity: White / Non-Hispanic
+  MRN:            16790570
+  Date of Visit:  02/07/2026
+  Provider:       Dr. Michael Rivera, MD — Rheumatology
+  Location:       Mountain West Arthritis Center
+  Referring PCP:  Dr. Johna Klein
+
+CHIEF COMPLAINT
+  "Mr. Hamill is here for evaluation of worsening rheumatoid arthritis
+   despite previous treatment attempts. Referred for biologic therapy consideration."
+
+HISTORY OF PRESENT ILLNESS
+  Gilbert Hamill is a 50-year-old white male with a
+  diagnosis of seropositive rheumatoid arthritis established in February 3, 2022.
+
+  TREATMENT HISTORY:
+  The patient has undergone the following disease-modifying therapy:
+
+    1. Methotrexate (MTX)
+       - Started: 2019
+       - Dose: escalated to 25 mg weekly with folic acid
+       - Discontinued: severe oral ulcers despite dose reduction
+
+  CURRENT SYMPTOMS:
+    - Bilateral hand and wrist pain: 7/10
+    - Morning stiffness: 94 minutes
+    - Difficulty with fine motor tasks (buttons, jars, writing)
+    - Bilateral knee stiffness
+    - Fatigue: 7/10
+    - No fevers, infections, or constitutional symptoms
+
+  ALLERGIES: No known drug allergies.
+  SOCIAL HISTORY: Married. Non-smoker.
+
+PHYSICAL EXAMINATION
+  Vital Signs:
+    Blood Pressure: 128/75 mmHg
+    Heart Rate: 65 bpm
+    Temperature: 98.4°F
+    Weight: 181 lbs
+
+  General: 50-year-old male in mild distress.
+
+  Musculoskeletal Examination:
+    Tender Joint Count (28-joint): 14
+    Swollen Joint Count (28-joint): 3
+    Hands: Mild MCP tenderness
+    Wrists: Mild tenderness
+
+LABORATORY DATA
+    ESR: 29 mm/hr (elevated)
+    CRP: 3.7 mg/dL (elevated)
+    RF: Positive, 99 IU/mL
+    Anti-CCP: Positive, 161 U/mL
+    CBC: Within normal limits
+    CMP: Within normal limits
+    Hepatitis B/C: Negative
+    QuantiFERON-TB Gold: Negative
+
+DISEASE ACTIVITY SCORE
+    DAS28-ESR: 5.9
+
+ASSESSMENT AND PLAN
+  1. RHEUMATOID ARTHRITIS — Active disease
+     DAS28-ESR: 5.9
+     Has not responded adequately to conventional therapy (see treatment history above).
+
+     PLAN: Recommend initiation of anti-TNF therapy. PA documentation submitted.
+     Pre-biologic infectious screening satisfactory.
+     Patient counseled on injection technique and infection monitoring.
+     Follow-up in 12 weeks.
+
+============================================================
+Electronically signed by Dr. Michael Rivera, MD
+Rheumatology
+Mountain West Arthritis Center
+Date: 02/07/2026

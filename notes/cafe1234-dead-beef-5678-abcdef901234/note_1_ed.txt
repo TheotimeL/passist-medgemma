@@ -1,0 +1,124 @@
+CHEYENNE REGIONAL MEDICAL CENTER — EMERGENCY DEPARTMENT
+Date: 11/14/2025  Time: 02:47
+Attending: Dr. Robert Flanagan, Emergency Medicine
+Triage RN: J. Kowalski, RN
+
+Patient: Gloria Jean Hutchinson
+DOB: 05/11/1958    Age: 67    Sex: F    MRN: CAFE1234
+Arrival: EMS, Code STEMI Alert downgraded to NSTEMI on arrival
+Insurance: UHC Commercial PPO
+
+CHIEF COMPLAINT: Substernal chest pain x 3 hours, diaphoresis
+
+TRIAGE VITALS: BP 178/102, HR 112, RR 22, SpO2 93% RA, T 99.1F, Wt 187 lbs
+Repeat VS (03:15): BP 152/88, HR 98, SpO2 96% 2L NC
+
+ALLERGIES: PCN (anaphylaxis), Codeine (nausea), Latex
+
+PMH (per chart review + patient report, reliability fair — pt in distress):
+- CAD s/p RCA stent 2019
+- CHF w/ reduced EF (last echo EF 35%, 06/2025)
+- T2DM A1c 8.1 (10/2025)
+- CKD Stage 3a (baseline Cr 1.4-1.6)
+- COPD on home O2 PRN (FEV1 52% predicted, 2024 PFTs)
+- HTN
+- HLD
+- Atrial fibrillation, rate-controlled, on DOAC
+- Chronic pain syndrome
+- "Arthritis" — pt states "I see a joint doctor, been on lots of meds for it"
+  (unable to provide further details, per pt "it's an autoimmune thing")
+- Hx DVT 2017, completed anticoagulation
+- Depression, anxiety
+- GERD
+- Osteoporosis, s/p vertebral compression fx T12 (2023)
+- Former smoker (45 pack-years, quit 2020)
+
+HOME MEDICATIONS (reconciled with pharmacy, daughter at bedside confirmed):
+1. Metoprolol succinate 50 mg daily
+2. Lisinopril 20 mg daily
+3. Amlodipine 5 mg daily
+4. Furosemide 40 mg daily
+5. Apixaban 5 mg BID
+6. Atorvastatin 80 mg daily
+7. Metformin 1000 mg BID
+8. Empagliflozin 10 mg daily
+9. Insulin glargine 22 units qHS
+10. Tiotropium 18 mcg inhaler daily
+11. Albuterol MDI PRN
+12. Sertraline 100 mg daily
+13. Gabapentin 300 mg TID
+14. Omeprazole 40 mg daily
+15. Calcium/Vitamin D 600/400 BID
+16. Folic acid 1 mg daily
+17. "Yellow pill once a week for her joints" — daughter unable to identify
+    → pharmacy confirms: methotrexate 15 mg PO weekly (filled 10/28/2025)
+18. Naproxen 500 mg BID (pt reports taking "for years")
+19. Prednisone 5 mg daily — pt unsure why ("my joint doctor put me on it")
+
+HPI:
+67yo F w/ extensive PMH as above presents w/ acute onset SSCP radiating to L arm
+and jaw beginning ~2345 while watching television. Associated diaphoresis, nausea,
+and SOB. Pt took SL NTG x1 at home (expired, from 2022) without relief. Daughter
+called 911. En route, 12-lead EKG showed ST depressions V3-V6 and lead II, III.
+Troponin I 0.89 ng/mL (H) on arrival. Repeat at 03:30: 2.14 ng/mL (H, rising).
+Chest pain improved from 9/10 to 4/10 after NTG drip and morphine 4mg IV.
+
+ROS (abbreviated per acuity):
+(+) CP, SOB, diaphoresis, nausea, fatigue, bilateral hand/wrist pain (chronic, per pt)
+(-) Syncope, hemoptysis, melena, hematochezia, focal neuro deficits, fever
+
+EXAM:
+General: Obese F, diaphoretic, anxious, in moderate distress
+HEENT: PERRL, MM dry, no JVD appreciated (body habitus limits assessment)
+CV: Irreg irreg rhythm (known AFib), tachycardic, no murmurs/gallops appreciated
+Pulm: Bilateral basilar crackles, scattered expiratory wheezes
+Abd: Soft, NT, obese, +BS, no HSM
+Ext: 1+ bilateral LE edema (baseline per daughter), no calf TTP
+  Hands: Bilateral MCP swelling noted, ulnar deviation R hand — "chronic" per pt
+  Limited ROM bilateral wrists
+MSK detail deferred given acuity — noted for outpatient f/u
+Neuro: A&Ox3, CN II-XII intact, moving all extremities
+
+LABS (02:55):
+  Troponin I: 0.89 → 2.14 ng/mL (NSTEMI)
+  BNP: 890 pg/mL (H — baseline elevated per CHF)
+  CBC: WBC 11.2 (stress response), Hgb 10.8 (baseline chronic disease), Plt 198
+  BMP: Na 138, K 4.6, Cl 102, CO2 22, BUN 34, Cr 1.7 (↑ from baseline 1.5), Glu 234
+  ALT 48, AST 62 (likely cardiac), Alk Phos 88, Tbili 0.9
+  PT/INR: 1.1 (on apixaban, not warfarin)
+  Lipase: 42 (normal)
+  Lactic acid: 1.4
+
+IMAGING:
+  CXR: Cardiomegaly. Bilateral pleural effusions, L>R. Vascular congestion. No PNA.
+  CT Chest w/o contrast (PE protocol deferred — CKD + NSTEMI):
+    No aortic dissection. Bibasilar effusions. Emphysematous changes.
+    Incidental: Mild degenerative changes in visualized thoracic spine.
+
+EKG: AFib w/ RVR rate 112, ST depression V3-V6, II, III, aVF. No ST elevation.
+
+ED COURSE:
+- NTG drip, titrated for chest pain
+- Heparin gtt per ACS protocol
+- ASA 325 mg (already on chronic ASA equivalent via apixaban — per cardiology,
+  held apixaban, started heparin bridge for ACS management)
+- Metoprolol IV 5 mg x2, then PO 25 mg
+- Furosemide 40 mg IV for pulmonary congestion
+- Insulin sliding scale for hyperglycemia
+- ALL IMMUNOSUPPRESSANTS HELD pending acute illness — discussed w/ admitting
+  (includes the weekly joint medication and daily low-dose steroid)
+  Pharmacy flagged methotrexate and prednisone for hold.
+- Pain management: acetaminophen 1g IV (avoiding NSAIDs per cardiology/nephrology)
+  Naproxen held — AKI + NSTEMI
+- Albuterol neb x1 for wheezing
+
+DISPOSITION: Admit to CCU under Dr. S. Okonkwo (Cardiology)
+  Rheumatology notified re: held immunosuppressants — will defer to outpt f/u
+
+Code status: Full code (confirmed with patient and daughter)
+
+Electronically signed,
+Robert Flanagan, MD
+Emergency Medicine
+Cheyenne Regional Medical Center
+11/14/2025  05:12

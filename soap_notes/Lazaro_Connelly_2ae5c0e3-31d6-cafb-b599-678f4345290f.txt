@@ -1,0 +1,14 @@
+Progress Note
+Date: 02/15/2026
+Patient: Lazaro Connelly   DOB: 5 Feb 1981   MRN: 2AE5C0E3
+Attending: Dr. Deandre Windler, Internal Medicine
+Site: BEST CARE FAMILY PRACTICE LLC
+
+Lazaro Connelly is a 45-year-old man with RA. Previously on methotrexate, discontinued for hepatotoxicity. Disease remains active with DAS28 4.3.
+
+Exam: TJC 11/28, SJC 7/28. ESR 30, CRP 1.7.
+
+The patient would benefit from rheumatology evaluation for possible biologic therapy. Will continue naproxen and consider referral.
+
+— Dr. Deandre Windler, MD
+  Internal Medicine, BEST CARE FAMILY PRACTICE LLC

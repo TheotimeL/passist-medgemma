@@ -1,0 +1,63 @@
+============================================================
+  CLINICAL NOTE — FAMILY MEDICINE CONSULTATION
+============================================================
+
+PATIENT INFORMATION
+  Name:           Emilio Gil
+  Date of Birth:  January 20, 1981
+  Age:            45
+  Sex:            Male
+  Race/Ethnicity: White / Hispanic
+  MRN:            353D8963
+  Date of Visit:  02/17/2026
+  Provider:       Dr. Federico Kuhic, MD — Family Medicine
+  Location:       SAGEWEST HEALTH CARE
+
+CHIEF COMPLAINT
+  "Routine follow-up for rheumatoid arthritis."
+
+HISTORY OF PRESENT ILLNESS
+  Emilio Gil is a 45-year-old white male with a
+  diagnosis of seropositive rheumatoid arthritis established in June 11, 2025.
+
+  The patient achieved sustained clinical remission on methotrexate, which was
+  subsequently tapered and discontinued. He has been off all RA therapy
+  for over 1 year with no recurrence of symptoms.
+
+  ALLERGIES: No known drug allergies.
+  SOCIAL HISTORY: Married. Non-smoker.
+
+PHYSICAL EXAMINATION
+  Vital Signs:
+    Blood Pressure: 139/90 mmHg
+    Heart Rate: 68 bpm
+    Temperature: 98.5°F
+    Weight: 124 lbs
+
+  General: 45-year-old male in no acute distress.
+
+  Musculoskeletal Examination:
+    No joint tenderness, swelling, or synovitis
+    Full range of motion in all joints
+
+LABORATORY DATA
+    ESR: 4 mm/hr (normal)
+    CRP: 0.3 mg/dL (normal)
+    RF: Positive, 54 IU/mL
+    Anti-CCP: Positive, 18 U/mL
+    CBC: Within normal limits
+    CMP: Within normal limits
+
+DISEASE ACTIVITY SCORE
+    DAS28-ESR: 1.8
+
+ASSESSMENT AND PLAN
+  1. RHEUMATOID ARTHRITIS — Remission
+
+     PLAN: No active treatment needed. Annual monitoring.
+
+============================================================
+Electronically signed by Dr. Federico Kuhic, MD
+Family Medicine
+SAGEWEST HEALTH CARE
+Date: 02/17/2026

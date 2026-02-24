@@ -10,6 +10,7 @@ TREE_PATH_ORIGINAL = "rheumatoid_arthritis_initial_auth_decision_tree.json"
 # Patient notes directories
 NOTES_ROOT = Path("soap_notes")       # legacy single-file structure
 NOTES_ROOT_NEW = Path("notes")        # new multi-note structure
+BENCHMARK_NOTES_ROOT = Path("benchmark_soap_notes")  # 47-patient benchmark set
 
 # FHIR bundle locations
 FHIR_ROOT = Path("generations")       # full local dataset
