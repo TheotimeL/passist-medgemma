@@ -14,15 +14,15 @@ from fastapi.responses import FileResponse
 
 from api.schemas import GeneratePdfRequest
 from api.patients import _find_fhir_bundle
-from patient_data import (
+from services.patient_data import (
     load_patient_from_fhir,
     format_section_vi,
     SNOMED_TO_ICD10,
     DRUG_TO_HCPCS,
 )
 from config import TREE_PATH
-from policy_tree import load_tree, get_status, get_all_criteria, CriterionResult, tree_to_dict
-from pdf_form import PDFFormManager
+from services.policy_tree import load_tree, get_status, get_all_criteria, CriterionResult, tree_to_dict
+from services.pdf_form import PDFFormManager
 
 router = APIRouter()
 
@@ -178,8 +178,8 @@ async def parse_drug_fields(request: ParseDrugFieldsRequest):
     Metal GPU conflicts.
     """
     import asyncio
-    from extraction_service import ExtractionService
-    from drug_field_parser import DrugFieldParser
+    from services.extraction_service import ExtractionService
+    from services.drug_field_parser import DrugFieldParser
 
     logger.info("parse-drug-fields: Received %d entries", len(request.entries))
     svc = ExtractionService.get_instance()
@@ -207,8 +207,8 @@ async def parse_prescriber_fields(request: ParsePrescriberFieldsRequest):
     Called by the frontend after extraction completes, before drug field parsing.
     """
     import asyncio
-    from extraction_service import ExtractionService
-    from drug_field_parser import DrugFieldParser
+    from services.extraction_service import ExtractionService
+    from services.drug_field_parser import DrugFieldParser
 
     logger.info("parse-prescriber-fields: Received %d entries", len(request.entries))
     svc = ExtractionService.get_instance()

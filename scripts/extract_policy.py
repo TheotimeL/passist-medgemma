@@ -24,7 +24,7 @@ import langextract as lx
 
 logging.getLogger("absl").setLevel(logging.ERROR)
 
-from policy_tree import enrich_tree
+from services.policy_tree import enrich_tree
 
 genai.configure(api_key=os.environ["LANGEXTRACT_API_KEY"])
 
@@ -666,7 +666,7 @@ if __name__ == "__main__":
     print_tree(tree)
 
     # Step 7: Verify search_descriptions
-    from policy_tree import load_tree, get_all_criteria
+    from services.policy_tree import load_tree, get_all_criteria
     tree_node = load_tree(OUTPUT_TREE_JSON)
     all_criteria = get_all_criteria(tree_node)
     print(f"\n{'='*80}")

@@ -13,7 +13,7 @@ from pathlib import Path
 
 from api.schemas import PatientSummary, PatientFhir, NotesResponse, NoteFile
 from config import NOTES_ROOT, NOTES_ROOT_NEW, FHIR_ROOT, FHIR_BUNDLED, UUID_PATTERN
-from patient_data import load_patient_from_fhir
+from services.patient_data import load_patient_from_fhir
 
 router = APIRouter()
 
@@ -25,7 +25,7 @@ def _load_eligibility_from_ground_truth() -> dict[str, dict]:
         return {}
 
     try:
-        from policy_tree import load_tree, get_status, CriterionResult
+        from services.policy_tree import load_tree, get_status, CriterionResult
         from config import TREE_PATH
 
         gt = json.loads(gt_path.read_text(encoding="utf-8"))
@@ -166,7 +166,7 @@ def list_patients():
 
 @router.get("/patients/{uuid}/fhir", response_model=PatientFhir)
 def get_patient_fhir(uuid: str):
-    from patient_data import SNOMED_TO_ICD10, ENCOUNTER_CLASS_TO_LOCATION
+    from services.patient_data import SNOMED_TO_ICD10, ENCOUNTER_CLASS_TO_LOCATION
 
     full_uuid = _resolve_uuid(uuid)
     bundle_path = _find_fhir_bundle(full_uuid)

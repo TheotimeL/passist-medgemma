@@ -1159,7 +1159,6 @@ async function exportFhir() {
   margin-left: 4px;
 }
 .justification-dot-loading { background: #F9AB00; }
-.justification-dot-ready { background: #34A853; }
 .missing-field-item {
   display: flex;
   align-items: center;

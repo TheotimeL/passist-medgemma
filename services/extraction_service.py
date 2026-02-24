@@ -1,12 +1,9 @@
-"""ExtractionService — wraps test_extraction_soap.py for web use.
+"""ExtractionService — MedGemma extraction for web use.
 
 Provides a singleton class that:
 1. Loads MedGemma model once at startup
 2. Caches the prompt prefix
 3. Exposes a generator-based extract() method for SSE streaming
-
-All core functions (prompt building, inference, validation) are preserved
-verbatim from test_extraction_soap.py.
 """
 
 from __future__ import annotations
@@ -26,7 +23,7 @@ from typing import Generator
 # HF_TOKEN is read from environment if needed for MLX model download
 
 from config import TREE_PATH, TREE_PATH_ORIGINAL, NOTES_ROOT, NOTES_ROOT_NEW, UUID_PATTERN
-from policy_tree import load_tree, get_all_criteria, CriterionResult, get_status
+from .policy_tree import load_tree, get_all_criteria, CriterionResult, get_status
 
 # Config
 MODEL_ID = "mlx-community/medgemma-27b-text-it-bf16"

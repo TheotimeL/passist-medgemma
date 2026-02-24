@@ -20,7 +20,7 @@ End-to-end pipeline that extracts clinical evidence from patient notes using a l
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                          OFFLINE PIPELINE (one-time)                            │
 │                                                                                 │
-│  UHC Policy PDF ──→ extract_policy.py                                          │
+│  UHC Policy PDF ──→ scripts/extract_policy.py                                  │
 │                      │                                                          │
 │                      ├─ Step 1: PyMuPDF ──→ raw text (~38K chars)              │
 │                      ├─ Step 2: Gemini 2.0-Flash ──→ cleaned RA section        │
@@ -243,48 +243,9 @@ Browser EventSource                    FastAPI                     ExtractionSer
   → triggers justification generation
 ```
 
-## Policy Extraction Pipeline (`extract_policy.py`)
+## Policy Extraction Pipeline
 
-Converts a raw insurance policy PDF into the structured decision tree JSONs used by the rest of the system. Uses Google Gemini (not MedGemma) for extraction since this is a one-time offline step.
-
-```
-UHC_Commercial_Medical_Policy_Adalimumab.pdf
-        │
-        ▼  Step 1: PyMuPDF (fitz)
-  Raw text (~38K chars)
-        │
-        ▼  Step 2: Gemini 2.0-Flash — text cleaning
-  RA-specific section (~2.8K chars)
-  (headers/footers removed, numbering preserved)
-        │
-        ▼  Step 3: LangExtract + Gemini 2.5-Flash — structured extraction
-  .jsonl with 31 items:
-  LogicGates (AND/OR), Criteria (leaf nodes), EvidenceRequirements
-  Each with logic_path encoding tree position
-        │
-        ▼  Step 4: Tree reconstruction
-  Nested AND/OR tree with auto-generated IDs
-  → rheumatoid_arthritis_initial_auth_decision_tree.json
-        │
-        ▼  Step 5: Clinical enrichment — Gemini 2.5-Flash
-  keywords, anti_keywords, search_descriptions per leaf
-  → rheumatoid_arthritis_initial_auth_decision_tree_enriched.json
-```
-
-### Running
-```bash
-# Full pipeline: PDF → clean text → extract → tree → enrich
-python extract_policy.py
-
-# Enrich an existing tree only
-python extract_policy.py --enrich-only <tree.json> --enrich-output <enriched.json>
-```
-
-### Key Design Decisions
-- **LangExtract** ensures consistent tree shape without brittle regex parsing
-- **Few-shot examples** use generic policy text to bias structure without leaking specifics
-- **No hardcoded disease logic** — works for any disease/drug/payer combination
-- **Two tree outputs**: original (shorter, used in MedGemma prompt) and enriched (keywords, used in validation pipeline)
+The offline pipeline that converts a raw insurance policy PDF into decision tree JSONs is in `scripts/extract_policy.py`. Uses Google Gemini (not MedGemma) for extraction since this is a one-time step. See that file for details on the 5-stage pipeline (PyMuPDF → Gemini text cleaning → LangExtract → tree reconstruction → clinical enrichment).
 
 ## Key Files
 
@@ -292,17 +253,19 @@ python extract_policy.py --enrich-only <tree.json> --enrich-output <enriched.jso
 | File | Purpose |
 |---|---|
 | `server.py` | FastAPI entry point, model loading at startup (lifespan) |
-| `extraction_service.py` | Singleton wrapping MedGemma extraction for web use (SSE streaming) |
+| `services/extraction_service.py` | Singleton wrapping MedGemma extraction for web use (SSE streaming) |
+| `services/patient_data.py` | FHIR parser, Section VI/IX formatter |
+| `services/policy_tree.py` | PolicyNode/PolicyStatus dataclasses, tree loading, evaluation, ID assignment + enrichment |
+| `services/pdf_form.py` | PDFFormManager class (pypdf AcroForm filling) |
+| `services/drug_field_parser.py` | Drug field parsing with MedGemma 4B |
 | `api/patients.py` | Patient listing, FHIR data, SOAP notes, justification endpoints |
 | `api/extraction.py` | SSE live extraction + pre-computed results fallback |
 | `api/form.py` | PDF generation endpoint |
-| `patient_data.py` | FHIR parser, Section VI/IX formatter, form fill orchestrator |
-| `policy_tree.py` | PolicyNode/PolicyStatus dataclasses, tree loading, evaluation, ID assignment + enrichment |
-| `pdf_form.py` | PDFFormManager class (pypdf AcroForm filling) |
-| `extract_policy.py` | Policy PDF → decision tree pipeline (PyMuPDF + LangExtract + Gemini) |
+| `scripts/extract_policy.py` | Policy PDF → decision tree pipeline (offline, PyMuPDF + LangExtract + Gemini) |
+| `scripts/benchmark_models.py` | Model benchmarking (MedGemma vs Meditron vs LLaMA) |
 
 ### Frontend (`frontend/src/`)
-| File | Purpose |©©
+| File | Purpose |
 |---|---|
 | `pages/index.vue` | Landing page — patient/insurer/drug selection |
 | `pages/workspace/[uuid].vue` | Main workspace — split panel layout, tab management |
@@ -319,7 +282,6 @@ python extract_policy.py --enrich-only <tree.json> --enrich-output <enriched.jso
 |---|---|
 | `rheumatoid_arthritis_initial_auth_decision_tree_enriched.json` | Enriched policy tree with keywords/anti_keywords |
 | `rheumatoid_arthritis_initial_auth_decision_tree.json` | Original tree (shorter descriptions, used in prompt) |
-| `rheumatoid_arthritis_initial_auth_extractions.jsonl` | Flat LangExtract output (31 items with logic_path) |
 | `rheumatoid_arthritis_initial_auth_clean.txt` | Cleaned policy text (RA section only) |
 | `rheumatoid_arthritis_initial_auth_visualization.html` | LangExtract HTML visualization of extractions |
 
@@ -393,7 +355,6 @@ cd frontend && npm run dev
 | `GET` | `/api/patients/{uuid}/fhir` | FHIR demographics |
 | `GET` | `/api/patients/{uuid}/notes` | SOAP note text |
 | `GET` | `/api/patients/{uuid}/extract` | **SSE stream** — live MedGemma extraction |
-| `GET` | `/api/patients/{uuid}/extraction` | Pre-computed extraction results |
 | `GET` | `/api/patients/{uuid}/justification` | Generated clinical justification letter |
 | `GET` | `/api/policy/tree` | Policy decision tree JSON |
 | `POST` | `/api/form/generate-pdf` | Generate filled PDF from field values |
@@ -450,16 +411,6 @@ event: complete  → {"met_criteria": [...], "eligible": false, "inference_time_
 |---|---|---|
 | UHC TX | `Patient Name`, `Paitent Gender - Male` (sic), etc. | `SECTION VI  CLINICAL DOCUMENTATION...` |
 | BCBS TX | `Patient's Name`, `Patient's Gender - Male`, etc. | `Section IX ― Justification...` (U+2015) |
-
-## Running (CLI)
-
-```bash
-# Extract evidence for a specific patient
-python test_extraction_soap.py vanesa --output extraction_vanesa.json
-
-# Extract all patients
-python test_extraction_soap.py --output all_results.json
-```
 
 ## Known Issues & Decisions
 

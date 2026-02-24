@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     backend = os.environ.get("EXTRACTION_BACKEND") or "mlx"
     if not skip or backend != "mlx":
         try:
-            from extraction_service import ExtractionService
+            from services.extraction_service import ExtractionService
             svc = ExtractionService.get_instance()
             svc.initialize()
         except Exception as e:
@@ -82,7 +82,7 @@ app.include_router(pas_bundle_router, prefix="/api")
 
 @app.get("/api/health")
 def health():
-    from extraction_service import ExtractionService
+    from services.extraction_service import ExtractionService
     svc = ExtractionService.get_instance()
     return {
         "status": "ok",

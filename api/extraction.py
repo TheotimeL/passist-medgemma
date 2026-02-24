@@ -22,7 +22,7 @@ async def extract_live(uuid: str):
     - event: complete → final extraction results
     - event: error   → error messages
     """
-    from extraction_service import ExtractionService
+    from services.extraction_service import ExtractionService
 
     svc = ExtractionService.get_instance()
     if not svc.initialized:

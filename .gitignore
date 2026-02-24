@@ -218,9 +218,6 @@ frontend/dist/
 # Jupyter notebooks (exploratory dev artifacts)
 *.ipynb
 
-# Unused scripts
-sft_dataset_creation.py
-
 # ── Project-specific ignores ─────────────────────────────────────────────────
 
 # MLX / HuggingFace model weights (large binaries, download at runtime)

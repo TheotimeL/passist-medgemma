@@ -1747,11 +1747,6 @@ defineExpose({ scrollToField, focusField })
   font-size: 12px;
   padding: 2px 6px;
 }
-.btn-save-sm, .btn-cancel-sm {
-  font-size: 10px;
-  padding: 2px 8px;
-}
-
 /* ========================================
    GROUPED DRUG VIEW
    ======================================== */
