@@ -28,7 +28,7 @@ from services.policy_tree import enrich_tree
 
 genai.configure(api_key=os.environ["LANGEXTRACT_API_KEY"])
 
-# ── Config ──────────────────────────────────────────────────────────
+# ── Config (defaults — overridden by CLI args) ──────────────────────
 POLICY_PDF = "UHC_Commercial_Medical_Policy_Adalimumab.pdf"
 DISEASE_NAME = "Rheumatoid Arthritis"
 DRUG_NAME = "Adalimumab"
@@ -41,12 +41,15 @@ MAX_PDF_PAGES = 9999
 def _slug(name):
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
-disease_slug = _slug(DISEASE_NAME)
-auth_slug = _slug(AUTH_TYPE)
-OUTPUT_CLEAN_TEXT = f"{disease_slug}_{auth_slug}_clean.txt"
-OUTPUT_FLAT_JSONL = f"{disease_slug}_{auth_slug}_extractions.jsonl"
-OUTPUT_TREE_JSON = f"{disease_slug}_{auth_slug}_decision_tree.json"
-OUTPUT_HTML = f"{disease_slug}_{auth_slug}_visualization.html"
+def _output_paths(disease: str, auth: str):
+    ds = _slug(disease)
+    asl = _slug(auth)
+    return {
+        "clean_text": f"{ds}_{asl}_clean.txt",
+        "flat_jsonl": f"{ds}_{asl}_extractions.jsonl",
+        "tree_json": f"{ds}_{asl}_decision_tree.json",
+        "html": f"{ds}_{asl}_visualization.html",
+    }
 
 # ── Generic example for LangExtract ────────────────────────────────
 GENERIC_EXAMPLE_TEXT = (
@@ -617,7 +620,15 @@ def clinically_enrich_tree(tree_path: str, output_path: str | None = None, model
 # ── Run pipeline ──────────────────────────────────────────────────
 if __name__ == "__main__":
     import argparse
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description="Extract PA policy criteria from a UHC PDF into a decision tree.")
+    ap.add_argument("--pdf", type=str, default=POLICY_PDF,
+                    help=f"Path to the policy PDF (default: {POLICY_PDF})")
+    ap.add_argument("--disease", type=str, default=DISEASE_NAME,
+                    help=f"Disease name (default: {DISEASE_NAME})")
+    ap.add_argument("--drug", type=str, default=DRUG_NAME,
+                    help=f"Drug name (default: {DRUG_NAME})")
+    ap.add_argument("--auth-type", type=str, default=AUTH_TYPE,
+                    help=f"Authorization type (default: {AUTH_TYPE})")
     ap.add_argument("--enrich-only", type=str, default=None,
                     help="Skip extraction, only enrich an existing tree JSON with clinical translations")
     ap.add_argument("--enrich-output", type=str, default=None,
@@ -629,45 +640,52 @@ if __name__ == "__main__":
         print("\nDone!")
         exit(0)
 
-    print(f"Policy: {DISEASE_NAME} / {DRUG_NAME} / {AUTH_TYPE}")
-    print(f"PDF: {POLICY_PDF}")
+    # Apply CLI args
+    policy_pdf = cli_args.pdf
+    disease_name = cli_args.disease
+    drug_name = cli_args.drug
+    auth_type = cli_args.auth_type
+    paths = _output_paths(disease_name, auth_type)
+
+    print(f"Policy: {disease_name} / {drug_name} / {auth_type}")
+    print(f"PDF: {policy_pdf}")
 
     # Step 1: Read PDF
-    print(f"\nReading PDF: {POLICY_PDF}...")
-    raw_text = read_pdf(POLICY_PDF, MAX_PDF_PAGES)
+    print(f"\nReading PDF: {policy_pdf}...")
+    raw_text = read_pdf(policy_pdf, MAX_PDF_PAGES)
     print(f"  Loaded {len(raw_text)} characters")
 
     # Step 2: Clean text
-    clean_text = clean_policy_text(raw_text, DISEASE_NAME, CLEANING_MODEL)
+    clean_text = clean_policy_text(raw_text, disease_name, CLEANING_MODEL)
     print(f"  Cleaned to {len(clean_text)} characters")
-    with open(OUTPUT_CLEAN_TEXT, "w", encoding="utf-8") as f:
+    with open(paths["clean_text"], "w", encoding="utf-8") as f:
         f.write(clean_text)
-    print(f"  Saved: {OUTPUT_CLEAN_TEXT}")
+    print(f"  Saved: {paths['clean_text']}")
 
     # Step 3: Extract criteria with LangExtract
-    result = extract_criteria(clean_text, DISEASE_NAME, DRUG_NAME, AUTH_TYPE, EXTRACTION_MODEL)
+    result = extract_criteria(clean_text, disease_name, drug_name, auth_type, EXTRACTION_MODEL)
     print(f"  Extracted {len(result.extractions)} items")
 
     # Step 4: Save flat JSONL
-    lx.io.save_annotated_documents([result], output_name=OUTPUT_FLAT_JSONL, output_dir=".")
-    print(f"  Saved: {OUTPUT_FLAT_JSONL}")
+    lx.io.save_annotated_documents([result], output_name=paths["flat_jsonl"], output_dir=".")
+    print(f"  Saved: {paths['flat_jsonl']}")
 
     # Step 5: Build and enrich tree
-    tree = reconstruct_tree(result.extractions, f"{DISEASE_NAME} - {AUTH_TYPE}")
+    tree = reconstruct_tree(result.extractions, f"{disease_name} - {auth_type}")
     tree = enrich_tree(tree)
-    with open(OUTPUT_TREE_JSON, "w", encoding="utf-8") as f:
+    with open(paths["tree_json"], "w", encoding="utf-8") as f:
         json.dump(tree, f, indent=2, ensure_ascii=False)
-    print(f"  Saved: {OUTPUT_TREE_JSON}")
+    print(f"  Saved: {paths['tree_json']}")
 
     # Step 6: Pretty-print tree
     print(f"\n{'='*80}")
-    print(f"DECISION TREE: {DISEASE_NAME} / {DRUG_NAME} / {AUTH_TYPE}")
+    print(f"DECISION TREE: {disease_name} / {drug_name} / {auth_type}")
     print(f"{'='*80}")
     print_tree(tree)
 
     # Step 7: Verify search_descriptions
     from services.policy_tree import load_tree, get_all_criteria
-    tree_node = load_tree(OUTPUT_TREE_JSON)
+    tree_node = load_tree(paths["tree_json"])
     all_criteria = get_all_criteria(tree_node)
     print(f"\n{'='*80}")
     print(f"SEARCH DESCRIPTIONS ({len(all_criteria)} criteria)")

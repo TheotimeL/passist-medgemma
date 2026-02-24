@@ -22,11 +22,15 @@ from typing import Generator
 
 # HF_TOKEN is read from environment if needed for MLX model download
 
-from config import TREE_PATH, TREE_PATH_ORIGINAL, NOTES_ROOT, NOTES_ROOT_NEW, UUID_PATTERN
+from dataclasses import dataclass, field as dc_field
+
+from config import TREE_PATH, TREE_PATH_ORIGINAL, NOTES_ROOT, NOTES_ROOT_NEW, UUID_PATTERN, POLICY, tree_paths
 from .policy_tree import load_tree, get_all_criteria, CriterionResult, get_status
 
 # Config
-MODEL_ID = "mlx-community/medgemma-27b-text-it-bf16"
+# MODEL_ID = "mlx-community/medgemma-27b-text-it-bf16"
+# MODEL_ID = "mlx-community/medgemma-27b-text-it-4bit"
+MODEL_ID = "mlx-community/medgemma-1.5-4b-it-bf16"
 
 # ── Static few-shot example (fake criteria + note, decoupled from real policy) ──
 EXAMPLE_NOTE = """SOAP NOTE — Specialist Clinic Visit
@@ -424,6 +428,18 @@ def _union_snippets(target: dict, new_snippets: list[str]) -> None:
     target["evidence_snippets"] = existing
 
 
+@dataclass
+class PolicyCacheEntry:
+    """Per-policy cached state: tree, criteria, and optional MLX KV prefix cache."""
+    slug: str
+    tree: object  # PolicyNode
+    tree_original: object  # PolicyNode
+    all_criteria: list[dict] = dc_field(default_factory=list)
+    criteria: list[dict] = dc_field(default_factory=list)
+    negated_criteria: list[dict] = dc_field(default_factory=list)
+    prefix_cache: object = None  # MLX KV cache (list of cache objects)
+
+
 class ExtractionService:
     """Singleton wrapping MedGemma extraction for web use."""
 
@@ -432,16 +448,13 @@ class ExtractionService:
     def __init__(self):
         self.model = None
         self.tokenizer = None
-        self.tree = None
-        self.tree_original = None
-        self.all_criteria: list[dict] = []
-        self.criteria: list[dict] = []
-        self.negated_criteria: list[dict] = []
         self.patients: dict[str, dict] = {}
-        self._prefix_cache = None
+        self._policy_caches: dict[str, PolicyCacheEntry] = {}
+        self._default_policy: str = POLICY
         self._sampler = None
         self._logits_processors = None
         self.initialized = False
+        self._backend = "mlx"
         self._gpu_lock = asyncio.Lock()  # Prevent concurrent GPU usage
 
     @classmethod
@@ -451,30 +464,9 @@ class ExtractionService:
         return cls._instance
 
     def initialize(self):
-        """Load model, cache prompt prefix, discover patients. Called once at startup."""
+        """Load model, cache prompt prefix for default policy, discover patients. Called once at startup."""
         if self.initialized:
             return
-
-        logger.info("ExtractionService: Loading policy trees...")
-        self.tree = load_tree(TREE_PATH)
-        leaf_nodes = get_all_criteria(self.tree)
-        self.tree_original = load_tree(TREE_PATH_ORIGINAL)
-        leaf_nodes_original = get_all_criteria(self.tree_original)
-
-        self.all_criteria = [
-            {
-                "id": cid,
-                "source_text": node.source_text or node.summary or node.name,
-                "search_description": leaf_nodes_original[cid].search_description if cid in leaf_nodes_original else node.search_description,
-                "keywords": node.keywords,
-                "anti_keywords": node.anti_keywords,
-                "negated": node.negated,
-            }
-            for cid, node in leaf_nodes.items()
-        ]
-        self.criteria = [c for c in self.all_criteria if not c.get("negated")]
-        self.negated_criteria = [c for c in self.all_criteria if c.get("negated")]
-        logger.info("  Loaded %d criteria (%d for model, %d negated)", len(self.all_criteria), len(self.criteria), len(self.negated_criteria))
 
         # Discover patients
         self.patients = self._discover_patients()
@@ -486,31 +478,76 @@ class ExtractionService:
         if backend == "mlx":
             # Load model
             logger.info("ExtractionService: Loading MedGemma model (MLX)...")
-            from mlx_lm import load, generate
-            from mlx_lm.models.cache import make_prompt_cache
-            from mlx_lm.generate import generate_step
+            from mlx_lm import load
             from mlx_lm.sample_utils import make_sampler, make_logits_processors
-            import mlx.core as mx
 
             self.model, self.tokenizer = load(str(MODEL_ID))
             self._sampler = make_sampler(temp=0.1, top_p=0.9)
             self._logits_processors = make_logits_processors(repetition_penalty=1.1)
-
-            # Cache prompt prefix
-            logger.info("ExtractionService: Caching prompt prefix...")
-            t_cache = time.time()
-            prompt_prefix = _build_prompt_prefix(self.criteria)
-            prefix_tokens = mx.array(self.tokenizer.encode(prompt_prefix))
-            self._prefix_cache = make_prompt_cache(self.model)
-            for _ in generate_step(prefix_tokens, self.model, max_tokens=0, prompt_cache=self._prefix_cache):
-                pass
-            mx.eval(*[kv.state for kv in self._prefix_cache])
-            logger.info("  Prefix cached: %d tokens (%.1fs)", self._prefix_cache[0].offset, time.time() - t_cache)
         else:
             logger.info("ExtractionService: Using %s backend (no local model loaded).", backend)
 
+        # Load default policy (trees + KV cache)
+        self._ensure_policy_loaded(self._default_policy)
+
         self.initialized = True
         logger.info("ExtractionService: Ready.")
+
+    def _ensure_policy_loaded(self, slug: str) -> PolicyCacheEntry:
+        """Load and cache a policy's trees + KV prefix. Returns cached entry if already loaded."""
+        if slug in self._policy_caches:
+            return self._policy_caches[slug]
+
+        logger.info("ExtractionService: Loading policy '%s'...", slug)
+        enriched_path, original_path = tree_paths(slug)
+
+        tree = load_tree(enriched_path)
+        leaf_nodes = get_all_criteria(tree)
+        tree_original = load_tree(original_path)
+        leaf_nodes_original = get_all_criteria(tree_original)
+
+        all_criteria = [
+            {
+                "id": cid,
+                "source_text": node.source_text or node.summary or node.name,
+                "search_description": leaf_nodes_original[cid].search_description if cid in leaf_nodes_original else node.search_description,
+                "keywords": node.keywords,
+                "anti_keywords": node.anti_keywords,
+                "negated": node.negated,
+            }
+            for cid, node in leaf_nodes.items()
+        ]
+        criteria = [c for c in all_criteria if not c.get("negated")]
+        negated_criteria = [c for c in all_criteria if c.get("negated")]
+        logger.info("  Loaded %d criteria (%d for model, %d negated)", len(all_criteria), len(criteria), len(negated_criteria))
+
+        prefix_cache = None
+        if self._backend == "mlx" and self.model is not None:
+            from mlx_lm.models.cache import make_prompt_cache
+            from mlx_lm.generate import generate_step
+            import mlx.core as mx
+
+            logger.info("  Caching KV prefix for '%s'...", slug)
+            t_cache = time.time()
+            prompt_prefix = _build_prompt_prefix(criteria)
+            prefix_tokens = mx.array(self.tokenizer.encode(prompt_prefix))
+            prefix_cache = make_prompt_cache(self.model)
+            for _ in generate_step(prefix_tokens, self.model, max_tokens=0, prompt_cache=prefix_cache):
+                pass
+            mx.eval(*[kv.state for kv in prefix_cache])
+            logger.info("  Prefix cached: %d tokens (%.1fs)", prefix_cache[0].offset, time.time() - t_cache)
+
+        entry = PolicyCacheEntry(
+            slug=slug,
+            tree=tree,
+            tree_original=tree_original,
+            all_criteria=all_criteria,
+            criteria=criteria,
+            negated_criteria=negated_criteria,
+            prefix_cache=prefix_cache,
+        )
+        self._policy_caches[slug] = entry
+        return entry
 
     def _discover_patients(self) -> dict[str, dict]:
         """Discover patients from new notes/ structure or legacy soap_notes/."""
@@ -542,6 +579,7 @@ class ExtractionService:
                     patients[uuid] = {
                         "name": name,
                         "uuid": uuid,
+                        "policy": meta.get("policy", ""),
                         "files": [n["filename"] for n in note_files],
                         "note_files": note_files,  # list of {filename, title, type, text}
                         # legacy "text" field: concatenation for backward compat
@@ -565,6 +603,7 @@ class ExtractionService:
                 patients[uuid] = {
                     "name": name,
                     "uuid": uuid,
+                    "policy": "rheumatoid_arthritis_initial_auth",
                     "files": [filename],
                     "note_files": [{"filename": filename, "title": "SOAP Note", "type": "soap", "text": note_text}],
                     "text": note_text,
@@ -572,9 +611,9 @@ class ExtractionService:
 
         return patients
 
-    def _run_inference(self, suffix: str, max_tokens: int = 8000) -> str:
-        if getattr(self, "_backend", "mlx") != "mlx":
-            full_prompt = _build_prompt_prefix(self.criteria) + suffix
+    def _run_inference(self, suffix: str, policy_entry: PolicyCacheEntry, max_tokens: int = 8000) -> str:
+        if self._backend != "mlx":
+            full_prompt = _build_prompt_prefix(policy_entry.criteria) + suffix
             # Strip Gemma chat format tokens — Gemini takes plain text
             for token in ("<start_of_turn>user\n", "<end_of_turn>\n", "<start_of_turn>model\n"):
                 full_prompt = full_prompt.replace(token, "")
@@ -584,7 +623,7 @@ class ExtractionService:
         import mlx.core as mx
         from mlx_lm import generate
 
-        cache = copy.deepcopy(self._prefix_cache)
+        cache = copy.deepcopy(policy_entry.prefix_cache)
         # Ensure all cached KV state is fully materialized on GPU before use
         mx.eval(*[kv.state for kv in cache])
         suffix_tokens = self.tokenizer.encode(suffix, add_special_tokens=False)
@@ -648,7 +687,16 @@ class ExtractionService:
         """Delegate to module-level merge_note_results()."""
         return merge_note_results(per_note_results, combined_text)
 
-    def extract(self, uuid: str) -> Generator[dict, None, None]:
+    def _resolve_policy(self, uuid: str, policy: str | None) -> str:
+        """Resolve which policy slug to use: explicit param > patient metadata > default."""
+        if policy:
+            return policy
+        pat = self.patients.get(uuid)
+        if pat and pat.get("policy"):
+            return pat["policy"]
+        return self._default_policy
+
+    def extract(self, uuid: str, policy: str | None = None) -> Generator[dict, None, None]:
         """Yield SSE events during per-note extraction.
 
         Event types:
@@ -670,6 +718,14 @@ class ExtractionService:
                 resolved = matches[0]
         if not resolved:
             yield {"type": "error", "data": {"message": f"Patient {uuid} not found"}}
+            return
+
+        # Resolve and load policy (lazily if needed)
+        slug = self._resolve_policy(resolved, policy)
+        try:
+            policy_entry = self._ensure_policy_loaded(slug)
+        except Exception as e:
+            yield {"type": "error", "data": {"message": f"Failed to load policy '{slug}': {e}"}}
             return
 
         pat = self.patients[resolved]
@@ -697,7 +753,7 @@ class ExtractionService:
 
             suffix = _build_prompt_suffix(note_text)
             t0 = time.time()
-            raw = self._run_inference(suffix, max_tokens=8000)
+            raw = self._run_inference(suffix, policy_entry, max_tokens=8000)
             run_time = time.time() - t0
             total_inference_time += run_time
 
@@ -716,7 +772,7 @@ class ExtractionService:
                 parsed = _parse_json_response(raw2)
 
             if parsed:
-                validated = validate_evidence(parsed, self.all_criteria, note_text)
+                validated = validate_evidence(parsed, policy_entry.all_criteria, note_text)
                 per_note_results.append((filename, validated))
 
                 # Update running merge
@@ -740,7 +796,7 @@ class ExtractionService:
 
         # Add negated criteria (auto-met, no source note needed)
         filtered = list(all_merged.values())
-        for nc in self.negated_criteria:
+        for nc in policy_entry.negated_criteria:
             if nc["id"] not in all_merged:
                 filtered.append({"criterion_id": nc["id"], "met": True, "evidence": "No mention found"})
 
@@ -753,7 +809,7 @@ class ExtractionService:
                 source_ref=item.get("source_note") or (pat["files"][0] if pat["files"] else ""),
             )
 
-        status = get_status(self.tree, results)
+        status = get_status(policy_entry.tree, results)
 
         yield {
             "type": "policy",

@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
             logger.warning("Failed to initialize extraction service: %s", e)
             logger.warning("Live extraction will be unavailable.")
 
-        # 4B drug field parser loads lazily on first use (after 27B finishes)
+        # 4B drug field parser loads lazily on first use (after extraction finishes)
         # to avoid Metal GPU conflicts during startup
     else:
         logger.info("SKIP_MODEL=1 — extraction will be unavailable.")

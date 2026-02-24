@@ -11,13 +11,13 @@ import logging
 import uuid as uuid_mod
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from api.schemas import GeneratePasBundleRequest
 from api.patients import _find_fhir_bundle
 from services.patient_data import load_patient_from_fhir, SNOMED_TO_ICD10, DRUG_TO_HCPCS
-from config import TREE_PATH
+from config import POLICY, tree_paths
 from services.policy_tree import load_tree, get_all_criteria
 
 logger = logging.getLogger(__name__)
@@ -359,14 +359,21 @@ def build_pas_bundle(
 
 
 @router.post("/form/generate-pas-bundle")
-def generate_pas_bundle(request: GeneratePasBundleRequest):
+def generate_pas_bundle(request: GeneratePasBundleRequest, policy: str = Query(default=None)):
     """Generate a Da Vinci PAS FHIR Bundle JSON for the patient."""
+    from pathlib import Path
+
     bundle_path = _find_fhir_bundle(request.uuid)
     if not bundle_path:
         raise HTTPException(status_code=404, detail="No FHIR bundle found")
 
+    slug = policy or POLICY
+    enriched, _ = tree_paths(slug)
+    if not Path(enriched).exists():
+        raise HTTPException(status_code=404, detail=f"Policy tree not found: {slug}")
+
     patient_data = load_patient_from_fhir(bundle_path)
-    tree = load_tree(TREE_PATH)
+    tree = load_tree(enriched)
     fields = {f.field_id: f.value for f in request.fields}
 
     bundle = build_pas_bundle(

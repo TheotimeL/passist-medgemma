@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-End-to-end pipeline that extracts clinical evidence from patient notes using a local MedGemma 27B model, evaluates it against an insurance policy decision tree, and auto-fills Prior Authorization (PA) PDF forms. Includes a full web UI for doctor review.
+End-to-end pipeline that extracts clinical evidence from patient notes using a local MedGemma 4B model, evaluates it against an insurance policy decision tree, and auto-fills Prior Authorization (PA) PDF forms. Includes a full web UI for doctor review.
 
 **Constraints:**
 - All processing is LOCAL — no external API calls (no NPI registry, UMLS, etc.)
@@ -58,7 +58,7 @@ End-to-end pipeline that extracts clinical evidence from patient notes using a l
 │  ┌─── Lifespan Startup ─────────────────────────────────────────────────────┐   │
 │  │ load_dotenv() → check SKIP_MODEL / EXTRACTION_BACKEND                   │   │
 │  │ → ExtractionService.get_instance().initialize()                          │   │
-│  │   → load MedGemma 27B (mlx-lm) or Gemini backend                       │   │
+│  │   → load MedGemma 4B (mlx-lm) or Gemini backend                       │   │
 │  │   → cache KV prefix (instructions + criteria + few-shot)                │   │
 │  │   → discover patients from notes/                                        │   │
 │  └──────────────────────────────────────────────────────────────────────────┘   │
@@ -372,7 +372,7 @@ event: complete  → {"met_criteria": [...], "eligible": false, "inference_time_
 
 ## MedGemma Extraction Pipeline
 
-- **Model**: `mlx-community/medgemma-27b-text-it-bf16` (local MLX)
+- **Model**: `mlx-community/medgemma-1.5-4b-it-bf16` (local MLX)
 - **Prompt caching**: Static prefix (instructions + criteria + few-shot example) cached as KV, only patient note changes per inference
 - **Per-note extraction**: One inference run per note file, results merged progressively (keeps longer evidence on collision). Run count depends on number of notes the patient has.
 - **Chain-of-thought**: Model reasons through each criterion before outputting JSON

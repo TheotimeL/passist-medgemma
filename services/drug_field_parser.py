@@ -3,7 +3,7 @@
 Extracts structured drug fields (name, strength, route, frequency, dates,
 is_prior_therapy, failure_reason) from raw clinical evidence text.
 
-The 27B extraction model focuses on finding evidence; this small 4B model
+The extraction model focuses on finding evidence; this small 4B model
 handles the structured field extraction as a fast post-processing step.
 
 Loaded lazily on first use — does NOT block server startup.
@@ -293,7 +293,7 @@ class DrugFieldParser:
         from mlx_lm import generate
         from mlx_lm.sample_utils import make_sampler
 
-        # Clear any lingering Metal state from the 27B model
+        # Clear any lingering Metal state from the extraction model
         mx.eval()
         mx.clear_cache()
 

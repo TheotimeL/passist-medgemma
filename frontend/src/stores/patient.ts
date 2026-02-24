@@ -8,6 +8,7 @@ export interface PatientSummary {
   has_fhir: boolean
   eligible: boolean | null
   eligibility_reason: string
+  policy: string
 }
 
 export interface PatientFhir {
@@ -51,10 +52,11 @@ export const usePatientStore = defineStore('patient', () => {
   const loadingFhir = ref(false)
   const loadingNotes = ref(false)
 
-  async function fetchPatients() {
+  async function fetchPatients(policy?: string) {
     loadingPatients.value = true
     try {
-      const res = await fetch('/api/patients')
+      const url = policy ? `/api/patients?policy=${encodeURIComponent(policy)}` : '/api/patients'
+      const res = await fetch(url)
       patients.value = await res.json()
     } finally {
       loadingPatients.value = false

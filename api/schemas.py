@@ -12,6 +12,7 @@ class PatientSummary(BaseModel):
     has_fhir: bool
     eligible: bool | None = None
     eligibility_reason: str = ""
+    policy: str = ""
 
 
 class PatientFhir(BaseModel):

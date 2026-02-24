@@ -5,14 +5,14 @@ from __future__ import annotations
 import asyncio
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 
 
 @router.get("/patients/{uuid}/extract")
-async def extract_live(uuid: str):
+async def extract_live(uuid: str, policy: str = Query(default=None)):
     """SSE endpoint for live MedGemma extraction.
 
     Streams events progressively as the extraction runs:
@@ -36,7 +36,7 @@ async def extract_live(uuid: str):
 
         def run_extraction():
             try:
-                for event in svc.extract(uuid):
+                for event in svc.extract(uuid, policy=policy):
                     loop.call_soon_threadsafe(queue.put_nowait, event)
             except Exception as e:
                 loop.call_soon_threadsafe(

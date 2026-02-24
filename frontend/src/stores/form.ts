@@ -311,10 +311,11 @@ export const useFormStore = defineStore('form', () => {
     _maybe('icd_version', 'ICD Version', 'diagnosis')
   }
 
-  async function fetchJustification(uuid: string, metCriteria: ExtractionResult[] = [], fieldOverrides: Record<string, string> = {}) {
+  async function fetchJustification(uuid: string, metCriteria: ExtractionResult[] = [], fieldOverrides: Record<string, string> = {}, policy = '') {
     justificationLoading.value = true
     try {
-      const res = await fetch(`/api/patients/${uuid}/justification`, {
+      const params = policy ? `?policy=${encodeURIComponent(policy)}` : ''
+      const res = await fetch(`/api/patients/${uuid}/justification${params}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ met_criteria: metCriteria, field_overrides: fieldOverrides }),

@@ -4,7 +4,7 @@ AI-powered Prior Authorization form filling using local clinical evidence extrac
 
 ## What It Does
 
-This pipeline extracts clinical evidence from patient notes using a local MedGemma 27B model, evaluates it against an insurance policy decision tree (AND/OR logic), and auto-fills Prior Authorization PDF forms. A web UI lets physicians review AI-extracted fields, override policy criteria, and download the completed PA form — all running locally with no external API calls.
+This pipeline extracts clinical evidence from patient notes using a local MedGemma 4B model, evaluates it against an insurance policy decision tree (AND/OR logic), and auto-fills Prior Authorization PDF forms. A web UI lets physicians review AI-extracted fields, override policy criteria, and download the completed PA form — all running locally with no external API calls.
 
 **Key idea:** AI drafts ~75% of form fields from FHIR records and clinical notes. The doctor reviews, accepts/rejects/edits each field, then downloads the filled PDF.
 
@@ -42,7 +42,7 @@ Open http://localhost:5173, select a patient, and explore the full workflow.
 ### Run (Full Mode — Apple Silicon)
 
 ```bash
-# Backend with live MedGemma 27B inference
+# Backend with live MedGemma 4B inference
 uv run uvicorn server:app --port 8000
 
 # Frontend
@@ -55,7 +55,7 @@ cd frontend && npm run dev
 FHIR Bundles (Synthea)  ─┐
                           ├──→ FastAPI Backend (:8000) ──→ Vue 3 Frontend (:5173)
 Clinical Notes (SOAP)   ─┘         │
-                                   ├─ MedGemma 27B (MLX, local)
+                                   ├─ MedGemma 4B (MLX, local)
 Policy Decision Tree ──────────────┤   └─ KV cache reuse for fast inference
                                    ├─ Evidence validation (multi-stage pipeline)
 PA Form Template (PDF) ────────────┤   └─ Spam, n-gram grounding, keyword checks
@@ -121,7 +121,7 @@ PA Form Template (PDF) ────────────┤   └─ Spam, n-
 
 | Layer | Technology |
 |---|---|
-| LLM | MedGemma 27B (mlx-lm on Apple Silicon) or Gemini 2.5 Flash |
+| LLM | MedGemma 4B (mlx-lm on Apple Silicon) or Gemini 2.5 Flash |
 | Backend | FastAPI + Uvicorn |
 | Frontend | Vue 3 + TypeScript + Vuetify 3 + Pinia |
 | PDF | pypdf (AcroForm filling) |

@@ -1,11 +1,21 @@
 """Shared constants used across the backend."""
 
+import os
 import re
 from pathlib import Path
 
-# Policy decision trees
-TREE_PATH = "rheumatoid_arthritis_initial_auth_decision_tree_enriched.json"
-TREE_PATH_ORIGINAL = "rheumatoid_arthritis_initial_auth_decision_tree.json"
+# Policy decision trees — derived from POLICY env var
+POLICY = os.environ.get("POLICY", "rheumatoid_arthritis_initial_auth")
+TREE_PATH = f"{POLICY}_decision_tree_enriched.json"
+TREE_PATH_ORIGINAL = f"{POLICY}_decision_tree.json"
+
+
+def tree_paths(slug: str) -> tuple[str, str]:
+    """Return (enriched_path, original_path) for a given policy slug."""
+    return (
+        f"{slug}_decision_tree_enriched.json",
+        f"{slug}_decision_tree.json",
+    )
 
 # Patient notes directories
 NOTES_ROOT = Path("soap_notes")       # legacy single-file structure

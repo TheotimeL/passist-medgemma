@@ -27,6 +27,7 @@ SNOMED_TO_ICD10: dict[str, tuple[str, str]] = {
     "287007002": ("M05.70", "Seropositive rheumatoid arthritis, multiple sites"),
     "201791009": ("M05.79", "Flare of rheumatoid arthritis"),
     "410795001": ("M05.70", "Erosive rheumatoid arthritis"),
+    "106181007": ("D84.1", "Hereditary angioedema"),
 }
 
 # FHIR encounter class → human-readable location name
@@ -47,6 +48,8 @@ DRUG_TO_HCPCS: dict[str, str] = {
     "tofacitinib": "J3590",
     "baricitinib": "J3590",
     "upadacitinib": "J3590",
+    "lanadelumab": "J0593",
+    "takhzyro": "J0593",
 }
 
 

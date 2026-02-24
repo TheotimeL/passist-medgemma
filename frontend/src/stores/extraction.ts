@@ -242,7 +242,7 @@ export const useExtractionStore = defineStore('extraction', () => {
   }
 
   /** Start extraction — requires live model. */
-  async function fetchExtraction(uuid: string) {
+  async function fetchExtraction(uuid: string, policy = '') {
     isExtracting.value = true
     progress.value = 'Starting extraction...'
     error.value = null
@@ -260,7 +260,7 @@ export const useExtractionStore = defineStore('extraction', () => {
     }
 
     if (modelLoaded.value) {
-      startLiveExtraction(uuid)
+      startLiveExtraction(uuid, policy)
       return
     }
 
@@ -270,11 +270,14 @@ export const useExtractionStore = defineStore('extraction', () => {
   }
 
   /** Start SSE extraction stream. */
-  function startLiveExtraction(uuid: string) {
+  function startLiveExtraction(uuid: string, policy = '') {
     isExtracting.value = true
     progress.value = 'Starting clinical extraction...'
 
-    eventSource = new EventSource(`/api/patients/${uuid}/extract`)
+    const url = policy
+      ? `/api/patients/${uuid}/extract?policy=${encodeURIComponent(policy)}`
+      : `/api/patients/${uuid}/extract`
+    eventSource = new EventSource(url)
 
     eventSource.addEventListener('status', (e: MessageEvent) => {
       const data = JSON.parse(e.data)
@@ -324,11 +327,21 @@ export const useExtractionStore = defineStore('extraction', () => {
       isExtracting.value = false
     })
 
-    // Handle connection errors
-    eventSource.onerror = () => {
+    // Handle connection errors — EventSource doesn't expose HTTP status codes,
+    // so retry with fetch to surface the actual error message (e.g. 409 policy mismatch).
+    eventSource.onerror = async () => {
       eventSource?.close()
       eventSource = null
       if (!complete.value) {
+        try {
+          const errRes = await fetch(url)
+          if (!errRes.ok) {
+            const data = await errRes.json().catch(() => ({}))
+            error.value = data.detail || `Extraction failed (${errRes.status})`
+            isExtracting.value = false
+            return
+          }
+        } catch { /* fall through to generic message */ }
         error.value = 'SSE connection error'
         isExtracting.value = false
       }

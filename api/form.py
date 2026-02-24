@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import logging
+import re
 import tempfile
 from datetime import datetime
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
 
@@ -20,11 +22,52 @@ from services.patient_data import (
     SNOMED_TO_ICD10,
     DRUG_TO_HCPCS,
 )
-from config import TREE_PATH
+from config import TREE_PATH, POLICY, tree_paths
 from services.policy_tree import load_tree, get_status, get_all_criteria, CriterionResult, tree_to_dict
 from services.pdf_form import PDFFormManager
 
 router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Known policy → drug/insurer mapping (derived from policy tree filenames)
+# ---------------------------------------------------------------------------
+# Maps the slug prefix (e.g. "rheumatoid_arthritis_initial_auth") to display metadata.
+# This avoids guessing drug names from filenames — each policy has a known drug.
+_POLICY_METADATA: dict[str, dict] = {
+    "rheumatoid_arthritis_initial_auth": {
+        "drug": "Adalimumab (Humira)",
+        "disease": "Rheumatoid Arthritis",
+        "insurer": "UHC",
+    },
+    "hereditary_angioedema_initial_auth": {
+        "drug": "Haegarda (C1 Esterase Inhibitor)",
+        "disease": "Hereditary Angioedema",
+        "insurer": "UHC",
+        "hidden": True,
+    },
+}
+
+
+@router.get("/config")
+def get_config():
+    """Return available drugs/policies based on tree files on disk."""
+    root = Path(".")
+    policies = []
+    for tree_file in sorted(root.glob("*_decision_tree_enriched.json")):
+        slug = tree_file.name.replace("_decision_tree_enriched.json", "")
+        meta = _POLICY_METADATA.get(slug, {})
+        if meta.get("hidden"):
+            continue
+        policies.append({
+            "slug": slug,
+            "drug": meta.get("drug", slug.replace("_", " ").title()),
+            "disease": meta.get("disease", ""),
+            "insurer": meta.get("insurer", "UHC"),
+        })
+
+    drugs = list({p["drug"] for p in policies})
+    insurers = list({p["insurer"] for p in policies})
+    return {"policies": policies, "drugs": drugs, "insurers": insurers}
 
 # Form template URLs
 FORM_TEMPLATES = {
@@ -137,17 +180,26 @@ def get_field_mapping():
     return {**FIELD_ID_TO_PDF, **COMPUTED_FIELD_TO_PDF}
 
 
+def _resolve_tree_path(policy: str | None) -> str:
+    """Resolve policy slug to enriched tree path, with 404 guard."""
+    slug = policy or POLICY
+    enriched, _ = tree_paths(slug)
+    if not Path(enriched).exists():
+        raise HTTPException(status_code=404, detail=f"Policy tree not found: {slug}")
+    return enriched
+
+
 @router.get("/policy/tree")
-def get_policy_tree():
+def get_policy_tree(policy: str = Query(default=None)):
     """Return the enriched policy decision tree."""
-    tree = load_tree(TREE_PATH)
+    tree = load_tree(_resolve_tree_path(policy))
     return tree_to_dict(tree)
 
 
 @router.get("/policy/criteria")
-def get_policy_criteria():
+def get_policy_criteria(policy: str = Query(default=None)):
     """Return flat list of all leaf criteria."""
-    tree = load_tree(TREE_PATH)
+    tree = load_tree(_resolve_tree_path(policy))
     criteria = get_all_criteria(tree)
     return [
         {
@@ -174,7 +226,7 @@ async def parse_drug_fields(request: ParseDrugFieldsRequest):
     drug_name, drug_strength, drug_route, drug_frequency, drug_dates,
     is_prior_therapy, and failure_reason from the evidence text.
 
-    Serialized via the same GPU lock as the 27B extraction to prevent
+    Serialized via the same GPU lock as the extraction model to prevent
     Metal GPU conflicts.
     """
     import asyncio
@@ -229,14 +281,14 @@ class JustificationRequest(BaseModel):
 
 
 @router.post("/patients/{uuid}/justification")
-def get_justification(uuid: str, body: JustificationRequest):
+def get_justification(uuid: str, body: JustificationRequest, policy: str = Query(default=None)):
     """Generate the clinical justification letter for a patient."""
     bundle_path = _find_fhir_bundle(uuid)
     if not bundle_path:
         raise HTTPException(status_code=404, detail="No FHIR bundle found")
 
     patient_data = load_patient_from_fhir(bundle_path)
-    tree = load_tree(TREE_PATH)
+    tree = load_tree(_resolve_tree_path(policy))
 
     extraction_results: list[dict] = body.met_criteria
 
@@ -261,7 +313,7 @@ def get_justification(uuid: str, body: JustificationRequest):
 
 
 @router.post("/form/generate-pdf")
-def generate_pdf(request: GeneratePdfRequest):
+def generate_pdf(request: GeneratePdfRequest, policy: str = Query(default=None)):
     """Generate a filled PA form PDF.
 
     ONLY populates fields that the user explicitly accepted/edited
@@ -272,7 +324,7 @@ def generate_pdf(request: GeneratePdfRequest):
         raise HTTPException(status_code=404, detail="No FHIR bundle found")
 
     patient_data = load_patient_from_fhir(bundle_path)
-    tree = load_tree(TREE_PATH)
+    tree = load_tree(_resolve_tree_path(policy))
 
     template_url = FORM_TEMPLATES.get(request.insurer)
     if not template_url:

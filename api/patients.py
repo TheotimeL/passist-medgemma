@@ -7,7 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from pathlib import Path
 
@@ -105,7 +105,7 @@ def _discover_patients() -> dict[str, dict]:
                 if not uuid or not name:
                     continue
                 files = [n["filename"] for n in meta.get("notes", [])]
-                patients[uuid] = {"name": name, "uuid": uuid, "files": files}
+                patients[uuid] = {"name": name, "uuid": uuid, "files": files, "policy": meta.get("policy", "")}
             except (json.JSONDecodeError, KeyError):
                 logger.warning("Failed to parse metadata: %s", metadata_file)
                 continue
@@ -121,7 +121,7 @@ def _discover_patients() -> dict[str, dict]:
                 continue  # Already covered by new structure
             name = m.group("name").replace("_", " ")
             if uuid not in patients:
-                patients[uuid] = {"name": name, "uuid": uuid, "files": []}
+                patients[uuid] = {"name": name, "uuid": uuid, "files": [], "policy": "rheumatoid_arthritis_initial_auth"}
             patients[uuid]["files"].append(txt_file.name)
 
     return patients
@@ -143,10 +143,13 @@ def _resolve_uuid(uuid_or_prefix: str) -> str:
 
 
 @router.get("/patients", response_model=list[PatientSummary])
-def list_patients():
+def list_patients(policy: str = Query(default=None)):
     patients = _discover_patients()
     result = []
     for uuid, info in patients.items():
+        # Filter by policy if requested — patients with no policy field are always shown
+        if policy and info.get("policy") and info["policy"] != policy:
+            continue
         if _find_fhir_bundle(uuid) is None:
             continue
         prefix = uuid[:8]
@@ -159,6 +162,7 @@ def list_patients():
                 has_fhir=True,
                 eligible=elig.get("eligible"),
                 eligibility_reason=elig.get("reason", ""),
+                policy=info.get("policy", ""),
             )
         )
     return sorted(result, key=lambda p: p.name)

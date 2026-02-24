@@ -257,7 +257,7 @@
 
         <!-- Policy Mode -->
         <div v-show="rightMode === 'policy'" class="right-body policy-body">
-          <PolicyTree @view-source="(ev: string, sn?: string, snippets?: string[]) => onPolicyViewSource(ev, sn, snippets)" />
+          <PolicyTree :policy="policySlug" @view-source="(ev: string, sn?: string, snippets?: string[]) => onPolicyViewSource(ev, sn, snippets)" />
         </div>
 
         <!-- Justification Mode — split: criteria reference + editor -->
@@ -459,6 +459,7 @@ const justificationTabAvailable = computed(() => extractionStore.allCriteriaRevi
 const pdfSaveEnabled = computed(() => justificationVisited.value && (formStore.acceptedCount > 0 || formStore.totalFilledCount > 0))
 
 const uuid = computed(() => (route.params as { uuid: string }).uuid)
+const policySlug = computed(() => (route.query.policy as string) || '')
 
 const statusKey = computed(() => {
   const ps = extractionStore.policyStatus
@@ -522,7 +523,7 @@ watch(() => extractionStore.complete, async (done) => {
     formStore.addExtractionResults(extractionStore.results)
 
     // Fetch clinical justification after drug fields are populated
-    formStore.fetchJustification(uuid.value, extractionStore.effectiveResults, formStore.justificationOverrides)
+    formStore.fetchJustification(uuid.value, extractionStore.effectiveResults, formStore.justificationOverrides, policySlug.value)
     // Auto-generate first PDF preview once extraction is done
     if (!pdfPreviewData.value && formStore.totalFilledCount > 0) {
       generatePreview()
@@ -550,7 +551,7 @@ watch(() => extractionStore.overrides, () => {
   if (!formStore.justificationText || !extractionStore.complete) return
   if (justificationDebounce) clearTimeout(justificationDebounce)
   justificationDebounce = setTimeout(() => {
-    formStore.fetchJustification(uuid.value, extractionStore.effectiveResults, formStore.justificationOverrides)
+    formStore.fetchJustification(uuid.value, extractionStore.effectiveResults, formStore.justificationOverrides, policySlug.value)
   }, 800)
 }, { deep: true })
 
@@ -585,10 +586,10 @@ onMounted(async () => {
     // Auto-generate PDF preview with FHIR fields so PDF shows demographics immediately
     generatePreview()
   }
-  await extractionStore.fetchExtraction(uuid.value)
+  await extractionStore.fetchExtraction(uuid.value, policySlug.value)
   // If extraction already completed (e.g. fast SSE), trigger justification fetch now
   if (extractionStore.complete && extractionStore.policyStatus && !formStore.justificationText) {
-    formStore.fetchJustification(uuid.value, extractionStore.effectiveResults, formStore.justificationOverrides)
+    formStore.fetchJustification(uuid.value, extractionStore.effectiveResults, formStore.justificationOverrides, policySlug.value)
   }
 })
 
@@ -684,7 +685,8 @@ async function generatePreview() {
       return
     }
 
-    const res = await fetch('/api/form/generate-pdf', {
+    const pdfParams = policySlug.value ? `?policy=${encodeURIComponent(policySlug.value)}` : ''
+    const res = await fetch(`/api/form/generate-pdf${pdfParams}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -725,7 +727,8 @@ async function downloadPdf() {
       .filter(f => f.status !== 'rejected' && f.value)
       .map(f => ({ field_id: f.fieldId, value: f.value, status: f.status }))
 
-    const res = await fetch('/api/form/generate-pdf', {
+    const dlParams = policySlug.value ? `?policy=${encodeURIComponent(policySlug.value)}` : ''
+    const res = await fetch(`/api/form/generate-pdf${dlParams}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -771,7 +774,8 @@ async function exportFhir() {
       overridesMap[id] = (ov as { met: boolean }).met
     }
 
-    const res = await fetch('/api/form/generate-pas-bundle', {
+    const fhirParams = policySlug.value ? `?policy=${encodeURIComponent(policySlug.value)}` : ''
+    const res = await fetch(`/api/form/generate-pas-bundle${fhirParams}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

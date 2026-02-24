@@ -124,16 +124,24 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePatientStore } from '@/stores/patient'
+
+interface PolicyInfo {
+  slug: string
+  drug: string
+  disease: string
+  insurer: string
+}
 
 const router = useRouter()
 const patientStore = usePatientStore()
 
 const selectedPatient = ref<string | null>(null)
 const selectedInsurer = ref('UHC')
-const selectedDrug = ref('Adalimumab (Humira)')
+const selectedDrug = ref('')
+const selectedPolicy = ref('')
 const navigating = ref(false)
 
 const patientItems = computed(() =>
@@ -145,17 +153,58 @@ const patientItems = computed(() =>
   }))
 )
 
-const insurerItems = ['UHC']
-const drugItems = ['Adalimumab (Humira)']
+const insurerItems = ref<string[]>(['UHC'])
+const drugItems = ref<string[]>([])
+const policies = ref<PolicyInfo[]>([])
 
-onMounted(() => {
-  patientStore.fetchPatients()
+// Map drug display name → policy slug
+const drugToSlug = computed(() => {
+  const map: Record<string, string> = {}
+  for (const p of policies.value) {
+    map[p.drug] = p.slug
+  }
+  return map
+})
+
+// Keep selectedPolicy in sync with selectedDrug
+watch(selectedDrug, (drug) => {
+  selectedPolicy.value = drugToSlug.value[drug] || ''
+})
+
+async function fetchConfig() {
+  try {
+    const res = await fetch('/api/config')
+    const data = await res.json()
+    if (data.policies?.length) policies.value = data.policies
+    if (data.drugs?.length) drugItems.value = data.drugs
+    if (data.insurers?.length) insurerItems.value = data.insurers
+    if (!selectedDrug.value && drugItems.value.length) {
+      selectedDrug.value = drugItems.value[0]
+    }
+  } catch {
+    drugItems.value = ['Adalimumab (Humira)']
+    if (!selectedDrug.value) selectedDrug.value = drugItems.value[0]
+  }
+}
+
+// Re-fetch patients when selected policy changes (drug switch)
+watch(selectedPolicy, (policy) => {
+  selectedPatient.value = null
+  patientStore.fetchPatients(policy || undefined)
+})
+
+onMounted(async () => {
+  await fetchConfig()
+  // Initial patient fetch will be triggered by the selectedPolicy watcher
+  // after fetchConfig sets the default drug → policy
 })
 
 function startReview() {
   if (selectedPatient.value) {
     navigating.value = true
-    router.push(`/workspace/${selectedPatient.value}?drug=${encodeURIComponent(selectedDrug.value)}`)
+    const params = new URLSearchParams({ drug: selectedDrug.value })
+    if (selectedPolicy.value) params.set('policy', selectedPolicy.value)
+    router.push(`/workspace/${selectedPatient.value}?${params.toString()}`)
   }
 }
 </script>

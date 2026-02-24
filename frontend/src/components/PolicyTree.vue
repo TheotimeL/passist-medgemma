@@ -76,6 +76,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useExtractionStore } from '@/stores/extraction'
 import PolicyTreeNode from './PolicyTreeNode.vue'
 
+const props = defineProps<{ policy?: string }>()
+
 const emit = defineEmits<{
   viewSource: [evidence: string, sourceNote?: string, snippets?: string[]]
 }>()
@@ -241,7 +243,8 @@ function findBlockers(node: TreeNode, names: string[]) {
 
 onMounted(async () => {
   try {
-    const res = await fetch('/api/policy/tree')
+    const params = props.policy ? `?policy=${encodeURIComponent(props.policy)}` : ''
+    const res = await fetch(`/api/policy/tree${params}`)
     if (res.ok) {
       const data = await res.json()
       treeData.value = data
