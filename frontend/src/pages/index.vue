@@ -179,11 +179,11 @@ async function fetchConfig() {
     if (data.drugs?.length) drugItems.value = data.drugs
     if (data.insurers?.length) insurerItems.value = data.insurers
     if (!selectedDrug.value && drugItems.value.length) {
-      selectedDrug.value = drugItems.value[0]
+      selectedDrug.value = drugItems.value[0] ?? ''
     }
   } catch {
     drugItems.value = ['Adalimumab (Humira)']
-    if (!selectedDrug.value) selectedDrug.value = drugItems.value[0]
+    if (!selectedDrug.value) selectedDrug.value = drugItems.value[0] ?? ''
   }
 }
 
