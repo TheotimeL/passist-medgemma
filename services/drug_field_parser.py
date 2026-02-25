@@ -130,6 +130,8 @@ class DrugFieldParser:
             from mlx_lm import load
             self._model, self._tokenizer = load(str(_MODEL_ID))
             logger.info("DrugFieldParser: Ready.")
+        elif backend == "ollama":
+            logger.info("DrugFieldParser: Using Ollama backend (model managed by Ollama server).")
         else:
             logger.info("DrugFieldParser: Using %s backend.", backend)
 
@@ -159,7 +161,7 @@ class DrugFieldParser:
 
         # Run inference (model is primed with "[" so we prepend it)
         raw = self._run_inference(prompt, max_tokens=2048)
-        if getattr(self, "_backend", "mlx") == "mlx":
+        if self._backend == "mlx":
             raw = "[" + raw
         logger.debug("Raw output (first 500 chars): %s", raw[:500])
         parsed = self._parse_json(raw)
@@ -262,7 +264,7 @@ class DrugFieldParser:
         prompt = _PRESCRIBER_PROMPT_TEMPLATE.format(entries_text=entries_text)
 
         raw = self._run_inference(prompt, max_tokens=512)
-        if getattr(self, "_backend", "mlx") == "mlx":
+        if self._backend == "mlx":
             raw = "[" + raw
         logger.debug("Prescriber raw output (first 500 chars): %s", raw[:500])
         parsed = self._parse_json(raw)
@@ -286,6 +288,8 @@ class DrugFieldParser:
 
     def _run_inference(self, prompt: str, max_tokens: int = 1024) -> str:
         if getattr(self, "_backend", "mlx") != "mlx":
+            if self._backend == "ollama":
+                return self._run_inference_ollama(prompt, max_tokens)
             return self._run_inference_gemini(prompt, max_tokens)
 
         import gc
@@ -310,6 +314,18 @@ class DrugFieldParser:
         mx.clear_cache()
 
         return output.strip()
+
+    def _run_inference_ollama(self, prompt: str, max_tokens: int = 2048) -> str:
+        import requests as _requests
+        host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+        response = _requests.post(f"{host}/api/generate", json={
+            "model": "MedAIBase/MedGemma1.5",
+            "prompt": prompt,
+            "stream": False,
+            "options": {"temperature": 0.1, "num_predict": max_tokens},
+        })
+        response.raise_for_status()
+        return response.json()["response"].strip()
 
     def _run_inference_gemini(self, prompt: str, max_tokens: int = 2048) -> str:
         from google import genai

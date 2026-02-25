@@ -128,5 +128,7 @@ See [CLAUDE.md](./CLAUDE.md) for comprehensive architecture documentation includ
 ---
 
 <p align="center">
-  Built for the Google MedGemma Hackathon 2025
+  This project is submitted to the MedGemma Impact Challenge. The code and documentation are licensed under CC BY 4.0.
 </p>
+
+Copyright (c) 2026 Thibaud SOUTHIRATN and Théotime LAVISSE.

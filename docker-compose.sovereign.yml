@@ -1,0 +1,47 @@
+# Sovereign AI Node — fully local inference, no PHI leaves the network.
+#
+# Usage:
+#   docker compose -f docker-compose.sovereign.yml up --build
+#
+# Requirements:
+#   - NVIDIA GPU with Docker GPU support (nvidia-container-toolkit)
+#   - ~3 GB VRAM for MedAIBase/MedGemma1.5
+#
+# First startup pulls the MedAIBase/MedGemma1.5 model (~2.5 GB) — subsequent starts are instant.
+
+services:
+  ollama:
+    image: ollama/ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    # Start Ollama server, wait for it, then pull the model
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull MedAIBase/MedGemma1.5 && wait"]
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.sovereign
+    ports:
+      - "8080:8080"
+    environment:
+      - EXTRACTION_BACKEND=ollama
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+volumes:
+  ollama_data:

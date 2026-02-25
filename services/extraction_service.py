@@ -484,6 +484,8 @@ class ExtractionService:
             self.model, self.tokenizer = load(str(MODEL_ID))
             self._sampler = make_sampler(temp=0.1, top_p=0.9)
             self._logits_processors = make_logits_processors(repetition_penalty=1.1)
+        elif backend == "ollama":
+            logger.info("ExtractionService: Using Ollama backend (model managed by Ollama server).")
         else:
             logger.info("ExtractionService: Using %s backend (no local model loaded).", backend)
 
@@ -614,9 +616,11 @@ class ExtractionService:
     def _run_inference(self, suffix: str, policy_entry: PolicyCacheEntry, max_tokens: int = 8000) -> str:
         if self._backend != "mlx":
             full_prompt = _build_prompt_prefix(policy_entry.criteria) + suffix
-            # Strip Gemma chat format tokens — Gemini takes plain text
+            # Strip Gemma chat format tokens — non-MLX backends take plain text
             for token in ("<start_of_turn>user\n", "<end_of_turn>\n", "<start_of_turn>model\n"):
                 full_prompt = full_prompt.replace(token, "")
+            if self._backend == "ollama":
+                return self._run_inference_ollama(full_prompt, max_tokens)
             return self._run_inference_gemini(full_prompt, max_tokens)
 
         import gc
@@ -643,6 +647,8 @@ class ExtractionService:
         if getattr(self, "_backend", "mlx") != "mlx":
             for token in ("<start_of_turn>user\n", "<end_of_turn>\n", "<start_of_turn>model\n"):
                 prompt = prompt.replace(token, "")
+            if self._backend == "ollama":
+                return self._run_inference_ollama(prompt, max_tokens)
             return self._run_inference_gemini(prompt, max_tokens)
 
         from mlx_lm import generate
@@ -652,6 +658,18 @@ class ExtractionService:
             verbose=False, sampler=self._sampler, logits_processors=self._logits_processors,
         )
         return output.strip()
+
+    def _run_inference_ollama(self, prompt: str, max_tokens: int = 8000) -> str:
+        import requests as _requests
+        host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+        response = _requests.post(f"{host}/api/generate", json={
+            "model": "MedAIBase/MedGemma1.5",
+            "prompt": prompt,
+            "stream": False,
+            "options": {"temperature": 0.1, "top_p": 0.9, "num_predict": max_tokens},
+        })
+        response.raise_for_status()
+        return response.json()["response"].strip()
 
     def _run_inference_gemini(self, prompt: str, max_tokens: int = 8000) -> str:
         from google import genai
