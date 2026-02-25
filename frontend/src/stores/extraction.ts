@@ -20,6 +20,7 @@ export interface ExtractionResult {
   prescriber_name?: string
   prescriber_specialty?: string
   source_note?: string
+  source_uri?: string
 }
 
 // Collect leaf nodes from the policy tree for building criteria list

@@ -16,6 +16,7 @@ import os
 import re
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 from typing import Generator
@@ -396,7 +397,9 @@ def merge_note_results(
     for filename, items in per_note_results:
         for item in items:
             cid = item.get("criterion_id", "")
-            item_with_source = {**item, "source_note": filename}
+            evidence_text = item.get("evidence", "")
+            source_uri = _build_source_uri(filename, evidence_text) if evidence_text else ""
+            item_with_source = {**item, "source_note": filename, "source_uri": source_uri}
             if cid not in merged:
                 merged[cid] = item_with_source
             else:
@@ -414,6 +417,15 @@ def merge_note_results(
                     # Rebuild joined evidence from unified snippets
                     existing["evidence"] = "\n".join(existing.get("evidence_snippets", []))
     return merged
+
+
+def _build_source_uri(filename: str, evidence_snippet: str) -> str:
+    """Build a linkable URI for evidence traceability.
+
+    Format: notes/{filename}#evidence={url_encoded_first_80_chars}
+    """
+    truncated = evidence_snippet[:80].strip()
+    return f"notes/{filename}#evidence={quote(truncated, safe='')}"
 
 
 def _union_snippets(target: dict, new_snippets: list[str]) -> None:
@@ -660,6 +672,7 @@ class ExtractionService:
         return output.strip()
 
     def _run_inference_ollama(self, prompt: str, max_tokens: int = 8000) -> str:
+        # Ollama serves models in GGUF format (quantized for efficient GPU inference)
         import requests as _requests
         host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
         response = _requests.post(f"{host}/api/generate", json={
@@ -825,6 +838,7 @@ class ExtractionService:
             results[cid] = CriterionResult(
                 criterion_id=cid, met=True, evidence=item.get("evidence", ""),
                 source_ref=item.get("source_note") or (pat["files"][0] if pat["files"] else ""),
+                source_uri=item.get("source_uri", ""),
             )
 
         status = get_status(policy_entry.tree, results)

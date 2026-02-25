@@ -316,6 +316,7 @@ class DrugFieldParser:
         return output.strip()
 
     def _run_inference_ollama(self, prompt: str, max_tokens: int = 2048) -> str:
+        # Ollama serves models in GGUF format (quantized for efficient GPU inference)
         import requests as _requests
         host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
         response = _requests.post(f"{host}/api/generate", json={

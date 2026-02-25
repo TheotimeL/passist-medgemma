@@ -52,6 +52,7 @@ class CriterionResult:
     met: bool | None = None
     evidence: str = ""
     source_ref: str = ""
+    source_uri: str = ""
 
 
 @dataclass
@@ -271,6 +272,7 @@ def get_status(tree: PolicyNode, results: dict[str, CriterionResult]) -> PolicyS
             "status": status,
             "evidence": cr.evidence if cr else "",
             "source_ref": cr.source_ref if cr else "",
+            "source_uri": cr.source_uri if cr else "",
         })
 
     overall = evaluate(tree, results)

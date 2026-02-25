@@ -62,6 +62,7 @@ class ExtractionResult(BaseModel):
     prescriber_name: str | None = None
     prescriber_specialty: str | None = None
     source_note: str | None = None
+    source_uri: str | None = None
 
 
 class PolicyStatusResponse(BaseModel):

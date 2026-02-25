@@ -1,7 +1,8 @@
 # Sovereign AI Node — fully local inference, no PHI leaves the network.
+# Ollama serves models in GGUF format (quantized for efficient GPU inference).
 #
 # Usage:
-#   docker compose -f docker-compose.sovereign.yml up --build
+#   docker compose up --build
 #
 # Requirements:
 #   - NVIDIA GPU with Docker GPU support (nvidia-container-toolkit)
