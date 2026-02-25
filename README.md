@@ -1,12 +1,88 @@
-# MedGemma PA Form Auto-Fill
+# PAssist &mdash; Evidence-Linked Assistant for Prior Authorization
 
-AI-powered Prior Authorization form filling using local clinical evidence extraction.
+**Physicians spend 14 hours/week on prior authorization paperwork. PAssist uses a local medical LLM to auto-extract clinical evidence, evaluate insurance policy criteria, and fill PA forms &mdash; so doctors can review in minutes instead of hours.**
 
-## What It Does
+<p align="center">
+  <img src="docs/demo.gif" alt="PAssist Demo Walkthrough" width="800" />
+</p>
 
-This pipeline extracts clinical evidence from patient notes using a local MedGemma 4B model, evaluates it against an insurance policy decision tree (AND/OR logic), and auto-fills Prior Authorization PDF forms. A web UI lets physicians review AI-extracted fields, override policy criteria, and download the completed PA form — all running locally with no external API calls.
+<p align="center">
+  <em>AI drafts, human verifies &mdash; all processing runs 100% locally</em>
+</p>
 
-**Key idea:** AI drafts ~75% of form fields from FHIR records and clinical notes. The doctor reviews, accepts/rejects/edits each field, then downloads the filled PDF.
+---
+
+## The Problem
+
+- **~35% of physicians** report prior authorization causes significant care delays
+- Each PA form takes **30-45 minutes** of manual chart review and data entry
+- Physicians spend an average of **14 hours/week** on PA-related paperwork
+- Information is scattered across EHR records, clinical notes, and insurance policies
+
+## What PAssist Does
+
+1. **Extracts clinical evidence** from FHIR records and SOAP notes using MedGemma 4B (runs locally on Apple Silicon)
+2. **Evaluates insurance policy criteria** through an interactive AND/OR decision tree with linked evidence
+3. **Auto-fills ~75% of the PA form** &mdash; patient demographics from EHR, drug history and clinical findings from AI extraction
+4. **Lets the doctor review every field** &mdash; accept, reject, or edit each AI suggestion with full source tracing back to clinical notes
+5. **Generates a clinical justification letter** and downloadable PDF, ready to submit
+
+## Key Screens
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/landing.png" alt="Landing Page" width="400" /><br />
+      <strong>Landing Page</strong><br />
+      Select patient, insurer, and drug to begin
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/demo.gif" alt="Full Workflow" width="400" /><br />
+      <strong>Full Workflow</strong><br />
+      Review Queue + PA Form + Policy Tree + Clinical Notes
+    </td>
+  </tr>
+</table>
+
+**Review Queue** &mdash; Accept/reject/edit AI-extracted fields with source badges (EHR, AI, Inferred) | **Policy Tree** &mdash; AND/OR eligibility evaluation with evidence snippets and override controls | **Clinical Notes** &mdash; SOAP notes with evidence highlighting | **PA Form** &mdash; Live PDF preview that auto-regenerates on changes
+
+## How It Works
+
+```
+ FHIR Records ──┐                                    ┌── Review Queue
+ (demographics)  ├──→  FastAPI  ──→  MedGemma 4B  ──→├── Policy Tree (AND/OR)
+ SOAP Notes ────┘     Backend       (local MLX)      ├── Auto-filled PDF
+ (clinical text)         │                            └── Justification Letter
+                         │
+              Policy Decision Tree
+              (extracted from UHC PDF)
+```
+
+**Pipeline:**
+1. **FHIR fields** populate instantly (patient info, provider, diagnosis)
+2. **MedGemma extraction** runs per-note via SSE, progressively filling drug history and step therapy fields
+3. **Policy tree** evaluates AND/OR eligibility criteria with each extraction update
+4. **Doctor reviews** each field and criterion, then downloads the completed PA form
+
+## Key Features
+
+- **100% local processing** &mdash; MedGemma 4B runs on Apple Silicon via MLX, no external API calls
+- **No disease-specific hardcoding** &mdash; all clinical logic comes from the policy tree or LLM output
+- **KV cache reuse** &mdash; static prompt prefix cached in GPU memory for ~50% inference speedup
+- **Multi-stage evidence validation** &mdash; spam detection, n-gram grounding, keyword/anti-keyword filtering
+- **OR-aware policy evaluation** &mdash; supports complex AND/OR gate logic with doctor override capability
+- **Da Vinci PAS FHIR Bundle export** &mdash; standards-compliant interoperability output
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| LLM | MedGemma 4B (mlx-lm on Apple Silicon) or Gemini 2.5 Flash |
+| Backend | FastAPI + Uvicorn, SSE streaming |
+| Frontend | Vue 3 + TypeScript + Vuetify 3 + Pinia |
+| PDF | pypdf (AcroForm filling) |
+| Data | Synthea FHIR bundles, SOAP notes |
+| Policy Extraction | PyMuPDF + LangExtract + Gemini (offline, one-time) |
 
 ## Quick Start
 
@@ -14,130 +90,43 @@ This pipeline extracts clinical evidence from patient notes using a local MedGem
 
 - Python 3.11+ with [uv](https://docs.astral.sh/uv/)
 - Node.js 18+
-- Apple Silicon Mac (for local MedGemma via MLX) — or use Gemini backend
+- Apple Silicon Mac (for local MedGemma) &mdash; or use `EXTRACTION_BACKEND=gemini`
 
-### Setup
+### Demo Mode (no GPU required)
 
 ```bash
-# Clone and install Python dependencies
+# Clone and install
 git clone <repo-url> && cd medgemma-impact-tibotimz
-cp .env.example .env   # Fill in your HF_TOKEN
-
-# Install frontend dependencies
 cd frontend && npm install && cd ..
-```
 
-### Run (Demo Mode — no GPU required)
-
-```bash
-# Backend with pre-computed extraction results
+# Start backend with pre-computed results
 SKIP_MODEL=1 uv run uvicorn server:app --port 8000
 
-# Frontend (in another terminal)
+# Start frontend (in another terminal)
 cd frontend && npm run dev
 ```
 
-Open http://localhost:5173, select a patient, and explore the full workflow.
+Open **http://localhost:5173**, select a patient, and explore the full workflow.
 
-### Run (Full Mode — Apple Silicon)
+### Full Mode (Apple Silicon)
 
 ```bash
-# Backend with live MedGemma 4B inference
+cp .env.example .env   # Add your HF_TOKEN
 uv run uvicorn server:app --port 8000
-
-# Frontend
 cd frontend && npm run dev
 ```
 
 ## Architecture
 
-```
-FHIR Bundles (Synthea)  ─┐
-                          ├──→ FastAPI Backend (:8000) ──→ Vue 3 Frontend (:5173)
-Clinical Notes (SOAP)   ─┘         │
-                                   ├─ MedGemma 4B (MLX, local)
-Policy Decision Tree ──────────────┤   └─ KV cache reuse for fast inference
-                                   ├─ Evidence validation (multi-stage pipeline)
-PA Form Template (PDF) ────────────┤   └─ Spam, n-gram grounding, keyword checks
-                                   └─ PDF generation (pypdf AcroForm)
-```
+See [CLAUDE.md](./CLAUDE.md) for comprehensive architecture documentation including SSE event flow, extraction pipeline, validation stages, and form filling logic.
 
-### Data Flow
+## Team
 
-1. **FHIR fields** populate instantly (patient demographics, provider info, diagnosis)
-2. **MedGemma extraction** runs per-note via SSE, progressively filling step therapy fields
-3. **Policy tree** evaluates AND/OR eligibility with each extraction update
-4. **Doctor reviews** each field (accept/reject/edit) and each policy criterion
-5. **Justification letter** auto-generated from met criteria evidence
-6. **PDF** auto-regenerates on field changes, downloadable after attestation
+- **Thibaud SOUTHIRATN**
+- **Theotime LAVISSE**
 
-## Project Structure
+---
 
-```
-├── server.py                  # FastAPI entry point, model loading
-├── config.py                  # Paths, constants
-├── services/
-│   ├── extraction_service.py  # MedGemma extraction singleton (SSE streaming)
-│   ├── patient_data.py        # FHIR parser, clinical justification formatter
-│   ├── policy_tree.py         # Policy decision tree (AND/OR evaluation)
-│   ├── pdf_form.py            # PDF AcroForm filling (pypdf)
-│   └── drug_field_parser.py   # Drug field parsing with MedGemma 4B
-├── api/
-│   ├── patients.py            # Patient listing, FHIR data, notes
-│   ├── extraction.py          # SSE extraction + pre-computed fallback
-│   ├── form.py                # PDF generation, field mapping, policy endpoints
-│   └── pas_bundle.py          # Da Vinci PAS FHIR Bundle generation
-├── frontend/src/
-│   ├── pages/
-│   │   ├── index.vue          # Landing — patient/insurer/drug selection
-│   │   └── workspace/[uuid].vue  # Main workspace — split panel layout
-│   ├── components/
-│   │   ├── ReviewQueue.vue    # Form field review (accept/reject/edit)
-│   │   ├── PolicyTree.vue     # AND/OR policy evaluation with overrides
-│   │   ├── NoteViewer.vue     # Clinical notes with evidence highlighting
-│   │   └── PdfViewer.vue      # Live PDF preview with clickable fields
-│   └── stores/
-│       ├── patient.ts         # FHIR data, notes
-│       ├── extraction.ts      # SSE state, results, overrides
-│       └── form.ts            # Form fields, justification
-├── scripts/
-│   └── extract_policy.py      # Policy PDF → decision tree pipeline (offline)
-├── notes/                     # Patient clinical notes (per-UUID directories)
-├── fhir/                      # FHIR bundles (Synthea-generated)
-└── *.json                     # Decision trees, extraction results
-```
-
-## Key Design Decisions
-
-- **No external API calls** — all processing runs locally (MedGemma on Metal GPU)
-- **No disease-specific hardcoding** — all clinical logic from policy tree or LLM
-- **KV cache reuse** — static prompt prefix cached in GPU memory; only patient note changes per inference (~50% latency reduction)
-- **Per-note extraction** — one inference run per note file, results merged progressively (run count depends on number of notes)
-- **OR-aware evaluation** — policy tree supports AND/OR gates; only best OR branch counts
-- **Override priority** — doctor overrides > negated (auto-met) > AI results
-- **Multi-stage evidence validation** — spam detection, n-gram grounding (30%), keyword/anti-keyword filtering, source-text entity grounding
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| LLM | MedGemma 4B (mlx-lm on Apple Silicon) or Gemini 2.5 Flash |
-| Backend | FastAPI + Uvicorn |
-| Frontend | Vue 3 + TypeScript + Vuetify 3 + Pinia |
-| PDF | pypdf (AcroForm filling) |
-| Data | Synthea FHIR bundles, SOAP notes |
-
-## Environment Variables
-
-See `.env.example` for all options:
-
-| Variable | Required | Description |
-|---|---|---|
-| `HF_TOKEN` | For MLX | Hugging Face token for model download |
-| `LANGEXTRACT_API_KEY` | For Gemini | Google AI API key |
-| `EXTRACTION_BACKEND` | No | `mlx` (default) or `gemini` |
-| `SKIP_MODEL` | No | Set to `1` for demo mode (pre-computed results) |
-
-## Detailed Architecture
-
-See [CLAUDE.md](./CLAUDE.md) for comprehensive architecture documentation including SSE event flow, extraction pipeline details, validation stages, and form filling logic.
+<p align="center">
+  Built for the Google MedGemma Hackathon 2025
+</p>
